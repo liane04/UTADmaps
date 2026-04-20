@@ -1,0 +1,48 @@
+{
+  "id": "bloco-a",
+  "nome": "Bloco A",
+  "pisos": [
+    {
+      "numero": 2,
+      "largura": 1000,
+      "altura": 600,
+      "locais": [
+        { "id": "s1", "nome": "Sala 2.1", "tipo": "sala", "x": 780, "y": 30, "largura": 190, "altura": 210 },
+        { "id": "s2", "nome": "Sala 2.10", "tipo": "sala", "x": 470, "y": 30, "largura": 290, "altura": 210 },
+        { "id": "s22", "nome": "Sala 2.2", "tipo": "sala", "x": 30, "y": 30, "largura": 180, "altura": 210 },
+        { "id": "s23", "nome": "Sala 2.3", "tipo": "sala", "x": 250, "y": 30, "largura": 180, "altura": 210 },
+        { "id": "wc", "nome": "WC", "tipo": "servico", "x": 30, "y": 360, "largura": 180, "altura": 150 },
+        { "id": "lab", "nome": "Lab. Informática", "tipo": "sala", "x": 250, "y": 360, "largura": 290, "altura": 210 }
+      ],
+      "grafo": {
+        "nos": [
+          { "id": "esc", "x": 50, "y": 300, "tipo": "entrada", "rotulo": "Escadas" },
+          { "id": "c_s22", "x": 120, "y": 300, "tipo": "corredor" },
+          { "id": "c_s23", "x": 340, "y": 300, "tipo": "corredor" },
+          { "id": "c_s2",  "x": 615, "y": 300, "tipo": "corredor" },
+          { "id": "c_s1",  "x": 870, "y": 300, "tipo": "corredor" },
+          { "id": "c_lab", "x": 395, "y": 300, "tipo": "corredor" },
+          { "id": "d_s1",  "x": 870, "y": 240, "tipo": "porta", "local": "s1" },
+          { "id": "d_s2",  "x": 615, "y": 240, "tipo": "porta", "local": "s2" },
+          { "id": "d_s22", "x": 120, "y": 240, "tipo": "porta", "local": "s22" },
+          { "id": "d_s23", "x": 340, "y": 240, "tipo": "porta", "local": "s23" },
+          { "id": "d_wc",  "x": 120, "y": 360, "tipo": "porta", "local": "wc" },
+          { "id": "d_lab", "x": 395, "y": 360, "tipo": "porta", "local": "lab" }
+        ],
+        "arestas": [
+          ["esc",   "c_s22"],
+          ["c_s22", "c_s23"],
+          ["c_s23", "c_lab"],
+          ["c_lab", "c_s2"],
+          ["c_s2",  "c_s1"],
+          ["c_s22", "d_s22"],
+          ["c_s23", "d_s23"],
+          ["c_s2",  "d_s2"],
+          ["c_s1",  "d_s1"],
+          ["c_s22", "d_wc"],
+          ["c_lab", "d_lab"]
+        ]
+      }
+    }
+  ]
+}

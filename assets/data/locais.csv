@@ -1,0 +1,31 @@
+id,categoria,nome,subtitulo,edificio,piso,distancia
+e1,edificio,Biblioteca,Edifício Central,Biblioteca,,90
+e2,edificio,Cantina,Edifício Central,Cantina,,100
+e3,edificio,Reitoria,Edifício Reitoria,Reitoria,,280
+e4,edificio,Bloco A,Edifício de Aulas,Bloco A,,120
+e5,edificio,Bloco B,Edifício de Aulas,Bloco B,,240
+e6,edificio,Bloco C,Edifício de Aulas,Bloco C,,300
+e7,edificio,Engenharias I,Edifício Engenharias I,Engenharias I,,410
+e8,edificio,Geociências,Edifício Geociências,Geociências,,360
+e9,edificio,Pavilhão Desportivo,Desporto e Lazer,Pavilhão,,520
+e10,edificio,Complexo Pedagógico,Edifício CP,Complexo Pedagógico,,470
+s1,sala,Sala 2.1,Piso 2 - Bloco A,Bloco A,2,120
+s2,sala,Sala 2.10,Piso 2 - Bloco A,Bloco A,2,125
+s3,sala,Sala 1.5,Piso 1 - Bloco B,Bloco B,1,240
+s4,sala,Sala 0.3,Piso 0 - Bloco C,Bloco C,0,300
+s5,sala,Lab. Informática 3,Piso 1 - Engenharias I,Engenharias I,1,410
+s6,sala,Anfiteatro 1,Piso 0 - Geociências,Geociências,0,360
+s7,sala,Auditório,Piso 0 - Reitoria,Reitoria,0,280
+s8,sala,Sala 3.2,Piso 3 - Bloco A,Bloco A,3,135
+s9,sala,Lab. Química,Piso 1 - Geociências,Geociências,1,365
+s10,sala,Sala 0.1,Piso 0 - Complexo Pedagógico,Complexo Pedagógico,0,470
+sv1,servico,Secretaria,Reitoria - Piso 0,Reitoria,0,280
+sv2,servico,Tesouraria,Reitoria - Piso 0,Reitoria,0,280
+sv3,servico,Centro Médico,Edifício Apoio - Piso 0,Edifício Apoio,0,350
+sv4,servico,SASUTAD,Edifício Apoio - Piso 1,Edifício Apoio,1,360
+sv5,servico,Reprografia,Bloco B - Piso 0,Bloco B,0,240
+sv6,servico,Bar Central,Cantina - Piso 0,Cantina,0,100
+sv7,servico,Posto CTT,Cantina - Piso 0,Cantina,0,100
+sv8,servico,Banco,Cantina - Piso 0,Cantina,0,100
+sv9,servico,Livraria,Biblioteca - Piso 0,Biblioteca,0,90
+sv10,servico,Núcleo de Estudantes,Bloco A - Piso 1,Bloco A,1,130
