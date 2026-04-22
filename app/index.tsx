@@ -3,62 +3,64 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { language, t, setLanguage } = useLanguage();
+  const { colors } = useSettings();
 
   const handleContinue = () => {
     router.replace('/(tabs)');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.logoContainer}>
         <Text style={styles.logoText}>Ü</Text>
         <Ionicons name="compass-outline" size={24} color="#8E8E93" style={styles.logoIcon} />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>{t.welcome}</Text>
-        <Text style={styles.subtitle}>{t.welcomeSubtitle}</Text>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>{t.welcome}</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>{t.welcomeSubtitle}</Text>
 
-        <Text style={styles.label}>Language</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Language</Text>
         <View style={styles.languageToggle}>
           <TouchableOpacity
-            style={[styles.languagePill, language === 'pt' ? styles.languagePillSelected : styles.languagePillUnselected]}
+            style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'pt' ? colors.text : colors.border }]}
             onPress={() => setLanguage('pt')}
           >
-            <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? '#000000' : '#8E8E93'} />
-            <Text style={[styles.languageText, language === 'pt' && styles.languageTextSelected]}>Português</Text>
+            <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? colors.text : '#8E8E93'} />
+            <Text style={[styles.languageText, { color: colors.text }, language === 'pt' && styles.languageTextSelected]}>Português</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.languagePill, language === 'en' ? styles.languagePillSelected : styles.languagePillUnselected]}
+            style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'en' ? colors.text : colors.border }]}
             onPress={() => setLanguage('en')}
           >
-            <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? '#000000' : '#8E8E93'} />
-            <Text style={[styles.languageText, language === 'en' && styles.languageTextSelected]}>English</Text>
+            <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? colors.text : '#8E8E93'} />
+            <Text style={[styles.languageText, { color: colors.text }, language === 'en' && styles.languageTextSelected]}>English</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.text }]}>
           {t.emailLabel} <Text style={styles.optionalText}>{t.optional}</Text>
         </Text>
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder={t.emailPlaceholder}
             placeholderTextColor="#8E8E93"
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
-          <Text style={styles.buttonText}>{t.continuar}</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleContinue}>
+          <Text style={[styles.buttonText, { color: colors.bg }]}>{t.continuar}</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={handleContinue} style={styles.skipButton}>
-        <Text style={styles.skipText}>{t.saltarExplorar}</Text>
+        <Text style={[styles.skipText, { color: colors.text }]}>{t.saltarExplorar}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

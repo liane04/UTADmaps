@@ -31,6 +31,7 @@ const translations = {
     idioma: 'Idioma',
     tema: 'Tema',
     claro: 'Claro',
+    escuro: 'Escuro',
     sobre: 'SOBRE',
     suporteAjuda: 'Suporte e Ajuda',
   },
@@ -62,6 +63,7 @@ const translations = {
     idioma: 'Language',
     tema: 'Theme',
     claro: 'Light',
+    escuro: 'Dark',
     sobre: 'ABOUT',
     suporteAjuda: 'Support & Help',
   },
@@ -72,20 +74,23 @@ type Translations = Record<keyof typeof translations.pt, string>;
 interface LanguageContextType {
   language: Language;
   t: Translations;
+  tr: (pt: string, en: string) => string;
   setLanguage: (lang: Language) => void;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
   language: 'pt',
   t: translations.pt,
+  tr: (pt) => pt,
   setLanguage: () => {},
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('pt');
+  const tr = (pt: string, en: string) => (language === 'pt' ? pt : en);
 
   return (
-    <LanguageContext.Provider value={{ language, t: translations[language], setLanguage }}>
+    <LanguageContext.Provider value={{ language, t: translations[language], tr, setLanguage }}>
       {children}
     </LanguageContext.Provider>
   );

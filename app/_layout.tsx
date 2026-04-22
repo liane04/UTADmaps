@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from '../contexts/LanguageContext';
+import { SettingsProvider } from '../contexts/SettingsContext';
 
 export default function RootLayout() {
   return (
+    <SettingsProvider>
     <LanguageProvider>
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }}>
@@ -15,5 +17,6 @@ export default function RootLayout() {
       </Stack>
     </SafeAreaProvider>
     </LanguageProvider>
+    </SettingsProvider>
   );
 }
