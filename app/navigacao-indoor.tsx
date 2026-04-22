@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSettings } from '../contexts/SettingsContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import blocoA from '../assets/data/pavilhoes/bloco-a.json';
 import { aStar, comprimentoCaminho, type Grafo, type No } from './lib/pathfinding';
 
@@ -26,6 +28,8 @@ type Piso = {
 
 export default function NavigacaoIndoorScreen() {
   const router = useRouter();
+  const { colors } = useSettings();
+  const { tr } = useLanguage();
   const { destino } = useLocalSearchParams<{ destino?: string }>();
 
   const piso = blocoA.pisos[0] as Piso;
@@ -46,6 +50,19 @@ export default function NavigacaoIndoorScreen() {
     return { caminho: c, passos: Math.round(comprimentoCaminho(c) / 60) };
   }, [piso, localDestino]);
 
+  const nomeLocal = (nome: string) => {
+    const map: Record<string, string> = {
+      'Lab. Informática': 'Computer Lab',
+      'Sala 2.1': 'Room 2.1',
+      'Sala 2.2': 'Room 2.2',
+      'Sala 2.3': 'Room 2.3',
+      'Sala 2.10': 'Room 2.10',
+      'WC': 'WC',
+      'Bloco A': 'Block A',
+    };
+    return tr(nome, map[nome] ?? nome);
+  };
+
   const corDoLocal = (tipo: string, isTarget: boolean) => {
     if (isTarget) return '#4A4A4A';
     if (tipo === 'servico') return '#FFE0B2';
@@ -54,26 +71,26 @@ export default function NavigacaoIndoorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#000000" />
-          <Text style={styles.backText}>Voltar</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Text style={[styles.backText, { color: colors.text }]}>{tr('Voltar', 'Back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Navegação Indoor</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{tr('Navegação Indoor', 'Indoor Navigation')}</Text>
         <View style={styles.floorPill}>
-          <Text style={styles.floorPillText}>Piso {piso.numero}</Text>
+          <Text style={styles.floorPillText}>{tr('Piso', 'Floor')} {piso.numero}</Text>
         </View>
       </View>
 
-      <Text style={styles.roomTitle}>
-        {localDestino.nome} - {blocoA.nome}
+      <Text style={[styles.roomTitle, { color: colors.text }]}>
+        {nomeLocal(localDestino.nome)} - {nomeLocal(blocoA.nome)}
       </Text>
 
       {/* Planta */}
       <View style={styles.mapContainer}>
-        <View style={[styles.plantaWrapper, { aspectRatio: PLANTA_W / PLANTA_H }]}>
+        <View style={[styles.plantaWrapper, { aspectRatio: PLANTA_W / PLANTA_H, backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Salas/Serviços */}
           {piso.locais.map((local) => {
             const isTarget = local.id === localDestino.id;
@@ -90,7 +107,7 @@ export default function NavigacaoIndoorScreen() {
                     backgroundColor: corDoLocal(local.tipo, isTarget),
                   },
                 ]}>
-                <Text style={[styles.roomLabel, isTarget && styles.roomLabelTarget]}>{local.nome}</Text>
+                <Text style={[styles.roomLabel, isTarget && styles.roomLabelTarget]}>{nomeLocal(local.nome)}</Text>
               </View>
             );
           })}
@@ -145,7 +162,7 @@ export default function NavigacaoIndoorScreen() {
                   top: `${(caminho[0].y / PLANTA_H) * 100}%`,
                 },
               ]}>
-              <Text style={styles.markerLabel}>Escadas</Text>
+              <Text style={styles.markerLabel}>{tr('Escadas', 'Stairs')}</Text>
             </View>
           )}
 
@@ -163,26 +180,26 @@ export default function NavigacaoIndoorScreen() {
           )}
         </View>
 
-        <View style={styles.compassContainer}>
-          <Ionicons name="compass-outline" size={36} color="#8E8E93" />
+        <View style={[styles.compassContainer, { backgroundColor: colors.card }]}>
+          <Ionicons name="compass-outline" size={36} color={colors.subtext} />
         </View>
       </View>
 
       {/* Painel inferior */}
       <View style={styles.bottomPanel}>
-        <View style={styles.instructionCard}>
+        <View style={[styles.instructionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="navigate" size={32} color="#2196F3" style={styles.instructionIcon} />
           <View style={styles.instructionTextContainer}>
-            <Text style={styles.instructionTitle}>Siga pelo corredor</Text>
-            <Text style={styles.instructionSubtitle}>
-              Destino: {localDestino.nome} ({caminho.length} nós, ~{passos} passos)
+            <Text style={[styles.instructionTitle, { color: colors.text }]}>{tr('Siga pelo corredor', 'Follow the corridor')}</Text>
+            <Text style={[styles.instructionSubtitle, { color: colors.text }]}>
+              {tr('Destino', 'Destination')}: {nomeLocal(localDestino.nome)} ({caminho.length} {tr('nós', 'nodes')}, ~{passos} {tr('passos', 'steps')})
             </Text>
-            <Text style={styles.instructionStep}>Rota calculada com A*</Text>
+            <Text style={styles.instructionStep}>{tr('Rota calculada com A*', 'Route calculated with A*')}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-          <Text style={styles.buttonText}>Terminar</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
+          <Text style={[styles.buttonText, { color: colors.bg }]}>{tr('Terminar', 'Finish')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

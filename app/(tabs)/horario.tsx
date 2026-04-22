@@ -2,26 +2,42 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSettings } from '../../contexts/SettingsContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function HorarioScreen() {
   const router = useRouter();
+  const { colors } = useSettings();
+  const { tr } = useLanguage();
+  const dias = [
+    { pt: 'Seg', en: 'Mon' },
+    { pt: 'Ter', en: 'Tue' },
+    { pt: 'Qua', en: 'Wed' },
+    { pt: 'Qui', en: 'Thu' },
+    { pt: 'Sex', en: 'Fri' },
+    { pt: 'Sab', en: 'Sat' },
+  ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>Horario</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.headerTitle, { color: colors.text }]}>{tr('Horário', 'Schedule')}</Text>
 
       {/* Days Selector */}
       <View style={styles.daysContainer}>
-        {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].map((day, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.dayChip, day === 'Qui' && styles.dayChipActive]}>
-            <Text style={[styles.dayText, day === 'Qui' && styles.dayTextActive]}>{day}</Text>
-          </TouchableOpacity>
-        ))}
+        {dias.map((day, index) => {
+          const label = tr(day.pt, day.en);
+          const isActive = day.pt === 'Qui';
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[styles.dayChip, { backgroundColor: colors.inputBg }, isActive && styles.dayChipActive]}>
+              <Text style={[styles.dayText, { color: colors.text }, isActive && styles.dayTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      <Text style={styles.dateText}>Quinta-feira, 21 Marco 2026</Text>
+      <Text style={styles.dateText}>{tr('Quinta-feira, 21 Março 2026', 'Thursday, 21 March 2026')}</Text>
 
       {/* Timeline */}
       <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
@@ -30,11 +46,11 @@ export default function HorarioScreen() {
           <Text style={styles.timeText}>09:00</Text>
           <View style={styles.timelineLine} />
           <View style={styles.cardContainer}>
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
               <View style={styles.cardContent}>
                 <View>
-                  <Text style={styles.classTitle}>Programacao Web</Text>
-                  <Text style={styles.classLocation}>Sala 1.3 - Bloco B</Text>
+                  <Text style={[styles.classTitle, { color: colors.text }]}>{tr('Programação Web', 'Web Programming')}</Text>
+                  <Text style={styles.classLocation}>{tr('Sala 1.3 - Bloco B', 'Room 1.3 - Block B')}</Text>
                   <Text style={styles.classTime}>09:00 - 11:00</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
@@ -49,7 +65,7 @@ export default function HorarioScreen() {
           <View style={styles.timelineLine} />
           <View style={styles.cardContainer}>
             <View style={styles.freeCard}>
-              <Text style={styles.freeText}>Livre</Text>
+              <Text style={styles.freeText}>{tr('Livre', 'Free')}</Text>
             </View>
           </View>
         </View>
@@ -68,11 +84,11 @@ export default function HorarioScreen() {
           <TouchableOpacity 
             style={styles.cardContainer}
             onPress={() => router.push('/navigacao-indoor')}>
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
               <View style={styles.cardContent}>
                 <View>
-                  <Text style={styles.classTitle}>IPC</Text>
-                  <Text style={styles.classLocation}>Sala 2.1 - Bloco A</Text>
+                  <Text style={[styles.classTitle, { color: colors.text }]}>IPC</Text>
+                  <Text style={styles.classLocation}>{tr('Sala 2.1 - Bloco A', 'Room 2.1 - Block A')}</Text>
                   <Text style={styles.classTime}>14:00 - 16:00</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
@@ -86,11 +102,11 @@ export default function HorarioScreen() {
           <Text style={styles.timeText}>16:00</Text>
           <View style={styles.timelineLine} />
           <View style={styles.cardContainer}>
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
               <View style={styles.cardContent}>
                 <View>
-                  <Text style={styles.classTitle}>Base de Dados</Text>
-                  <Text style={styles.classLocation}>Lab 2 - Bloco B</Text>
+                  <Text style={[styles.classTitle, { color: colors.text }]}>{tr('Base de Dados', 'Databases')}</Text>
+                  <Text style={styles.classLocation}>{tr('Lab 2 - Bloco B', 'Lab 2 - Block B')}</Text>
                   <Text style={styles.classTime}>16:00 - 18:00</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#8E8E93" />

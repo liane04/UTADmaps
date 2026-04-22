@@ -4,17 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LOCAIS, type Categoria, type Local } from '../data/locais';
+import { useSettings } from '../../contexts/SettingsContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 type FiltroCategoria = 'todos' | Categoria;
 
-const FILTROS: { key: FiltroCategoria; label: string }[] = [
-  { key: 'todos', label: 'Todos' },
-  { key: 'edificio', label: 'Edifícios' },
-  { key: 'sala', label: 'Salas' },
-  { key: 'servico', label: 'Serviços' },
-];
-
-const RECENTES = ['Biblioteca', 'Cantina', 'Secretaria'];
+const RECENTES_PT = ['Biblioteca', 'Cantina', 'Secretaria'];
+const RECENTES_EN = ['Library', 'Canteen', 'Secretariat'];
 
 function avatarLetra(categoria: Categoria): string {
   if (categoria === 'edificio') return 'E';
@@ -30,8 +26,17 @@ function avatarCor(categoria: Categoria): string {
 
 export default function PesquisaScreen() {
   const router = useRouter();
+  const { colors } = useSettings();
+  const { tr, language } = useLanguage();
   const [query, setQuery] = useState('');
   const [categoria, setCategoria] = useState<FiltroCategoria>('todos');
+
+  const FILTROS: { key: FiltroCategoria; label: string }[] = [
+    { key: 'todos', label: tr('Todos', 'All') },
+    { key: 'edificio', label: tr('Edifícios', 'Buildings') },
+    { key: 'sala', label: tr('Salas', 'Rooms') },
+    { key: 'servico', label: tr('Serviços', 'Services') },
+  ];
 
   const resultados = useMemo<Local[]>(() => {
     const q = query.trim().toLowerCase();
@@ -40,7 +45,9 @@ export default function PesquisaScreen() {
       if (!q) return true;
       return (
         l.nome.toLowerCase().includes(q) ||
+        l.nomeEn.toLowerCase().includes(q) ||
         l.subtitulo.toLowerCase().includes(q) ||
+        l.subtituloEn.toLowerCase().includes(q) ||
         l.edificio.toLowerCase().includes(q)
       );
     }).sort((a, b) => a.distancia - b.distancia);
@@ -60,16 +67,16 @@ export default function PesquisaScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>UTAD Campus</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.headerTitle, { color: colors.text }]}>UTAD Campus</Text>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.inputBg }]}>
         <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.text }]}
           value={query}
           onChangeText={setQuery}
-          placeholder="Pesquisar edifício, sala, serviço..."
+          placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
           placeholderTextColor="#8E8E93"
           returnKeyType="search"
         />
@@ -100,30 +107,30 @@ export default function PesquisaScreen() {
         {resultados.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={40} color="#8E8E93" />
-            <Text style={styles.emptyText}>Sem resultados para "{query}"</Text>
+            <Text style={styles.emptyText}>{tr('Sem resultados para', 'No results for')} "{query}"</Text>
           </View>
         ) : (
           resultados.map((local) => (
-            <TouchableOpacity key={local.id} style={styles.resultCard} onPress={() => aoSelecionar(local)}>
+            <TouchableOpacity key={local.id} style={[styles.resultCard, { backgroundColor: colors.card }]} onPress={() => aoSelecionar(local)}>
               <View style={[styles.avatar, { backgroundColor: avatarCor(local.categoria) }]}>
                 <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
               </View>
               <View style={styles.resultInfo}>
-                <Text style={styles.resultTitle}>{local.nome}</Text>
-                <Text style={styles.resultSubtitle}>{local.subtitulo}</Text>
+                <Text style={[styles.resultTitle, { color: colors.text }]}>{language === 'pt' ? local.nome : local.nomeEn}</Text>
+                <Text style={styles.resultSubtitle}>{language === 'pt' ? local.subtitulo : local.subtituloEn}</Text>
               </View>
-              <Text style={styles.resultDistance}>{local.distancia}m</Text>
+              <Text style={[styles.resultDistance, { color: colors.text }]}>{local.distancia}m</Text>
             </TouchableOpacity>
           ))
         )}
 
         {query.length === 0 && (
           <>
-            <Text style={styles.recentTitle}>Pesquisas recentes</Text>
+            <Text style={[styles.recentTitle, { color: colors.text }]}>{tr('Pesquisas recentes', 'Recent searches')}</Text>
             <View style={styles.recentContainer}>
-              {RECENTES.map((termo) => (
+              {(language === 'pt' ? RECENTES_PT : RECENTES_EN).map((termo) => (
                 <TouchableOpacity key={termo} onPress={() => aoTocarRecente(termo)}>
-                  <Text style={styles.recentItem}>{termo}</Text>
+                  <Text style={[styles.recentItem, { color: colors.text }]}>{termo}</Text>
                 </TouchableOpacity>
               ))}
             </View>
