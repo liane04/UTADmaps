@@ -6,9 +6,10 @@
 - **Base de dados:** Supabase (PostgreSQL)
 - **Deploy:** Docker + Nginx + Let's Encrypt no servidor Hetzner
 
-## URL de Produção
+## URLs de Produção
 ```
-https://api.utadmaps.b-host.me
+Frontend:  https://utadmaps.b-host.me
+Backend:   https://api.utadmaps.b-host.me
 ```
 
 ## Rotas da API
@@ -49,9 +50,9 @@ backend/
 ```
 
 ## Tabelas no Supabase
-- `buildings` — edifícios com coordenadas GPS reais
+- `buildings` — edifícios com coordenadas GPS reais (já populado)
 - `floors` — pisos por edifício
-- `rooms` — salas e serviços
+- `rooms` — salas e serviços (por popular com dados reais da UTAD)
 - `favorites` — favoritos por utilizador
 - `schedules` — horário importado via iCal
 
@@ -65,39 +66,56 @@ backend/
 - **IP:** `116.203.39.51`
 - **OS:** Ubuntu
 - **Localização:** Nuremberg, eu-central
+- **Acesso SSH:** `ssh -i $env:USERPROFILE\.ssh\id_monteiros bruno@116.203.39.51`
 
-### Subdomínio DNS
-- **Registo:** `api.utadmaps` tipo `A` no Cloudflare (domínio `b-host.me`)
-- **DNS only** (sem proxy Cloudflare)
-- **Resultado:** `api.utadmaps.b-host.me → 116.203.39.51`
+### Subdomínios DNS (Cloudflare — domínio b-host.me)
+| Subdomínio | Tipo | IP | Proxy |
+|---|---|---|---|
+| `api.utadmaps.b-host.me` | A | 116.203.39.51 | DNS only |
+| `utadmaps.b-host.me` | A | 116.203.39.51 | DNS only |
 
-### Docker
+### Frontend (estático)
+- Pasta no servidor: `/var/www/utadmaps/dist/`
+- Nginx config: `/etc/nginx/sites-available/utadmaps-frontend`
+- Build: `npx expo export --platform web` (corre automaticamente no deploy)
+- SSL: Let's Encrypt via Certbot (auto-renovação activa)
+
+### Backend (Docker)
 - Container: `utadmaps-api`
 - Porta interna: `3000`
 - Porta exposta no host: `3001` (3000 ocupada pelo Chatwoot)
 - Pasta no servidor: `/var/www/utadmaps/backend/`
+- Nginx config: `/etc/nginx/sites-available/utadmaps-api`
 - Restart policy: `unless-stopped`
 
-### Nginx
-- Config: `/etc/nginx/sites-available/utadmaps-api`
-- Proxy: `localhost:3001 → api.utadmaps.b-host.me`
-- SSL: Let's Encrypt via Certbot (auto-renovação activa)
-
 ### Outros serviços no servidor
-- **Chatwoot** — porta 3000
-- **n8n** — porta 5678
+- **Chatwoot** — porta 3000 → `chat.monteiros.pt`
+- **n8n** — porta 5678 → `n8n.monteiros.pt`
 
 ---
 
-## Como fazer deploy de atualizações
+## Deploy Automático (GitHub Actions)
 
-```bash
-# No servidor
-cd /var/www/utadmaps
-git pull
-cd backend
-docker compose down && docker compose up -d --build
+A cada `git push` para `main` o GitHub Actions faz deploy automático:
+
 ```
+git push → GitHub Actions (.github/workflows/deploy.yml) → SSH → /var/www/utadmaps/deploy.sh
+```
+
+O script `deploy.sh` executa:
+1. `git pull`
+2. `npm install --legacy-peer-deps`
+3. `npx expo export --platform web` (rebuild do frontend)
+4. `docker compose down && docker compose up -d --build` (restart do backend)
+
+### Secrets no GitHub (Settings → Secrets → Actions)
+| Secret | Valor |
+|---|---|
+| `SSH_PRIVATE_KEY` | Chave privada em `~/.ssh/github_actions` no servidor |
+| `SSH_HOST` | `116.203.39.51` |
+| `SSH_USER` | `bruno` |
+
+---
 
 ## Variáveis de Ambiente (.env)
 ```
@@ -106,4 +124,4 @@ SUPABASE_URL=https://vebqypqepyvsoockcfrd.supabase.co
 SUPABASE_SERVICE_KEY=<service_role key do Supabase>
 JWT_SECRET=utadmaps-secret-2026
 ```
-> O ficheiro `.env` não está no git — tem de ser criado manualmente no servidor.
+> O ficheiro `.env` não está no git — tem de ser criado manualmente no servidor em `/var/www/utadmaps/backend/.env`.
