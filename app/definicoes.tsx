@@ -3,11 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DefinicoesScreen() {
   const router = useRouter();
-  
-  // Local state for toggles just for visual interactivity
+  const { language, t, setLanguage } = useLanguage();
+
   const [altoContraste, setAltoContraste] = useState(false);
   const [rotasAcessiveis, setRotasAcessiveis] = useState(true);
   const [leitorEcra, setLeitorEcra] = useState(false);
@@ -18,19 +19,19 @@ export default function DefinicoesScreen() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#000000" />
-          <Text style={styles.backText}>Voltar</Text>
+          <Text style={styles.backText}>{t.voltar}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Definições</Text>
+        <Text style={styles.headerTitle}>{t.definicoes}</Text>
         <View style={{ width: 80 }} /> {/* Spacer to center title */}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* ACESSIBILIDADE Section */}
-        <Text style={styles.sectionTitle}>ACESSIBILIDADE</Text>
+        <Text style={styles.sectionTitle}>{t.acessibilidade}</Text>
         <View style={styles.card}>
           <View style={styles.cardRow}>
-            <Text style={styles.rowText}>Tamanho do Texto</Text>
+            <Text style={styles.rowText}>{t.tamanhoTexto}</Text>
             {/* Visual Slider */}
             <View style={styles.sliderContainer}>
               <Text style={styles.sliderTextSmall}>A</Text>
@@ -44,9 +45,9 @@ export default function DefinicoesScreen() {
           <View style={styles.divider} />
           
           <View style={styles.cardRow}>
-            <Text style={styles.rowText}>Alto Contraste</Text>
-            <Switch 
-              value={altoContraste} 
+            <Text style={styles.rowText}>{t.altoContraste}</Text>
+            <Switch
+              value={altoContraste}
               onValueChange={setAltoContraste}
               trackColor={{ false: '#E5E5EA', true: '#34C759' }}
               ios_backgroundColor="#E5E5EA"
@@ -56,22 +57,22 @@ export default function DefinicoesScreen() {
 
           <View style={styles.cardRow}>
             <View>
-              <Text style={styles.rowText}>Rotas Acessíveis</Text>
-              <Text style={styles.rowSubtext}>Evitar escadas</Text>
+              <Text style={styles.rowText}>{t.rotasAcessiveis}</Text>
+              <Text style={styles.rowSubtext}>{t.evitarEscadas}</Text>
             </View>
-            <Switch 
-              value={rotasAcessiveis} 
+            <Switch
+              value={rotasAcessiveis}
               onValueChange={setRotasAcessiveis}
-              trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }} // Black toggle
+              trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }}
               ios_backgroundColor="#E5E5EA"
             />
           </View>
           <View style={styles.divider} />
 
           <View style={styles.cardRow}>
-            <Text style={styles.rowText}>Leitor de Ecrã</Text>
-            <Switch 
-              value={leitorEcra} 
+            <Text style={styles.rowText}>{t.leitorEcra}</Text>
+            <Switch
+              value={leitorEcra}
               onValueChange={setLeitorEcra}
               trackColor={{ false: '#E5E5EA', true: '#34C759' }}
               ios_backgroundColor="#E5E5EA"
@@ -80,31 +81,34 @@ export default function DefinicoesScreen() {
         </View>
 
         {/* PERSONALIZAÇÃO Section */}
-        <Text style={styles.sectionTitle}>PERSONALIZAÇÃO</Text>
+        <Text style={styles.sectionTitle}>{t.personalizacao}</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.cardRow}>
-            <Text style={styles.rowText}>Idioma</Text>
+          <TouchableOpacity
+            style={styles.cardRow}
+            onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+          >
+            <Text style={styles.rowText}>{t.idioma}</Text>
             <View style={styles.rowValueContainer}>
-              <Text style={styles.rowValue}>Português</Text>
+              <Text style={styles.rowValue}>{language === 'pt' ? 'Português' : 'English'}</Text>
               <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
             </View>
           </TouchableOpacity>
           <View style={styles.divider} />
 
           <TouchableOpacity style={styles.cardRow}>
-            <Text style={styles.rowText}>Tema</Text>
+            <Text style={styles.rowText}>{t.tema}</Text>
             <View style={styles.rowValueContainer}>
-              <Text style={styles.rowValue}>Claro</Text>
+              <Text style={styles.rowValue}>{t.claro}</Text>
               <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
             </View>
           </TouchableOpacity>
         </View>
 
         {/* SOBRE Section */}
-        <Text style={styles.sectionTitle}>SOBRE</Text>
+        <Text style={styles.sectionTitle}>{t.sobre}</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.cardRow}>
-            <Text style={styles.rowText}>Suporte e Ajuda</Text>
+            <Text style={styles.rowText}>{t.suporteAjuda}</Text>
             <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
           </TouchableOpacity>
         </View>

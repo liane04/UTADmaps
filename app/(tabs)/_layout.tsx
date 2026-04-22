@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -30,7 +32,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Mapa',
+          title: t.mapa,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'map' : 'map-outline'} size={24} color={color} />
           ),
@@ -39,7 +41,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="pesquisa"
         options={{
-          title: 'Pesquisa',
+          title: t.pesquisa,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'search' : 'search-outline'} size={24} color={color} />
           ),
@@ -48,7 +50,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="horario"
         options={{
-          title: 'Horário',
+          title: t.horario,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'time' : 'time-outline'} size={24} color={color} />
           ),
@@ -57,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favoritos"
         options={{
-          title: 'Favoritos',
+          title: t.favoritos,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
           ),
@@ -66,7 +68,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="perfil"
         options={{
-          title: 'Perfil',
+          title: t.perfil,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),

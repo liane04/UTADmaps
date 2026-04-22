@@ -2,9 +2,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { language, t, setLanguage } = useLanguage();
 
   const handleContinue = () => {
     router.replace('/(tabs)');
@@ -18,39 +20,45 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.title}>Bem-vindo ao{'\n'}UTAD Maps</Text>
-        <Text style={styles.subtitle}>Navegue pelo campus com facilidade</Text>
+        <Text style={styles.title}>{t.welcome}</Text>
+        <Text style={styles.subtitle}>{t.welcomeSubtitle}</Text>
 
         <Text style={styles.label}>Language</Text>
         <View style={styles.languageToggle}>
-          <View style={[styles.languagePill, styles.languagePillSelected]}>
-            <Ionicons name="radio-button-on" size={20} color="#000000" />
-            <Text style={[styles.languageText, styles.languageTextSelected]}>Português</Text>
-          </View>
-          <View style={[styles.languagePill, styles.languagePillUnselected]}>
-            <Ionicons name="radio-button-off" size={20} color="#8E8E93" />
-            <Text style={styles.languageText}>English</Text>
-          </View>
+          <TouchableOpacity
+            style={[styles.languagePill, language === 'pt' ? styles.languagePillSelected : styles.languagePillUnselected]}
+            onPress={() => setLanguage('pt')}
+          >
+            <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? '#000000' : '#8E8E93'} />
+            <Text style={[styles.languageText, language === 'pt' && styles.languageTextSelected]}>Português</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.languagePill, language === 'en' ? styles.languagePillSelected : styles.languagePillUnselected]}
+            onPress={() => setLanguage('en')}
+          >
+            <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? '#000000' : '#8E8E93'} />
+            <Text style={[styles.languageText, language === 'en' && styles.languageTextSelected]}>English</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.label}>
-          Email Institucional Login <Text style={styles.optionalText}>(optional)</Text>
+          {t.emailLabel} <Text style={styles.optionalText}>{t.optional}</Text>
         </Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Email @utad.eu"
+            placeholder={t.emailPlaceholder}
             placeholderTextColor="#8E8E93"
           />
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleContinue}>
-          <Text style={styles.buttonText}>Continuar</Text>
+          <Text style={styles.buttonText}>{t.continuar}</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={handleContinue} style={styles.skipButton}>
-        <Text style={styles.skipText}>Saltar e explorar</Text>
+        <Text style={styles.skipText}>{t.saltarExplorar}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
