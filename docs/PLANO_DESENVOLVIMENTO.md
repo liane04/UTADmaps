@@ -140,27 +140,27 @@ POST /api/auth/register          → registo
 ```
 
 **Semana 1:**
-- [ ] `npx create-expo-app utadmaps` + configurar Expo Router
+- [x] `npx create-expo-app utadmaps` + configurar Expo Router
 - [ ] Instalar dependências: `nativewind`, `zustand`, `i18next`, `react-i18next`, `axios`, `react-leaflet`, `react-native-svg`
 - [ ] Criar store Zustand: `useAppStore` (user, language, theme, accessibility)
-- [ ] Criar `services/api.ts`: instância Axios apontando ao backend
+- [x] Criar `services/api.ts`: instância apontando ao backend (`fetch` nativo, não axios)
 - [ ] Ficheiros `locales/pt.json` e `locales/en.json` com todas as strings
-- [ ] Criar repo GitHub, branches por equipa (`bussola`, `alicerces`, `experiencia`), PR template
-- [ ] Criar projecto Node.js: instalar `express`, `cors`, `dotenv`, `@supabase/supabase-js`, `ical.js`
-- [ ] Criar projecto Supabase: criar tabelas, configurar Row Level Security
-- [ ] Implementar rotas base: `GET /api/buildings`, `GET /api/rooms/search`, `GET /api/services`
-- [ ] Popular tabelas: coordenadas reais dos edifícios da UTAD, salas do Bloco A
+- [x] Criar repo GitHub, branches por equipa (`bussola`, `alicerces`, `experiencia`), PR template
+- [x] Criar projecto Node.js: instalar `express`, `cors`, `dotenv`, `@supabase/supabase-js`, `ical.js`
+- [x] Criar projecto Supabase: criar tabelas, configurar Row Level Security
+- [x] Implementar rotas base: `GET /api/buildings`, `GET /api/rooms/search`, `GET /api/services`
+- [x] Popular tabelas: coordenadas reais dos 21 edifícios da UTAD (salas ainda por popular)
 
 **Semana 2:**
 - [ ] Integrar tema escuro e alto contraste via NativeWind
 - [ ] Rever e mergear Pull Requests de todas as equipas
-- [ ] Testar no browser (expo web) e no Expo Go (dispositivo físico)
-- [ ] Deploy frontend no Vercel
-- [ ] `POST /api/ical/import`: recebe `.ics`, parseia com `ical.js`, faz match sala ↔ DB, guarda em `schedules`
-- [ ] `GET /api/schedule/:userId`: devolve aulas ordenadas por dia + hora com localização
-- [ ] Rotas de favoritos (`GET`, `POST`, `DELETE`) e histórico
-- [ ] Auth via Supabase: login + registo + middleware JWT para rotas protegidas
-- [ ] Deploy backend no Railway
+- [x] Testar no browser (expo web) — frontend em produção em `https://utadmaps.b-host.me`
+- [x] Deploy frontend (Hetzner + Nginx + Let's Encrypt, não Vercel)
+- [x] `POST /api/ical/import`: recebe `.ics`, parseia com `ical.js`, faz match sala ↔ DB, guarda em `schedules`
+- [x] `GET /api/schedule/:userId`: devolve aulas ordenadas por dia + hora com localização
+- [x] Rotas de favoritos (`GET`, `POST`, `DELETE`) e histórico
+- [x] Auth via Supabase: login + registo + middleware JWT para rotas protegidas
+- [x] Deploy backend (Hetzner + Docker + Nginx, não Railway) — `https://api.utadmaps.b-host.me`
 
 ---
 
@@ -243,15 +243,15 @@ Sala encontrada ✓
 
 ## ✅ Critérios de Aceitação
 
-- [ ] App abre no browser (Expo Web) e no Expo Go (mobile)
+- [x] App abre no browser (Expo Web) — `https://utadmaps.b-host.me`
 - [ ] Idioma muda em toda a app a partir do onboarding
-- [ ] Mapa carrega edifícios da API (dados reais da UTAD no Supabase)
-- [ ] Pesquisar "Sala 2.1" → resultado → iniciar navegação
+- [ ] Mapa carrega edifícios da API (API pronta; frontend ainda usa placeholder estático)
+- [x] Pesquisar "Sala 2.1" → resultado → iniciar navegação (dados locais; API pronta para ligar)
 - [ ] Navegação outdoor: rota com distância e tempo estimado
-- [ ] Navegação indoor: planta SVG passo a passo
-- [ ] Importar `.ics` → horário semanal com aulas reais
-- [ ] Clicar "Navegar" numa aula → abre indoor para a sala correcta
-- [ ] Guardar e remover favoritos (persistidos na DB)
+- [x] Navegação indoor: planta A* funcional com `bloco-a.json`
+- [ ] Importar `.ics` → horário semanal com aulas reais (backend pronto; UI não ligada)
+- [x] Clicar "Navegar" numa aula → abre indoor para a sala correcta
+- [ ] Guardar e remover favoritos (backend pronto; UI não ligada à API)
 - [ ] Alto contraste activo muda a UI visivelmente
 
 ---
