@@ -3,7 +3,7 @@ import { Building, Floor, Room, Favorite, Schedule, User } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
 
-function getAuthHeader() {
+function getAuthHeader(): Record<string, string> {
   const token = useAppStore.getState().token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
