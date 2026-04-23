@@ -7,7 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function PerfilScreen() {
   const router = useRouter();
-  const { colors } = useSettings();
+  const { colors, fs } = useSettings();
   const { tr } = useLanguage();
 
   return (
@@ -18,8 +18,8 @@ export default function PerfilScreen() {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>F</Text>
           </View>
-          <Text style={[styles.name, { color: colors.text }]}>Filipe Neves</Text>
-          <Text style={styles.email}>filipe@utad.eu</Text>
+          <Text style={[styles.name, { color: colors.text, fontSize: fs(24) }]}>Filipe Neves</Text>
+          <Text style={[styles.email, { fontSize: fs(16) }]}>filipe@utad.eu</Text>
         </View>
 
         {/* Next Class Card */}
@@ -28,31 +28,31 @@ export default function PerfilScreen() {
             style={[styles.nextClassCard, { backgroundColor: colors.card }]}
             onPress={() => router.push('/navigacao-indoor')}>
             <View style={styles.nextClassHeader}>
-              <Text style={[styles.nextClassLabel, { color: colors.text }]}>{tr('Próxima Aula', 'Next Class')}</Text>
+              <Text style={[styles.nextClassLabel, { color: colors.text, fontSize: fs(14) }]}>{tr('Próxima Aula', 'Next Class')}</Text>
               <Ionicons name="navigate" size={20} color={colors.text} />
             </View>
-            <Text style={[styles.nextClassTitle, { color: colors.text }]}>IPC</Text>
-            <Text style={[styles.nextClassDetail, { color: colors.subtext }]}>{tr('Sala 2.1, Bloco A', 'Room 2.1, Block A')}</Text>
-            <Text style={[styles.nextClassDetail, { color: colors.subtext }]}>{tr('Hoje, 14:00 - 16:00', 'Today, 14:00 - 16:00')}</Text>
+            <Text style={[styles.nextClassTitle, { color: colors.text, fontSize: fs(20) }]}>IPC</Text>
+            <Text style={[styles.nextClassDetail, { color: colors.subtext, fontSize: fs(14) }]}>{tr('Sala 2.1, Bloco A', 'Room 2.1, Block A')}</Text>
+            <Text style={[styles.nextClassDetail, { color: colors.subtext, fontSize: fs(14) }]}>{tr('Hoje, 14:00 - 16:00', 'Today, 14:00 - 16:00')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Menu Items */}
         <View style={[styles.menuContainer, { backgroundColor: colors.card, borderColor: colors.divider }]}>
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={[styles.menuText, { color: colors.text }]}>{tr('Favoritos', 'Favourites')}</Text>
+            <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>{tr('Favoritos', 'Favourites')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={[styles.menuText, { color: colors.text }]}>{tr('Histórico de Navegação', 'Navigation History')}</Text>
+            <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>{tr('Histórico de Navegação', 'Navigation History')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={[styles.menuText, { color: colors.text }]}>{tr('Horário Semanal', 'Weekly Schedule')}</Text>
+            <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>{tr('Horário Semanal', 'Weekly Schedule')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -60,7 +60,7 @@ export default function PerfilScreen() {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/definicoes')}>
-            <Text style={[styles.menuText, { color: colors.text }]}>{tr('Definições', 'Settings')}</Text>
+            <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>{tr('Definições', 'Settings')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </View>

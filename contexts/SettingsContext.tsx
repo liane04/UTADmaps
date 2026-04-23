@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Tema = 'claro' | 'escuro';
+export type TamanhoTexto = 'pequeno' | 'normal' | 'grande';
+
+const FONT_SCALES: Record<TamanhoTexto, number> = {
+  pequeno: 0.85,
+  normal: 1.0,
+  grande: 1.2,
+};
 
 export interface Colors {
   bg: string;
@@ -45,20 +52,31 @@ interface SettingsContextType {
   tema: Tema;
   setTema: (t: Tema) => void;
   colors: Colors;
+  tamanhoTexto: TamanhoTexto;
+  setTamanhoTexto: (t: TamanhoTexto) => void;
+  fontScale: number;
+  fs: (size: number) => number;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
   tema: 'claro',
   setTema: () => {},
   colors: lightColors,
+  tamanhoTexto: 'normal',
+  setTamanhoTexto: () => {},
+  fontScale: 1,
+  fs: (s) => s,
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [tema, setTema] = useState<Tema>('claro');
+  const [tamanhoTexto, setTamanhoTexto] = useState<TamanhoTexto>('normal');
   const colors = tema === 'escuro' ? darkColors : lightColors;
+  const fontScale = FONT_SCALES[tamanhoTexto];
+  const fs = (size: number) => Math.round(size * fontScale);
 
   return (
-    <SettingsContext.Provider value={{ tema, setTema, colors }}>
+    <SettingsContext.Provider value={{ tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fontScale, fs }}>
       {children}
     </SettingsContext.Provider>
   );

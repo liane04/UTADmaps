@@ -5,7 +5,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function MapaScreen() {
-  const { colors, tema } = useSettings();
+  const { colors, tema, fs } = useSettings();
   const { tr } = useLanguage();
 
   return (
@@ -20,23 +20,23 @@ export default function MapaScreen() {
 
         {/* Buildings */}
         <View style={[styles.building, styles.biblioteca, { top: 240, left: 20, width: 110, height: 180 }]}>
-          <Text style={styles.buildingLabel}>{tr('Biblioteca', 'Library')}</Text>
+          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Biblioteca', 'Library')}</Text>
         </View>
         
         <View style={[styles.building, styles.blocoA, { top: 240, left: 180, width: 100, height: 70 }]}>
-          <Text style={styles.buildingLabel}>{tr('Bloco A', 'Block A')}</Text>
+          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Bloco A', 'Block A')}</Text>
         </View>
 
         <View style={[styles.building, styles.blocoB, { top: 240, left: 330, width: 100, height: 70 }]}>
-          <Text style={styles.buildingLabel}>{tr('Bloco B', 'Block B')}</Text>
+          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Bloco B', 'Block B')}</Text>
         </View>
 
         <View style={[styles.building, styles.cantina, { top: 440, left: 20, width: 140, height: 50 }]}>
-          <Text style={styles.buildingLabel}>{tr('Cantina', 'Canteen')}</Text>
+          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Cantina', 'Canteen')}</Text>
         </View>
 
         <View style={[styles.building, styles.reitoria, { top: 520, left: 180, width: 100, height: 60 }]}>
-          <Text style={styles.buildingLabel}>{tr('Reitoria', 'Rectory')}</Text>
+          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Reitoria', 'Rectory')}</Text>
         </View>
       </View>
 
@@ -46,7 +46,7 @@ export default function MapaScreen() {
         <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
           <Ionicons name="search" size={20} color={colors.text} style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={[styles.searchInput, { color: colors.text, fontSize: fs(16) }]}
             placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
             placeholderTextColor="#8E8E93"
             editable={false} // static prototype

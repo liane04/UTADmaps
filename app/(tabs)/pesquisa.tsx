@@ -26,7 +26,7 @@ function avatarCor(categoria: Categoria): string {
 
 export default function PesquisaScreen() {
   const router = useRouter();
-  const { colors } = useSettings();
+  const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
   const [query, setQuery] = useState('');
   const [categoria, setCategoria] = useState<FiltroCategoria>('todos');
@@ -68,7 +68,7 @@ export default function PesquisaScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>UTAD Campus</Text>
+      <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]}>UTAD Campus</Text>
 
       <View style={[styles.searchContainer, { backgroundColor: colors.inputBg }]}>
         <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
@@ -116,17 +116,17 @@ export default function PesquisaScreen() {
                 <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
               </View>
               <View style={styles.resultInfo}>
-                <Text style={[styles.resultTitle, { color: colors.text }]}>{language === 'pt' ? local.nome : local.nomeEn}</Text>
-                <Text style={styles.resultSubtitle}>{language === 'pt' ? local.subtitulo : local.subtituloEn}</Text>
+                <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]}>{language === 'pt' ? local.nome : local.nomeEn}</Text>
+                <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]}>{language === 'pt' ? local.subtitulo : local.subtituloEn}</Text>
               </View>
-              <Text style={[styles.resultDistance, { color: colors.text }]}>{local.distancia}m</Text>
+              <Text style={[styles.resultDistance, { color: colors.text, fontSize: fs(14) }]}>{local.distancia}m</Text>
             </TouchableOpacity>
           ))
         )}
 
         {query.length === 0 && (
           <>
-            <Text style={[styles.recentTitle, { color: colors.text }]}>{tr('Pesquisas recentes', 'Recent searches')}</Text>
+            <Text style={[styles.recentTitle, { color: colors.text, fontSize: fs(18) }]}>{tr('Pesquisas recentes', 'Recent searches')}</Text>
             <View style={styles.recentContainer}>
               {(language === 'pt' ? RECENTES_PT : RECENTES_EN).map((termo) => (
                 <TouchableOpacity key={termo} onPress={() => aoTocarRecente(termo)}>

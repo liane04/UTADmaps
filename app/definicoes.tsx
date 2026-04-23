@@ -9,7 +9,7 @@ import { useSettings } from '../contexts/SettingsContext';
 export default function DefinicoesScreen() {
   const router = useRouter();
   const { language, t, setLanguage } = useLanguage();
-  const { tema, setTema, colors } = useSettings();
+  const { tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fs } = useSettings();
 
   const [altoContraste, setAltoContraste] = useState(false);
   const [rotasAcessiveis, setRotasAcessiveis] = useState(true);
@@ -21,33 +21,41 @@ export default function DefinicoesScreen() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
-          <Text style={[styles.backText, { color: colors.text }]}>{t.voltar}</Text>
+          <Text style={[styles.backText, { color: colors.text, fontSize: fs(16) }]}>{t.voltar}</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t.definicoes}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]}>{t.definicoes}</Text>
         <View style={{ width: 80 }} /> {/* Spacer to center title */}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* ACESSIBILIDADE Section */}
-        <Text style={[styles.sectionTitle, { color: colors.subtext }]}>{t.acessibilidade}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.acessibilidade}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.tamanhoTexto}</Text>
-            {/* Visual Slider */}
-            <View style={styles.sliderContainer}>
-              <Text style={[styles.sliderTextSmall, { color: colors.subtext }]}>A</Text>
-              <View style={[styles.sliderTrack, { backgroundColor: colors.border }]}>
-                <View style={[styles.sliderFill, { backgroundColor: colors.text }]} />
-                <View style={styles.sliderThumb} />
-              </View>
-              <Text style={[styles.sliderTextLarge, { color: colors.text }]}>A</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tamanhoTexto}</Text>
+            {/* 3 Pills: Pequeno / Normal / Grande */}
+            <View style={[styles.pillsGroup, { backgroundColor: colors.inputBg }]}>
+              {(['pequeno', 'normal', 'grande'] as const).map((op) => {
+                const ativo = tamanhoTexto === op;
+                const label = op === 'pequeno' ? 'A' : op === 'normal' ? 'A' : 'A';
+                const pillFontSize = op === 'pequeno' ? 12 : op === 'normal' ? 16 : 20;
+                return (
+                  <TouchableOpacity
+                    key={op}
+                    style={[styles.pill, ativo && { backgroundColor: colors.card }]}
+                    onPress={() => setTamanhoTexto(op)}
+                  >
+                    <Text style={[styles.pillText, { color: colors.text, fontSize: pillFontSize, fontWeight: ativo ? '700' : '400' }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           
           <View style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.altoContraste}</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.altoContraste}</Text>
             <Switch
               value={altoContraste}
               onValueChange={setAltoContraste}
@@ -59,7 +67,7 @@ export default function DefinicoesScreen() {
 
           <View style={styles.cardRow}>
             <View>
-              <Text style={[styles.rowText, { color: colors.text }]}>{t.rotasAcessiveis}</Text>
+              <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.rotasAcessiveis}</Text>
               <Text style={styles.rowSubtext}>{t.evitarEscadas}</Text>
             </View>
             <Switch
@@ -72,7 +80,7 @@ export default function DefinicoesScreen() {
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <View style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.leitorEcra}</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.leitorEcra}</Text>
             <Switch
               value={leitorEcra}
               onValueChange={setLeitorEcra}
@@ -83,13 +91,13 @@ export default function DefinicoesScreen() {
         </View>
 
         {/* PERSONALIZAÇÃO Section */}
-        <Text style={[styles.sectionTitle, { color: colors.subtext }]}>{t.personalizacao}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.personalizacao}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
           >
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.idioma}</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.idioma}</Text>
             <View style={styles.rowValueContainer}>
               <Text style={styles.rowValue}>{language === 'pt' ? 'Português' : 'English'}</Text>
               <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
@@ -101,7 +109,7 @@ export default function DefinicoesScreen() {
             style={styles.cardRow}
             onPress={() => setTema(tema === 'claro' ? 'escuro' : 'claro')}
           >
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.tema}</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tema}</Text>
             <View style={styles.rowValueContainer}>
               <Text style={styles.rowValue}>{tema === 'claro' ? t.claro : t.escuro}</Text>
               <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
@@ -110,10 +118,10 @@ export default function DefinicoesScreen() {
         </View>
 
         {/* SOBRE Section */}
-        <Text style={[styles.sectionTitle, { color: colors.subtext }]}>{t.sobre}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.sobre}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <TouchableOpacity style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text }]}>{t.suporteAjuda}</Text>
+            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.suporteAjuda}</Text>
             <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
           </TouchableOpacity>
         </View>
@@ -204,49 +212,21 @@ const styles = StyleSheet.create({
     marginTop: 32,
     marginBottom: 32,
   },
-  // Slider styles
-  sliderContainer: {
+  // Pills "A"
+  pillsGroup: {
     flexDirection: 'row',
+    borderRadius: 16,
+    padding: 4,
+    gap: 4,
+  },
+  pill: {
+    width: 40,
+    height: 32,
+    borderRadius: 12,
     alignItems: 'center',
-    width: 150,
-  },
-  sliderTextSmall: {
-    fontSize: 14,
-    color: '#000000',
-    marginRight: 8,
-  },
-  sliderTextLarge: {
-    fontSize: 18,
-    color: '#000000',
-    marginLeft: 8,
-  },
-  sliderTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#E5E5EA',
-    borderRadius: 2,
-    position: 'relative',
     justifyContent: 'center',
   },
-  sliderFill: {
-    position: 'absolute',
-    left: 0,
-    width: '60%',
-    height: 4,
-    backgroundColor: '#000000',
-    borderRadius: 2,
-  },
-  sliderThumb: {
-    position: 'absolute',
-    left: '50%',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+  pillText: {
+    color: '#000000',
   },
 });
