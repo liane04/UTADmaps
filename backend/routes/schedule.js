@@ -54,10 +54,10 @@ router.post('/ical/import-url', async (req, res) => {
     return res.status(400).json({ error: 'Formato iCal inválido' });
   }
 
-  // Deduplica eventos recorrentes — mesma disciplina + dia + hora de início
+  // Deduplica apenas entradas completamente iguais (mesma data + hora + disciplina)
   const seen = new Set();
   const unicos = aulas.filter((a) => {
-    const key = `${a.diaSemana}|${a.horaInicio}|${a.disciplina}`;
+    const key = `${a.data}|${a.horaInicio}|${a.disciplina}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, TextInput, ActivityIndicator, Alert,
@@ -10,12 +10,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const STORAGE_KEY = 'utadmaps_schedule';
+const STORAGE_KEY = 'utadmaps_schedule_v2';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
 
 type Aula = {
   disciplina: string;
-  diaSemana: string;
+  data: string;       // 'YYYY-MM-DD'
+  diaSemana: string;  // 'segunda' | 'terca' | ...
   horaInicio: string;
   horaFim: string;
   sala: string;
@@ -23,22 +24,42 @@ type Aula = {
 };
 
 const DIAS = [
-  { key: 'segunda', ptCurto: 'Seg', enCurto: 'Mon', ptLongo: 'Segunda-feira', enLongo: 'Monday' },
-  { key: 'terca',   ptCurto: 'Ter', enCurto: 'Tue', ptLongo: 'Terça-feira',   enLongo: 'Tuesday' },
-  { key: 'quarta',  ptCurto: 'Qua', enCurto: 'Wed', ptLongo: 'Quarta-feira',  enLongo: 'Wednesday' },
-  { key: 'quinta',  ptCurto: 'Qui', enCurto: 'Thu', ptLongo: 'Quinta-feira',  enLongo: 'Thursday' },
-  { key: 'sexta',   ptCurto: 'Sex', enCurto: 'Fri', ptLongo: 'Sexta-feira',   enLongo: 'Friday' },
-  { key: 'sabado',  ptCurto: 'Sáb', enCurto: 'Sat', ptLongo: 'Sábado',       enLongo: 'Saturday' },
+  { key: 'segunda', ptCurto: 'Seg', enCurto: 'Mon' },
+  { key: 'terca',   ptCurto: 'Ter', enCurto: 'Tue' },
+  { key: 'quarta',  ptCurto: 'Qua', enCurto: 'Wed' },
+  { key: 'quinta',  ptCurto: 'Qui', enCurto: 'Thu' },
+  { key: 'sexta',   ptCurto: 'Sex', enCurto: 'Fri' },
+  { key: 'sabado',  ptCurto: 'Sáb', enCurto: 'Sat' },
 ];
 
-// Dia de hoje → chave em PT (domingo → segunda por defeito)
+const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Segunda-feira da semana à qual pertence `hoje` + offset de semanas
+function calcularSemana(offset: number): { inicio: Date; fim: Date } {
+  const hoje = new Date();
+  const diasAteLundas = hoje.getDay() === 0 ? 6 : hoje.getDay() - 1;
+  const seg = new Date(hoje);
+  seg.setDate(hoje.getDate() - diasAteLundas + offset * 7);
+  seg.setHours(0, 0, 0, 0);
+  const sab = new Date(seg);
+  sab.setDate(seg.getDate() + 5); // sábado
+  sab.setHours(23, 59, 59, 999);
+  return { inicio: seg, fim: sab };
+}
+
+function labelSemana(inicio: Date, fim: Date, language: string): string {
+  const m = language === 'pt' ? MESES_PT : MESES_EN;
+  return `${inicio.getDate()} ${m[inicio.getMonth()]} – ${fim.getDate()} ${m[fim.getMonth()]}`;
+}
+
+// Dia de hoje → chave DIAS
 const DIA_JS = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 function diaHoje(): string {
   const k = DIA_JS[new Date().getDay()];
   return k === 'domingo' ? 'segunda' : k;
 }
 
-// Aceita URL completo ou só a chave
 function extrairChave(input: string): string {
   const match = input.match(/chave=([a-zA-Z0-9]+)/i);
   return match ? match[1] : input.trim();
@@ -50,28 +71,48 @@ export default function HorarioScreen() {
   const { tr, language } = useLanguage();
 
   const [diaAtivo, setDiaAtivo] = useState(diaHoje);
+  const [semanaOffset, setSemanaOffset] = useState(0);
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [importado, setImportado] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [chaveInput, setChaveInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Carrega horário guardado ao montar o ecrã
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
       if (!raw) return;
       try {
         const parsed = JSON.parse(raw) as Aula[];
-        setAulas(parsed);
-        setImportado(true);
+        // Só aceita o formato novo (com campo `data`)
+        if (parsed.length > 0 && parsed[0].data) {
+          setAulas(parsed);
+          setImportado(true);
+        }
       } catch {}
     });
   }, []);
 
-  const diaInfo = DIAS.find((d) => d.key === diaAtivo) ?? DIAS[3];
-  const aulasDia = aulas
-    .filter((a) => a.diaSemana === diaAtivo)
-    .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+  const { inicio: inicioSemana, fim: fimSemana } = useMemo(
+    () => calcularSemana(semanaOffset),
+    [semanaOffset],
+  );
+
+  // Aulas da semana seleccionada
+  const aulasSemana = useMemo(() =>
+    aulas.filter((a) => {
+      const d = new Date(`${a.data}T12:00:00`);
+      return d >= inicioSemana && d <= fimSemana;
+    }),
+    [aulas, inicioSemana, fimSemana],
+  );
+
+  // Aulas do dia activo dentro dessa semana
+  const aulasDia = useMemo(() =>
+    aulasSemana
+      .filter((a) => a.diaSemana === diaAtivo)
+      .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)),
+    [aulasSemana, diaAtivo],
+  );
 
   const importar = useCallback(async () => {
     const chave = extrairChave(chaveInput);
@@ -91,6 +132,7 @@ export default function HorarioScreen() {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
       setModalVisible(false);
       setChaveInput('');
+      setSemanaOffset(0);
     } catch (e: any) {
       Alert.alert(
         tr('Erro ao importar', 'Import error'),
@@ -115,7 +157,10 @@ export default function HorarioScreen() {
         <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(24) }]}>
           {tr('Horário', 'Schedule')}
         </Text>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.importBtn} accessibilityLabel={tr('Importar horário', 'Import schedule')}>
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          style={styles.importBtn}
+          accessibilityLabel={tr('Importar horário', 'Import schedule')}>
           <Ionicons name="cloud-upload-outline" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -138,11 +183,20 @@ export default function HorarioScreen() {
         })}
       </View>
 
-      <Text style={styles.dateText}>
-        {language === 'pt' ? diaInfo.ptLongo : diaInfo.enLongo}
-      </Text>
+      {/* Navegação de semana */}
+      <View style={styles.weekNav}>
+        <TouchableOpacity onPress={() => setSemanaOffset(o => o - 1)} style={styles.weekNavBtn}>
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.weekLabel, { color: colors.subtext, fontSize: fs(14) }]}>
+          {labelSemana(inicioSemana, fimSemana, language)}
+        </Text>
+        <TouchableOpacity onPress={() => setSemanaOffset(o => o + 1)} style={styles.weekNavBtn}>
+          <Ionicons name="chevron-forward" size={20} color={colors.text} />
+        </TouchableOpacity>
+      </View>
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo */}
       {importado ? (
         <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
           {aulasDia.length === 0 ? (
@@ -184,7 +238,6 @@ export default function HorarioScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       ) : (
-        // Estado vazio — sem horário importado
         <View style={styles.emptyState}>
           <Ionicons name="calendar-outline" size={72} color="#D1D1D6" style={{ marginBottom: 20 }} />
           <Text style={[styles.emptyTitle, { color: colors.text, fontSize: fs(20) }]}>
@@ -215,10 +268,7 @@ export default function HorarioScreen() {
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
-
-            {/* Handle de arrasto */}
             <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-
             <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(20) }]}>
               {tr('Importar Horário', 'Import Schedule')}
             </Text>
@@ -228,22 +278,17 @@ export default function HorarioScreen() {
                 'Paste your private Infraestudante link or just the alphanumeric key.',
               )}
             </Text>
-
             <TextInput
               style={[styles.modalInput, { backgroundColor: colors.inputBg, color: colors.text, fontSize: fs(14) }]}
               value={chaveInput}
               onChangeText={setChaveInput}
-              placeholder={tr(
-                'https://inforestudante.utad.pt/...?chave=...',
-                'https://inforestudante.utad.pt/...?chave=...',
-              )}
+              placeholder="https://inforestudante.utad.pt/...?chave=..."
               placeholderTextColor="#8E8E93"
               autoCapitalize="none"
               autoCorrect={false}
               multiline
               numberOfLines={3}
             />
-
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalCancel, { backgroundColor: colors.inputBg }]}
@@ -266,7 +311,6 @@ export default function HorarioScreen() {
                     </Text>}
               </TouchableOpacity>
             </View>
-
             {importado && (
               <TouchableOpacity
                 style={styles.clearButton}
@@ -304,7 +348,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   dayChip: {
     paddingHorizontal: 12,
@@ -322,13 +366,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  dateText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginBottom: 24,
+  // Navegação de semana
+  weekNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    gap: 12,
   },
-  // Timeline (horário real)
+  weekNavBtn: {
+    padding: 6,
+  },
+  weekLabel: {
+    fontSize: 14,
+    color: '#8E8E93',
+    minWidth: 140,
+    textAlign: 'center',
+  },
+  // Timeline
   timelineContainer: {
     flex: 1,
     paddingHorizontal: 16,
@@ -385,7 +440,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#8E8E93',
   },
-  // Dia vazio (sem aulas no dia selecionado)
+  // Dia sem aulas
   emptyDay: {
     alignItems: 'center',
     paddingTop: 60,
@@ -395,7 +450,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8E8E93',
   },
-  // Estado sem horário importado
+  // Estado sem horário
   emptyState: {
     flex: 1,
     alignItems: 'center',
