@@ -40,6 +40,43 @@
 
 ---
 
+## Sessão 2 — 29 Abril 2026
+
+### O que foi feito
+
+#### Deploy corrigido
+- Deploy automático (GitHub Actions) estava a falhar porque o servidor tinha branches divergentes (`git pull` falhava com exit 128)
+- Corrigido manualmente via SSH: `git fetch origin && git reset --hard origin/main`
+- `deploy.sh` no servidor actualizado: substituído `git pull` por `git fetch origin && git reset --hard origin/main`
+- Build do frontend correu com sucesso; Docker compose path corrigido para `cd backend && docker compose ...`
+
+#### Importação de Horário via Infraestudante (iCal)
+- **Backend:** nova rota `POST /api/schedule/ical/import-url` em `backend/routes/schedule.js`
+  - Sem autenticação (adequado ao protótipo)
+  - Aceita `{ chave: "..." }` no body
+  - Faz fetch do URL `https://inforestudante.utad.pt/nonio/util/sincronizaHorarioNonio.do?chave=...&locale=PT`
+  - Valida que a resposta contém `BEGIN:VCALENDAR`
+  - Parseia com `ical.js` via `parseIcal()` existente
+  - Deduplica eventos recorrentes por `diaSemana|horaInicio|disciplina`
+  - Retorna `{ aulas: [...] }` com a lista de aulas únicas semanais
+  - Timeout de 12 segundos no fetch ao Infraestudante
+
+- **Frontend:** `app/(tabs)/horario.tsx` completamente redesenhado
+  - Tabs de dia agora interactivos (antes fixo em Qui) — selecção do dia real
+  - Dia activo por defeito = dia de hoje (calculado com `new Date().getDay()`)
+  - Botão de importação (ícone nuvem) no header
+  - Modal bottom-sheet: aceita URL completo ou só a chave alfanumérica (`extrairChave()`)
+  - Importação: `POST /api/schedule/ical/import-url` via `fetch` nativo
+  - Horário guardado em `AsyncStorage` (chave `utadmaps_schedule`) — persiste entre sessões
+  - Carregamento automático do AsyncStorage ao montar o ecrã
+  - Estado vazio com botão "Importar Horário" quando não há horário guardado
+  - Estado "Sem aulas neste dia" com checkmark quando o dia está livre
+  - Botão "Limpar horário guardado" dentro do modal
+  - Cada aula clicável → `navigacao-indoor`
+  - Toda a estética original mantida (mesmas cores, borderLeftColor #005C7A, fontes, cards)
+
+---
+
 ## O que falta fazer
 
 ### Prioritário
