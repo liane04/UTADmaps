@@ -3,10 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 
-export interface AccessibilityState {
-  highContrast: boolean;
-  accessibleRoutes: boolean;
-  textSize: 'small' | 'medium' | 'large';
+interface FavoriteItem {
+  id: string;
+  nome: string;
+  subtitulo: string;
+  categoria: 'edificio' | 'sala' | 'servico';
 }
 
 interface AppState {
@@ -20,42 +21,47 @@ interface AppState {
   language: 'pt' | 'en';
   setLanguage: (lang: 'pt' | 'en') => void;
 
-  // Accessibility
-  accessibility: AccessibilityState;
-  updateAccessibility: (settings: Partial<AccessibilityState>) => void;
-
   // Theme
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+
+  // Favoritos (por utilizador)
+  favorites: FavoriteItem[];
+  addFavorite: (item: FavoriteItem) => void;
+  removeFavorite: (id: string) => void;
+  isFavorite: (id: string) => boolean;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Auth
       user: null,
       token: null,
       setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
+      logout: () => set({ user: null, token: null, favorites: [] }),
 
       // i18n
       language: 'pt',
       setLanguage: (language) => set({ language }),
 
-      // Accessibility
-      accessibility: {
-        highContrast: false,
-        accessibleRoutes: false,
-        textSize: 'medium',
-      },
-      updateAccessibility: (settings) =>
-        set((state) => ({
-          accessibility: { ...state.accessibility, ...settings },
-        })),
-
       // Theme
       theme: 'light',
       setTheme: (theme) => set({ theme }),
+
+      // Favoritos
+      favorites: [],
+      addFavorite: (item) =>
+        set((state) => ({
+          favorites: state.favorites.some((f) => f.id === item.id)
+            ? state.favorites
+            : [...state.favorites, item],
+        })),
+      removeFavorite: (id) =>
+        set((state) => ({
+          favorites: state.favorites.filter((f) => f.id !== id),
+        })),
+      isFavorite: (id) => get().favorites.some((f) => f.id === id),
     }),
     {
       name: 'utadmaps-storage',

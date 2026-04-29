@@ -1,16 +1,76 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAppStore } from '../store/useAppStore';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
+const STORAGE_KEY = 'utadmaps_schedule_v2';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { language, t, setLanguage } = useLanguage();
+  const { language, t, setLanguage, tr } = useLanguage();
   const { colors } = useSettings();
+  const { setAuth } = useAppStore();
 
-  const handleContinue = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleLogin = async () => {
+    const emailTrimmed = email.trim();
+    if (!emailTrimmed || !password) {
+      Alert.alert(
+        tr('Campos obrigatórios', 'Required fields'),
+        tr('Introduz o email e a password.', 'Enter your email and password.'),
+      );
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailTrimmed, password }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? tr('Erro de autenticação', 'Authentication error'));
+
+      setAuth(json.user, json.token);
+
+      // Auto-import schedule if a chave was previously saved
+      const chave = json.user.user_metadata?.ical_chave;
+      if (chave) {
+        try {
+          const schedRes = await fetch(`${API_URL}/api/schedule/ical/import-url`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${json.token}`,
+            },
+            body: JSON.stringify({ chave }),
+          });
+          if (schedRes.ok) {
+            const schedJson = await schedRes.json();
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(schedJson.aulas));
+          }
+        } catch {}
+      }
+
+      router.replace('/(tabs)');
+    } catch (e: any) {
+      Alert.alert(tr('Erro ao entrar', 'Sign in error'), e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkip = () => {
     router.replace('/(tabs)');
   };
 
@@ -29,37 +89,60 @@ export default function WelcomeScreen() {
         <View style={styles.languageToggle}>
           <TouchableOpacity
             style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'pt' ? colors.text : colors.border }]}
-            onPress={() => setLanguage('pt')}
-          >
+            onPress={() => setLanguage('pt')}>
             <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? colors.text : '#8E8E93'} />
             <Text style={[styles.languageText, { color: colors.text }, language === 'pt' && styles.languageTextSelected]}>Português</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'en' ? colors.text : colors.border }]}
-            onPress={() => setLanguage('en')}
-          >
+            onPress={() => setLanguage('en')}>
             <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? colors.text : '#8E8E93'} />
             <Text style={[styles.languageText, { color: colors.text }, language === 'en' && styles.languageTextSelected]}>English</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.label, { color: colors.text }]}>
-          {t.emailLabel} <Text style={styles.optionalText}>{t.optional}</Text>
-        </Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t.emailLabel}</Text>
         <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <TextInput
             style={[styles.input, { color: colors.text }]}
             placeholder={t.emailPlaceholder}
             placeholderTextColor="#8E8E93"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
           />
         </View>
 
-        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleContinue}>
-          <Text style={[styles.buttonText, { color: colors.bg }]}>{t.continuar}</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+        <View style={[styles.inputContainer, styles.passwordContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+          <TextInput
+            style={[styles.input, styles.passwordInput, { color: colors.text }]}
+            placeholder="••••••"
+            placeholderTextColor="#8E8E93"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#8E8E93" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
+          onPress={handleLogin}
+          disabled={loading}>
+          {loading
+            ? <ActivityIndicator color={colors.bg} size="small" />
+            : <Text style={[styles.buttonText, { color: colors.bg }]}>{tr('Entrar', 'Sign In')}</Text>}
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={handleContinue} style={styles.skipButton}>
+      <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
         <Text style={[styles.skipText, { color: colors.text }]}>{t.saltarExplorar}</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -134,14 +217,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 8,
   },
-  languagePillSelected: {
-    borderColor: '#000000',
-    backgroundColor: '#FFFFFF',
-  },
-  languagePillUnselected: {
-    borderColor: '#E5E5EA',
-    backgroundColor: '#FFFFFF',
-  },
   languageText: {
     fontSize: 16,
     color: '#000000',
@@ -149,14 +224,10 @@ const styles = StyleSheet.create({
   languageTextSelected: {
     fontWeight: '500',
   },
-  optionalText: {
-    color: '#8E8E93',
-    fontWeight: '400',
-  },
   inputContainer: {
     backgroundColor: '#F2F2F7',
     borderRadius: 12,
-    marginBottom: 32,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#E5E5EA',
   },
@@ -165,6 +236,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: '#000000',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  passwordInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  eyeBtn: {
+    paddingHorizontal: 14,
   },
   button: {
     backgroundColor: '#2C2C2E',

@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { LOCAIS, type Categoria, type Local } from '../data/locais';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAppStore } from '../../store/useAppStore';
 
 type FiltroCategoria = 'todos' | Categoria;
 
@@ -28,6 +29,7 @@ export default function PesquisaScreen() {
   const router = useRouter();
   const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
+  const { isFavorite, addFavorite, removeFavorite } = useAppStore();
   const [query, setQuery] = useState('');
   const [categoria, setCategoria] = useState<FiltroCategoria>('todos');
 
@@ -58,6 +60,19 @@ export default function PesquisaScreen() {
       router.push({ pathname: '/navigacao-indoor', params: { destino: local.id } });
     } else {
       router.push('/navigacao-outdoor');
+    }
+  };
+
+  const toggleFavorito = (local: Local) => {
+    if (isFavorite(local.id)) {
+      removeFavorite(local.id);
+    } else {
+      addFavorite({
+        id: local.id,
+        nome: language === 'pt' ? local.nome : local.nomeEn,
+        subtitulo: language === 'pt' ? local.subtitulo : local.subtituloEn,
+        categoria: local.categoria,
+      });
     }
   };
 
@@ -110,18 +125,34 @@ export default function PesquisaScreen() {
             <Text style={styles.emptyText}>{tr('Sem resultados para', 'No results for')} "{query}"</Text>
           </View>
         ) : (
-          resultados.map((local) => (
-            <TouchableOpacity key={local.id} style={[styles.resultCard, { backgroundColor: colors.card }]} onPress={() => aoSelecionar(local)}>
-              <View style={[styles.avatar, { backgroundColor: avatarCor(local.categoria) }]}>
-                <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
-              </View>
-              <View style={styles.resultInfo}>
-                <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]}>{language === 'pt' ? local.nome : local.nomeEn}</Text>
-                <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]}>{language === 'pt' ? local.subtitulo : local.subtituloEn}</Text>
-              </View>
-              <Text style={[styles.resultDistance, { color: colors.text, fontSize: fs(14) }]}>{local.distancia}m</Text>
-            </TouchableOpacity>
-          ))
+          resultados.map((local) => {
+            const fav = isFavorite(local.id);
+            return (
+              <TouchableOpacity
+                key={local.id}
+                style={[styles.resultCard, { backgroundColor: colors.card }]}
+                onPress={() => aoSelecionar(local)}>
+                <View style={[styles.avatar, { backgroundColor: avatarCor(local.categoria) }]}>
+                  <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
+                </View>
+                <View style={styles.resultInfo}>
+                  <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]}>
+                    {language === 'pt' ? local.nome : local.nomeEn}
+                  </Text>
+                  <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]}>
+                    {language === 'pt' ? local.subtitulo : local.subtituloEn}
+                  </Text>
+                </View>
+                <Text style={[styles.resultDistance, { color: colors.text, fontSize: fs(14) }]}>{local.distancia}m</Text>
+                <TouchableOpacity
+                  onPress={() => toggleFavorito(local)}
+                  style={styles.favBtn}
+                  accessibilityLabel={fav ? tr('Remover dos favoritos', 'Remove from favourites') : tr('Adicionar aos favoritos', 'Add to favourites')}>
+                  <Ionicons name={fav ? 'heart' : 'heart-outline'} size={22} color={fav ? '#FF3B30' : '#8E8E93'} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })
         )}
 
         {query.length === 0 && (
@@ -238,6 +269,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     fontWeight: '500',
+    marginRight: 8,
+  },
+  favBtn: {
+    padding: 4,
   },
   recentTitle: {
     fontSize: 18,

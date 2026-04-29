@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAppStore } from '../../store/useAppStore';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
@@ -69,6 +70,7 @@ export default function HorarioScreen() {
   const router = useRouter();
   const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
+  const { token, user } = useAppStore();
 
   const [diaAtivo, setDiaAtivo] = useState(diaHoje);
   const [semanaOffset, setSemanaOffset] = useState(0);
@@ -79,15 +81,34 @@ export default function HorarioScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (!raw) return;
+    AsyncStorage.getItem(STORAGE_KEY).then(async (raw) => {
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as Aula[];
+          if (parsed.length > 0 && parsed[0].data) {
+            setAulas(parsed);
+            setImportado(true);
+            return;
+          }
+        } catch {}
+      }
+      // No local schedule — auto-import if user has a saved chave
+      const chave = user?.user_metadata?.ical_chave;
+      if (!chave) return;
       try {
-        const parsed = JSON.parse(raw) as Aula[];
-        // Só aceita o formato novo (com campo `data`)
-        if (parsed.length > 0 && parsed[0].data) {
-          setAulas(parsed);
-          setImportado(true);
-        }
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${API_URL}/api/schedule/ical/import-url`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ chave }),
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const lista = json.aulas as Aula[];
+        setAulas(lista);
+        setImportado(true);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
       } catch {}
     });
   }, []);
@@ -119,9 +140,11 @@ export default function HorarioScreen() {
     if (!chave) return;
     setLoading(true);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${API_URL}/api/schedule/ical/import-url`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ chave }),
       });
       const json = await res.json();
@@ -141,7 +164,7 @@ export default function HorarioScreen() {
     } finally {
       setLoading(false);
     }
-  }, [chaveInput, tr]);
+  }, [chaveInput, token, tr]);
 
   const limpar = useCallback(async () => {
     setAulas([]);

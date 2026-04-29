@@ -63,6 +63,18 @@ router.post('/ical/import-url', async (req, res) => {
     return true;
   });
 
+  // Se o utilizador estiver autenticado, guarda a chave no user_metadata (disponível em qualquer dispositivo)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) {
+      await supabase.auth.admin.updateUserById(user.id, {
+        user_metadata: { ...user.user_metadata, ical_chave: chave.trim() },
+      });
+    }
+  }
+
   res.json({ aulas: unicos });
 });
 

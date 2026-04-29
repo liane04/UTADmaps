@@ -1,6 +1,10 @@
 export interface User {
   id: string;
   email: string;
+  user_metadata?: {
+    ical_chave?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface Building {
