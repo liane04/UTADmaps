@@ -77,16 +77,73 @@
 
 ---
 
+---
+
+## Sessão 3 — 29 Abril 2026 (continuação)
+
+### O que foi feito
+
+#### Autenticação real (login com conta UTAD)
+- **Backend `backend/routes/auth.js`** corrigido:
+  - Validação de email alargada para aceitar `@alunos.utad.pt` (além de `@utad.eu` e `@alunos.utad.eu`)
+  - Resposta do login corrigida: devolve `token` (access_token) directamente em vez do objeto session completo
+- **Frontend `app/index.tsx`** completamente reescrito:
+  - Campo de password com toggle mostrar/ocultar
+  - Botão "Entrar" chama `POST /api/auth/login` e guarda JWT no Zustand (`setAuth`)
+  - Auto-importa o horário ao fazer login se a conta tiver `user_metadata.ical_chave` guardada
+  - "Saltar e explorar" mantém acesso anónimo
+- **5 contas de demonstração** criadas via SQL directo no Supabase (`auth.users` + `auth.identities`):
+  - `al82239@alunos.utad.pt` / `123456`
+  - `al79012@alunos.utad.pt` / `123456`
+  - `al81311@alunos.utad.pt` / `123456`
+  - `al82626@alunos.utad.pt` / `123456`
+  - `al80990@alunos.utad.pt` / `123456`
+
+#### Horário associado à conta
+- **Backend `backend/routes/schedule.js`** — rota `POST /api/schedule/ical/import-url`:
+  - Se request incluir `Authorization: Bearer <token>`, guarda a chave iCal no `user_metadata` do Supabase
+  - Chave disponível em qualquer dispositivo após login
+- **Frontend `app/(tabs)/horario.tsx`** atualizado:
+  - Passa token JWT no header da importação (para guardar chave na conta)
+  - Ao montar, se não houver horário local mas a conta tiver `ical_chave`, faz auto-importação
+- **`backend/services/icalParser.js`** reescrito:
+  - Adicionado campo `data` (data real `YYYY-MM-DD`) usando valores directos do ical.js (sem conversão UTC)
+  - Corrigido problema de mostrar eventos de todo o semestre — agora filtragem por data real
+  - Chave de deduplicação mudada de `diaSemana|horaInicio|disciplina` para `data|horaInicio|disciplina`
+- **`store/useAppStore.ts`** atualizado:
+  - Interface `FavoriteItem` (`id, nome, subtitulo, categoria`)
+  - Estado `favorites[]` com `addFavorite`, `removeFavorite`, `isFavorite`
+  - `logout` limpa favoritos
+
+#### Favoritos reais
+- **`app/(tabs)/favoritos.tsx`** reescrito:
+  - Lista de favoritos do Zustand (persistidos em AsyncStorage)
+  - Botão remover (ícone ♡ vermelho preenchido)
+  - Estado vazio com instrução para adicionar pela pesquisa
+- **`app/(tabs)/pesquisa.tsx`** atualizado:
+  - Ícone ♡ em cada resultado de pesquisa
+  - Toggle: adiciona/remove dos favoritos no Zustand
+
+#### Correção do build web (`import.meta`)
+- Erro `Cannot use 'import.meta' outside a module` impedia o site de carregar
+- Causa: pacote(s) no `node_modules` com `import.meta` que o Metro não envolve como ES module
+- **Solução 1:** downgrade `zustand` de `^5.0.12` para `^4.5.7` (v5 usa `import.meta` internamente)
+- **Solução 2:** `babel.config.js` criado na raiz com plugin inline que substitui qualquer `import.meta` por `{ env: { MODE: 'production' } }` antes de gerar o bundle
+- Build forçado com `npx expo export --platform web --clear` para limpar cache do Metro
+
+#### Deploy corrigido
+- `deploy.sh` no servidor atualizado para incluir `--clear` no export e reconstruir correctamente o frontend
+
+---
+
 ## O que falta fazer
 
 ### Prioritário
 - [ ] Popular tabela `rooms` com salas reais (levantamento no campus)
 - [ ] Ligar frontend à API — substituir dados hardcoded por chamadas reais
-- [ ] Testar auth completo (registo + login @utad.eu)
 
 ### Importante
 - [ ] Afinar coordenadas GPS dos edifícios (confirmar no campus)
-- [ ] Testar iCal com ficheiro .ics real do Infraestudante
 - [ ] Corrigir CORS para aceitar só `utadmaps.b-host.me`
 - [ ] Popular tabela `floors` com pisos reais por edifício
 
@@ -101,4 +158,5 @@
 1. Ler `docs/docs_backend/BACKEND.md` para contexto completo
 2. URLs em produção: `https://utadmaps.b-host.me` (frontend) e `https://api.utadmaps.b-host.me` (backend)
 3. SSH no servidor: `ssh -i $env:USERPROFILE\.ssh\id_monteiros bruno@116.203.39.51`
-4. Deploy: basta `git push` para `main`
+4. Deploy: basta `git push` para `main` (rebuild automático via GitHub Actions)
+5. Contas demo: `al82239@alunos.utad.pt` (e outros al*) com password `123456`

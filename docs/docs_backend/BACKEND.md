@@ -20,13 +20,25 @@ Backend:   https://api.utadmaps.b-host.me
 | GET | `/api/buildings` | Não | Lista todos os edifícios |
 | GET | `/api/buildings/:id/floors` | Não | Pisos de um edifício |
 | GET | `/api/rooms/search?q=&type=` | Não | Pesquisa salas e serviços |
-| POST | `/api/auth/register` | Não | Registo (só @utad.eu) |
-| POST | `/api/auth/login` | Não | Login |
+| POST | `/api/auth/register` | Não | Registo (só @utad.eu / @alunos.utad.pt) |
+| POST | `/api/auth/login` | Não | Login — devolve `{ user, token }` |
 | GET | `/api/schedule/:userId` | JWT | Horário do utilizador |
+| POST | `/api/schedule/ical/import-url` | Não* | Importar via chave Infraestudante |
 | POST | `/api/schedule/ical/import` | JWT | Importar ficheiro .ics |
 | GET | `/api/favorites/:userId` | JWT | Favoritos do utilizador |
 | POST | `/api/favorites` | JWT | Adicionar favorito |
 | DELETE | `/api/favorites/:id` | JWT | Remover favorito |
+
+> \* `/api/schedule/ical/import-url` não requer auth, mas se enviares `Authorization: Bearer <token>` guarda a chave no `user_metadata` do Supabase para sincronização entre dispositivos.
+
+### Contas de demonstração (Supabase Auth)
+| Email | Password |
+|---|---|
+| `al82239@alunos.utad.pt` | `123456` |
+| `al79012@alunos.utad.pt` | `123456` |
+| `al81311@alunos.utad.pt` | `123456` |
+| `al82626@alunos.utad.pt` | `123456` |
+| `al80990@alunos.utad.pt` | `123456` |
 
 ## Estrutura de Pastas
 ```
