@@ -32,6 +32,14 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permitir que UTADmaps use a tua localização para te guiar pelo campus."
+        }
+      ]
+    ]
   }
 }

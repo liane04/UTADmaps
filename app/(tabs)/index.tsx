@@ -1,14 +1,33 @@
-import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { POLO1_CENTER, POLO1_BUILDINGS } from '../../constants/polo1Data';
+import { POLO1_CENTER, POLO1_BUILDINGS, Building } from '../../constants/polo1Data';
 
 export default function MapaScreen() {
+  const router = useRouter();
   const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
+
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+
+  const totalRooms = (b: Building) =>
+    b.floors.reduce((sum, floor) => sum + floor.rooms.length, 0);
+
+  const handleGo = () => {
+    if (!selectedBuilding) return;
+    const dest = {
+      destLat: selectedBuilding.coordinate.latitude.toString(),
+      destLng: selectedBuilding.coordinate.longitude.toString(),
+      destName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
+    };
+    setSelectedBuilding(null);
+    router.push({ pathname: '/navigacao-outdoor', params: dest });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -22,13 +41,17 @@ export default function MapaScreen() {
         showsScale={false}
         rotateEnabled={false}
         pitchEnabled={false}
+        onPress={() => setSelectedBuilding(null)}
       >
         {POLO1_BUILDINGS.map(building => (
           <Marker
             key={building.id}
             coordinate={building.coordinate}
-            title={language === 'pt' ? building.name.pt : building.name.en}
             pinColor="#007AFF"
+            onPress={(e) => {
+              e.stopPropagation();
+              setSelectedBuilding(building);
+            }}
           />
         ))}
       </MapView>
@@ -46,22 +69,56 @@ export default function MapaScreen() {
           />
         </View>
 
-        {/* Bottom Right Controls */}
-        <View style={styles.controlsContainer}>
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.card }]}>
-            <Ionicons name="locate" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View style={[styles.zoomControls, { backgroundColor: colors.card }]}>
-            <TouchableOpacity style={styles.zoomButton}>
-              <Ionicons name="add" size={24} color={colors.text} />
+        {/* Bottom Right Controls — hidden when card is open */}
+        {!selectedBuilding && (
+          <View style={styles.controlsContainer}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.card }]}>
+              <Ionicons name="locate" size={24} color={colors.text} />
             </TouchableOpacity>
-            <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
-            <TouchableOpacity style={styles.zoomButton}>
-              <Ionicons name="remove" size={24} color={colors.text} />
+            <View style={[styles.zoomControls, { backgroundColor: colors.card }]}>
+              <TouchableOpacity style={styles.zoomButton}>
+                <Ionicons name="add" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
+              <TouchableOpacity style={styles.zoomButton}>
+                <Ionicons name="remove" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+
+      {/* Location info card (Google-Maps style mini-tab) */}
+      {selectedBuilding && (
+        <SafeAreaView edges={['bottom']} style={styles.cardContainer} pointerEvents="box-none">
+          <View style={[styles.placeCard, { backgroundColor: colors.card }]}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTextWrap}>
+                <Text
+                  style={[styles.placeName, { color: colors.text, fontSize: fs(18) }]}
+                  numberOfLines={2}
+                >
+                  {language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en}
+                </Text>
+                <Text style={[styles.placeDescription, { fontSize: fs(13) }]}>
+                  {selectedBuilding.floors.length} {tr('pisos', 'floors')} · {totalRooms(selectedBuilding)} {tr('salas', 'rooms')}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSelectedBuilding(null)}
+                style={styles.closeBtn}
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              >
+                <Ionicons name="close" size={22} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.goButton} onPress={handleGo} activeOpacity={0.85}>
+              <Ionicons name="navigate" size={18} color="#FFFFFF" />
+              <Text style={[styles.goButtonText, { fontSize: fs(16) }]}>{tr('Ir', 'Go')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      )}
     </View>
   );
 }
@@ -135,5 +192,58 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E5EA',
     marginHorizontal: 12,
+  },
+  cardContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  placeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  cardTextWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  placeName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  placeDescription: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  closeBtn: {
+    padding: 2,
+  },
+  goButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  goButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
