@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import CampusMap from '../../components/CampusMap';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { POLO1_CENTER, POLO1_BUILDINGS, Building } from '../../constants/polo1Data';
@@ -29,32 +29,25 @@ export default function MapaScreen() {
     router.push({ pathname: '/navigacao-outdoor', params: dest });
   };
 
+  const markers = useMemo(
+    () =>
+      POLO1_BUILDINGS.map(b => ({
+        id: b.id,
+        coordinate: b.coordinate,
+        title: language === 'pt' ? b.name.pt : b.name.en,
+        color: '#007AFF',
+        onPress: () => setSelectedBuilding(b),
+      })),
+    [language],
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <MapView
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_DEFAULT}
+      <CampusMap
         initialRegion={POLO1_CENTER}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        showsScale={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
+        markers={markers}
         onPress={() => setSelectedBuilding(null)}
-      >
-        {POLO1_BUILDINGS.map(building => (
-          <Marker
-            key={building.id}
-            coordinate={building.coordinate}
-            pinColor="#007AFF"
-            onPress={(e) => {
-              e.stopPropagation();
-              setSelectedBuilding(building);
-            }}
-          />
-        ))}
-      </MapView>
+      />
 
       {/* Floating UI Elements */}
       <SafeAreaView style={styles.uiContainer} pointerEvents="box-none">

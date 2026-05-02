@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import CampusMap, { CampusMapHandle } from '../components/CampusMap';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -58,7 +58,7 @@ export default function NavigacaoOutdoorScreen() {
     destName?: string;
   }>();
 
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<CampusMapHandle | null>(null);
 
   const destination = useMemo<{ coordinate: Coord; name: string }>(() => {
     if (params.destLat && params.destLng) {
@@ -98,6 +98,18 @@ export default function NavigacaoOutdoorScreen() {
     );
     setIsMapMovedByUser(false);
   };
+
+  const destinationMarker = useMemo(
+    () => [
+      {
+        id: 'destination',
+        coordinate: destination.coordinate,
+        title: destination.name,
+        color: '#007AFF',
+      },
+    ],
+    [destination.coordinate, destination.name],
+  );
 
   // Request GPS permission + position once on mount
   useEffect(() => {
@@ -158,7 +170,7 @@ export default function NavigacaoOutdoorScreen() {
         ? routeCoords
         : [userLocation, destination.coordinate],
       {
-        edgePadding: { top: 120, right: 60, bottom: 260, left: 60 },
+        padding: { top: 120, right: 60, bottom: 260, left: 60 },
         animated: true,
       },
     );
@@ -166,32 +178,19 @@ export default function NavigacaoOutdoorScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <MapView
+      <CampusMap
         ref={mapRef}
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_DEFAULT}
         initialRegion={POLO1_CENTER}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
+        markers={destinationMarker}
+        route={
+          routeCoords
+            ? { coordinates: routeCoords, color: '#007AFF', width: 4, dashed: true }
+            : undefined
+        }
+        showsUserLocation
+        userLocation={userLocation}
         onPanDrag={() => setIsMapMovedByUser(true)}
-      >
-        <Marker
-          coordinate={destination.coordinate}
-          title={destination.name}
-          pinColor="#007AFF"
-        />
-        {routeCoords && (
-          <Polyline
-            coordinates={routeCoords}
-            strokeColor="#007AFF"
-            strokeWidth={4}
-            lineDashPattern={[10, 5] as any}
-          />
-        )}
-      </MapView>
+      />
 
       {/* Recenter button — Google Maps style */}
       {userLocation && isMapMovedByUser && (
