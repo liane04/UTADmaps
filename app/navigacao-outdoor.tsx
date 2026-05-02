@@ -2,57 +2,56 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  OUTDOOR_ROUTE,
+  OUTDOOR_ROUTE_START,
+  OUTDOOR_ROUTE_END,
+} from '../constants/polo1Data';
+
+const ROUTE_REGION = {
+  latitude: 41.297,
+  longitude: -7.7398,
+  latitudeDelta: 0.006,
+  longitudeDelta: 0.006,
+};
 
 export default function NavigacaoOutdoorScreen() {
   const router = useRouter();
-  const { colors, tema } = useSettings();
+  const { colors } = useSettings();
   const { tr } = useLanguage();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      {/* Map Background Placeholder */}
-      <View style={[styles.mapBackground, { backgroundColor: tema === 'escuro' ? '#1C2530' : '#F0F4F8' }]}>
-        {/* Fake roads */}
-        <View style={[styles.road, { top: 0, left: 100, width: 40, height: '100%', transform: [{ rotate: '20deg' }] }]} />
-        <View style={[styles.road, { top: 300, left: 0, width: '100%', height: 40, transform: [{ rotate: '-10deg' }] }]} />
-        
-        {/* Fake buildings */}
-        <View style={[styles.building, { top: 100, left: 50, width: 120, height: 40, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Bloco A', 'Block A')}</Text>
-        </View>
-        <View style={[styles.building, { top: 150, left: 40, width: 140, height: 50, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Bloco A', 'Block A')}</Text>
-        </View>
-        <View style={[styles.building, { top: 220, left: 200, width: 100, height: 40, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Cantina', 'Canteen')}</Text>
-        </View>
-        <View style={[styles.building, { top: 350, left: 120, width: 90, height: 60, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Eng. Civil', 'Civil Eng.')}</Text>
-        </View>
-        <View style={[styles.building, { top: 280, left: 260, width: 80, height: 60, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Reitoria', 'Rectory')}</Text>
-        </View>
-
-        {/* Target Building (Biblioteca) */}
-        <View style={[styles.building, styles.targetBuilding, { top: 400, left: 250, width: 120, height: 100, transform: [{ rotate: '20deg' }] }]}>
-          <Text style={styles.buildingText}>{tr('Biblioteca', 'Library')}</Text>
-        </View>
-
-        {/* Route Line (Simplified using absolutely positioned views) */}
-        {/* Segment 1 */}
-        <View style={[styles.routeLine, { top: 260, left: 60, width: 180, transform: [{ rotate: '60deg' }] }]} />
-        {/* Segment 2 */}
-        <View style={[styles.routeLine, { top: 460, left: 160, width: 100, transform: [{ rotate: '-20deg' }] }]} />
-        
-        {/* Start Dot */}
-        <View style={[styles.routeDot, { top: 260, left: 70 }]} />
-        {/* Arrow Head */}
-        <Ionicons name="caret-forward" size={24} color="#007AFF" style={{ position: 'absolute', top: 430, left: 240, transform: [{ rotate: '-20deg' }] }} />
-        {/* Target Dot */}
-        <View style={[styles.routeDot, styles.targetDot, { top: 435, left: 255 }]} />
-      </View>
+      <MapView
+        style={StyleSheet.absoluteFillObject}
+        provider={PROVIDER_DEFAULT}
+        initialRegion={ROUTE_REGION}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+      >
+        <Marker
+          coordinate={OUTDOOR_ROUTE_START.coordinate}
+          title={tr(OUTDOOR_ROUTE_START.name.pt, OUTDOOR_ROUTE_START.name.en)}
+          pinColor="#34C759"
+        />
+        <Marker
+          coordinate={OUTDOOR_ROUTE_END.coordinate}
+          title={tr(OUTDOOR_ROUTE_END.name.pt, OUTDOOR_ROUTE_END.name.en)}
+          pinColor="#007AFF"
+        />
+        <Polyline
+          coordinates={OUTDOOR_ROUTE}
+          strokeColor="#007AFF"
+          strokeWidth={4}
+          lineDashPattern={[10, 5] as any}
+        />
+      </MapView>
 
       {/* Header Overlay */}
       <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.card }]}>
@@ -94,63 +93,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F2F2F7',
-  },
-  mapBackground: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F0F4F8',
-  },
-  road: {
-    position: 'absolute',
-    backgroundColor: '#FFFFFF',
-  },
-  building: {
-    position: 'absolute',
-    backgroundColor: '#E5E5EA',
-    borderWidth: 1,
-    borderColor: '#D1D1D6',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 1, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  targetBuilding: {
-    backgroundColor: '#C5D0D6', // Slightly darker blue-gray
-    borderWidth: 2,
-    borderColor: '#A0B0B8',
-  },
-  buildingText: {
-    fontSize: 12,
-    color: '#000000',
-  },
-  routeLine: {
-    position: 'absolute',
-    height: 4,
-    backgroundColor: '#007AFF', // Blue route line
-    borderRadius: 2,
-    borderStyle: 'dashed',
-    borderWidth: 2,
-    borderColor: '#007AFF', // Fake dash using solid line for now
-  },
-  routeDot: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#007AFF',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  targetDot: {
-    backgroundColor: '#8E8E93',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
   },
   header: {
     position: 'absolute',
@@ -209,7 +151,7 @@ const styles = StyleSheet.create({
   timeDistance: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4A4A4A', // Dark gray
+    color: '#4A4A4A',
     marginBottom: 4,
   },
   instruction: {
@@ -241,10 +183,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   modeTextActive: {
-    color: '#007AFF', // Blue text for active mode
+    color: '#007AFF',
   },
   button: {
-    backgroundColor: '#4A4A5A', // Dark gray/blue button matching mockup
+    backgroundColor: '#4A4A5A',
     borderRadius: 24,
     paddingVertical: 16,
     alignItems: 'center',

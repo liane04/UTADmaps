@@ -1,44 +1,37 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { POLO1_CENTER, POLO1_BUILDINGS } from '../../constants/polo1Data';
 
 export default function MapaScreen() {
-  const { colors, tema, fs } = useSettings();
-  const { tr } = useLanguage();
+  const { colors, fs } = useSettings();
+  const { tr, language } = useLanguage();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      {/* Map Placeholder */}
-      <View style={[styles.mapBackground, { backgroundColor: tema === 'escuro' ? '#1C2530' : '#F0F4F8' }]}>
-        {/* Roads */}
-        <View style={[styles.road, { top: 200, left: 0, width: '100%', height: 20 }]} />
-        <View style={[styles.road, { top: 0, left: 150, width: 20, height: '100%' }]} />
-        <View style={[styles.road, { top: 400, left: 0, width: '100%', height: 20 }]} />
-        <View style={[styles.road, { top: 0, left: 300, width: 20, height: '100%' }]} />
-
-        {/* Buildings */}
-        <View style={[styles.building, styles.biblioteca, { top: 240, left: 20, width: 110, height: 180 }]}>
-          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Biblioteca', 'Library')}</Text>
-        </View>
-        
-        <View style={[styles.building, styles.blocoA, { top: 240, left: 180, width: 100, height: 70 }]}>
-          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Bloco A', 'Block A')}</Text>
-        </View>
-
-        <View style={[styles.building, styles.blocoB, { top: 240, left: 330, width: 100, height: 70 }]}>
-          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Bloco B', 'Block B')}</Text>
-        </View>
-
-        <View style={[styles.building, styles.cantina, { top: 440, left: 20, width: 140, height: 50 }]}>
-          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Cantina', 'Canteen')}</Text>
-        </View>
-
-        <View style={[styles.building, styles.reitoria, { top: 520, left: 180, width: 100, height: 60 }]}>
-          <Text style={[styles.buildingLabel, { fontSize: fs(12) }]}>{tr('Reitoria', 'Rectory')}</Text>
-        </View>
-      </View>
+      <MapView
+        style={StyleSheet.absoluteFillObject}
+        provider={PROVIDER_DEFAULT}
+        initialRegion={POLO1_CENTER}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        showsScale={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+      >
+        {POLO1_BUILDINGS.map(building => (
+          <Marker
+            key={building.id}
+            coordinate={building.coordinate}
+            title={language === 'pt' ? building.name.pt : building.name.en}
+            pinColor="#007AFF"
+          />
+        ))}
+      </MapView>
 
       {/* Floating UI Elements */}
       <SafeAreaView style={styles.uiContainer} pointerEvents="box-none">
@@ -77,47 +70,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F2F2F7',
-  },
-  mapBackground: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F0F4F8',
-  },
-  road: {
-    position: 'absolute',
-    backgroundColor: '#FFFFFF',
-  },
-  building: {
-    position: 'absolute',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D1D1D6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  buildingLabel: {
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '500',
-  },
-  biblioteca: {
-    backgroundColor: '#BCCEE0',
-  },
-  blocoA: {
-    backgroundColor: '#B4D2D4',
-  },
-  blocoB: {
-    backgroundColor: '#BCD8C1',
-  },
-  cantina: {
-    backgroundColor: '#CCD8CA',
-  },
-  reitoria: {
-    backgroundColor: '#D1D1D6',
   },
   uiContainer: {
     flex: 1,
