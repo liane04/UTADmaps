@@ -44,3 +44,6 @@ export const LOCAIS: Local[] = [
   { id: 'sv9', categoria: 'servico', nome: 'Livraria', nomeEn: 'Bookstore', subtitulo: 'Biblioteca - Piso 0', subtituloEn: 'Library - Floor 0', edificio: 'Biblioteca', piso: '0', distancia: 90 },
   { id: 'sv10', categoria: 'servico', nome: 'Núcleo de Estudantes', nomeEn: 'Student Union', subtitulo: 'Bloco A - Piso 1', subtituloEn: 'Block A - Floor 1', edificio: 'Bloco A', piso: '1', distancia: 130 },
 ];
+
+// Expo-router requires a default export in every file inside app/
+export default {};

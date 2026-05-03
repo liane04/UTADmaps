@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Platform, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -50,6 +50,20 @@ function formatDuration(s: number): string {
 
 export default function NavigacaoOutdoorScreen() {
   const router = useRouter();
+
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <Ionicons name="map-outline" size={64} color="#999" />
+        <Text style={{ fontSize: 18, color: '#555', marginTop: 16, textAlign: 'center', paddingHorizontal: 32 }}>
+          Navegação outdoor não está disponível na versão web.{'\n'}Use a app móvel.
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 24, backgroundColor: '#007AFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>Voltar</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
   const { colors } = useSettings();
   const { tr } = useLanguage();
   const params = useLocalSearchParams<{

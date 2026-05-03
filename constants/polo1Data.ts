@@ -13,6 +13,7 @@ export type Building = {
   coordinate: { latitude: number; longitude: number };
   color: string;
   floors: Floor[];
+  hasIndoor?: boolean;
 };
 
 // Coordenadas reais (OpenStreetMap) — Polo I da UTAD, Vila Real
@@ -89,7 +90,16 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'Setor E (ECT)', en: 'Sector E (ECT)' },
     coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
     color: '#B4D2D4',
+    hasIndoor: true,
     floors: [
+      {
+        level: 0,
+        rooms: [
+          { code: 'E0.01' },
+          { code: 'E0.02' },
+          { code: 'E0.03' },
+        ],
+      },
       {
         level: 1,
         rooms: [
