@@ -16,14 +16,19 @@ type Coord = { latitude: number; longitude: number };
 
 type RouteMode = 'foot' | 'driving';
 
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+// router.project-osrm.org só tem perfil 'driving' — sempre devolve tempos de carro.
+// Para 'foot' usamos o servidor da OpenStreetMap (FOSSGIS) que tem perfis dedicados.
+const OSRM_BASES: Record<RouteMode, string> = {
+  foot: 'https://routing.openstreetmap.de/routed-foot/route/v1',
+  driving: 'https://router.project-osrm.org/route/v1',
+};
 
 async function fetchOsrmRoute(
   start: Coord,
   end: Coord,
   mode: RouteMode,
 ): Promise<{ coords: Coord[]; distance: number; duration: number } | null> {
-  const url = `${OSRM_BASE}/${mode}/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson`;
+  const url = `${OSRM_BASES[mode]}/${mode}/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson`;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;

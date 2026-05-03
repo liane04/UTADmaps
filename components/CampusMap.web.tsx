@@ -13,17 +13,25 @@ import {
 } from './CampusMap.types';
 
 const LEAFLET_VERSION = '1.9.4';
+const MARKERCLUSTER_VERSION = '1.5.3';
 const LEAFLET_CSS_URL = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
+const MARKERCLUSTER_CSS = [
+  `https://unpkg.com/leaflet.markercluster@${MARKERCLUSTER_VERSION}/dist/MarkerCluster.css`,
+  `https://unpkg.com/leaflet.markercluster@${MARKERCLUSTER_VERSION}/dist/MarkerCluster.Default.css`,
+];
 
-function ensureLeafletCss() {
+function ensureCss() {
   if (typeof document === 'undefined') return;
-  const id = 'leaflet-css';
-  if (document.getElementById(id)) return;
-  const link = document.createElement('link');
-  link.id = id;
-  link.rel = 'stylesheet';
-  link.href = LEAFLET_CSS_URL;
-  document.head.appendChild(link);
+  const urls = [LEAFLET_CSS_URL, ...MARKERCLUSTER_CSS];
+  urls.forEach((url, i) => {
+    const id = `leaflet-css-${i}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = url;
+    document.head.appendChild(link);
+  });
 }
 
 function normalizePadding(p: CampusMapPadding | undefined): [number, number] {
@@ -40,25 +48,34 @@ function deltaToZoom(latitudeDelta: number): number {
   return Math.max(2, Math.min(19, Math.round(zoom)));
 }
 
-function makeColoredDivIcon(L: any, color: string) {
-  const html = `<div style="
-    width: 18px;
-    height: 18px;
+function makeCategoryIcon(L: any, color: string, symbol: string, accessibleLabel: string) {
+  const safeSymbol = symbol ? symbol.replace(/[<>&"]/g, '') : '';
+  const html = `<div role="img" aria-label="${accessibleLabel.replace(/"/g, '')}" style="
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: ${color};
     border: 3px solid #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-  "></div>`;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1;
+  ">${safeSymbol}</div>`;
   return L.divIcon({
     className: 'campus-marker',
     html,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
 }
 
 function makeUserLocationIcon(L: any) {
-  const html = `<div style="
+  const html = `<div aria-label="Posição atual" style="
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -72,6 +89,35 @@ function makeUserLocationIcon(L: any) {
     iconSize: [16, 16],
     iconAnchor: [8, 8],
   });
+}
+
+function makeClusterIconFactory(L: any) {
+  return (cluster: any) => {
+    const count = cluster.getChildCount();
+    const size = count < 10 ? 36 : count < 25 ? 42 : 48;
+    const fontSize = size > 40 ? 16 : 14;
+    const html = `<div aria-label="${count} edifícios agrupados" style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.92);
+      border: 3px solid #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: ${fontSize}px;
+    ">${count}</div>`;
+    return L.divIcon({
+      className: 'campus-cluster',
+      html,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  };
 }
 
 export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function CampusMap(
@@ -88,8 +134,12 @@ export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function Ca
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const layersRef = useRef<{ markers: any[]; userMarker: any | null; polyline: any | null }>({
-    markers: [],
+  const layersRef = useRef<{
+    clusterGroup: any | null;
+    userMarker: any | null;
+    polyline: any | null;
+  }>({
+    clusterGroup: null,
     userMarker: null,
     polyline: null,
   });
@@ -97,11 +147,15 @@ export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function Ca
 
   useEffect(() => {
     let cancelled = false;
-    ensureLeafletCss();
-    import('leaflet').then(mod => {
+    ensureCss();
+    (async () => {
+      const Lmod = await import('leaflet');
       if (cancelled) return;
-      setLeaflet(mod.default ?? mod);
-    });
+      // markercluster é side-effect: estende L com markerClusterGroup
+      await import('leaflet.markercluster');
+      if (cancelled) return;
+      setLeaflet(Lmod.default ?? Lmod);
+    })();
     return () => {
       cancelled = true;
     };
@@ -133,25 +187,43 @@ export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function Ca
     return () => {
       map.remove();
       mapRef.current = null;
-      layersRef.current = { markers: [], userMarker: null, polyline: null };
+      layersRef.current = { clusterGroup: null, userMarker: null, polyline: null };
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaflet]);
 
-  // Sync markers
+  // Sync markers via cluster group
   useEffect(() => {
     const map = mapRef.current;
     const L = leaflet;
     if (!map || !L) return;
-    layersRef.current.markers.forEach(m => map.removeLayer(m));
-    layersRef.current.markers = [];
-    (markers ?? []).forEach(m => {
-      const icon = makeColoredDivIcon(L, m.color ?? '#007AFF');
+
+    if (layersRef.current.clusterGroup) {
+      map.removeLayer(layersRef.current.clusterGroup);
+      layersRef.current.clusterGroup = null;
+    }
+
+    if (!markers || markers.length === 0) return;
+
+    const clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 50,
+      iconCreateFunction: makeClusterIconFactory(L),
+    });
+
+    markers.forEach(m => {
+      const color = m.color ?? '#2563EB';
+      const symbol = m.symbol ?? '·';
+      const accessibleLabel = m.title ?? '';
+      const icon = makeCategoryIcon(L, color, symbol, accessibleLabel);
       const marker = L.marker([m.coordinate.latitude, m.coordinate.longitude], {
         icon,
         title: m.title,
-      }).addTo(map);
-      if (m.title) marker.bindTooltip(m.title);
+        keyboard: true,
+        alt: m.title ?? '',
+      });
+      if (m.title) marker.bindTooltip(m.title, { direction: 'top', offset: [0, -14] });
       if (m.onPress) {
         marker.on('click', (ev: any) => {
           if (ev?.originalEvent) {
@@ -159,9 +231,18 @@ export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function Ca
           }
           m.onPress?.();
         });
+        marker.on('keypress', (ev: any) => {
+          const key = ev?.originalEvent?.key;
+          if (key === 'Enter' || key === ' ') {
+            m.onPress?.();
+          }
+        });
       }
-      layersRef.current.markers.push(marker);
+      clusterGroup.addLayer(marker);
     });
+
+    map.addLayer(clusterGroup);
+    layersRef.current.clusterGroup = clusterGroup;
   }, [markers, leaflet]);
 
   // Sync user location
@@ -231,7 +312,6 @@ export const CampusMap = forwardRef<CampusMapHandle, CampusMapProps>(function Ca
 
   return (
     <View style={[StyleSheet.absoluteFillObject, style]}>
-      {/* Leaflet needs a real <div> with definite height to render */}
       <div
         ref={containerRef}
         style={{ width: '100%', height: '100%', backgroundColor: '#E5E7EB' }}

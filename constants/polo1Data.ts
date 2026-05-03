@@ -7,15 +7,17 @@ export type Floor = {
   rooms: Room[];
 };
 
+export type BuildingTipo = 'escola' | 'servico' | 'lab' | 'desporto' | 'outro';
+
 export type Building = {
   id: string;
   name: { pt: string; en: string };
+  tipo: BuildingTipo;
   coordinate: { latitude: number; longitude: number };
-  color: string;
   floors: Floor[];
 };
 
-// Centro do campus UTAD, Vila Real — ajustado para enquadrar Polo I + Polo II
+// Centro do campus UTAD, Vila Real — enquadra Polo I + Polo II
 export const POLO1_CENTER = {
   latitude: 41.2868,
   longitude: -7.7405,
@@ -23,17 +25,48 @@ export const POLO1_CENTER = {
   longitudeDelta: 0.008,
 };
 
+// Cores e símbolos por tipo (acessibilidade WCAG: contraste + glyph, não só cor)
+export const TIPO_COR: Record<BuildingTipo, string> = {
+  escola:   '#2563EB', // azul forte
+  servico:  '#EA580C', // laranja
+  lab:      '#7C3AED', // roxo
+  desporto: '#16A34A', // verde escuro (distinto do verde do mapa)
+  outro:    '#475569', // cinza-azulado
+};
+
+export const TIPO_SIMBOLO: Record<BuildingTipo, string> = {
+  escola:   'E',
+  servico:  'S',
+  lab:      'L',
+  desporto: 'D',
+  outro:    '·',
+};
+
+export const TIPO_LABEL_PT: Record<BuildingTipo, string> = {
+  escola:   'Escola',
+  servico:  'Serviço',
+  lab:      'Laboratório',
+  desporto: 'Desporto',
+  outro:    'Outro',
+};
+
+export const TIPO_LABEL_EN: Record<BuildingTipo, string> = {
+  escola:   'School',
+  servico:  'Service',
+  lab:      'Laboratory',
+  desporto: 'Sports',
+  outro:    'Other',
+};
+
 // Coordenadas dos edifícios obtidas do OpenStreetMap (Overpass API).
 // Nomenclatura segue o mapa oficial UTAD (mapa-campus-simplificado-3D.pdf).
-// Os 4 edifícios principais (ECAV-I, ECT-I, Biblioteca, Reitoria) têm
-// salas conhecidas via Inforestudante (códigos F, E, G, I).
 export const POLO1_BUILDINGS: Building[] = [
-  // === Polo I — núcleo académico ===
+  // === Polo I — escolas (com salas conhecidas) ===
   {
     id: 'ecav1',
     name: { pt: 'ECAV – Polo I', en: 'ECAV – Campus I' },
+    tipo: 'escola',
     coordinate: { latitude: 41.288144, longitude: -7.741173 },
-    color: '#BCCEE0',
     floors: [
       {
         level: 0,
@@ -66,8 +99,8 @@ export const POLO1_BUILDINGS: Building[] = [
   {
     id: 'ect1',
     name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
+    tipo: 'escola',
     coordinate: { latitude: 41.286934, longitude: -7.740588 },
-    color: '#B4D2D4',
     floors: [
       {
         level: 1,
@@ -88,8 +121,8 @@ export const POLO1_BUILDINGS: Building[] = [
   {
     id: 'bib',
     name: { pt: 'Biblioteca Central', en: 'Central Library' },
+    tipo: 'servico',
     coordinate: { latitude: 41.285822, longitude: -7.740542 },
-    color: '#BCD8C1',
     floors: [
       {
         level: 0,
@@ -103,8 +136,8 @@ export const POLO1_BUILDINGS: Building[] = [
   {
     id: 'rei',
     name: { pt: 'Reitoria', en: 'Rectory' },
+    tipo: 'outro',
     coordinate: { latitude: 41.286264, longitude: -7.738626 },
-    color: '#E5C9A8',
     floors: [
       {
         level: 0,
@@ -113,152 +146,158 @@ export const POLO1_BUILDINGS: Building[] = [
     ],
   },
 
-  // === Polo I — outros edifícios académicos / serviços ===
+  // === Polo I — outros edifícios académicos ===
   {
     id: 'ecva1',
     name: { pt: 'ECVA – Polo I', en: 'ECVA – Campus I' },
+    tipo: 'escola',
     coordinate: { latitude: 41.286109, longitude: -7.739345 },
-    color: '#D6C0E0',
     floors: [],
   },
   {
     id: 'echs1',
     name: { pt: 'ECHS – Polo I', en: 'ECHS – Campus I' },
+    tipo: 'escola',
     coordinate: { latitude: 41.281620, longitude: -7.745260 },
-    color: '#C8E0F0',
     floors: [],
   },
+
+  // === Polo I — laboratórios e edifícios de apoio ===
   {
     id: 'eno',
     name: { pt: 'Edifício de Enologia', en: 'Oenology Building' },
+    tipo: 'lab',
     coordinate: { latitude: 41.286113, longitude: -7.738237 },
-    color: '#E0B8B0',
     floors: [],
   },
   {
     id: 'lab',
     name: { pt: 'Complexo Laboratorial', en: 'Laboratory Complex' },
+    tipo: 'lab',
     coordinate: { latitude: 41.287550, longitude: -7.738097 },
-    color: '#D8D8C0',
     floors: [],
   },
   {
     id: 'hect1',
     name: { pt: 'Hangar ECT – Polo I', en: 'ECT Hangar – Campus I' },
+    tipo: 'lab',
     coordinate: { latitude: 41.286942, longitude: -7.741533 },
-    color: '#C0CCD8',
-    floors: [],
-  },
-  {
-    id: 'uc',
-    name: { pt: 'University Center (AAUTAD)', en: 'University Center (AAUTAD)' },
-    coordinate: { latitude: 41.288435, longitude: -7.739048 },
-    color: '#E0D0B8',
-    floors: [],
-  },
-  {
-    id: 'eaa',
-    name: { pt: 'Edifício de Apoio aos Alunos', en: 'Student Support Building' },
-    coordinate: { latitude: 41.288100, longitude: -7.739450 },
-    color: '#D8E0C0',
-    floors: [],
-  },
-  {
-    id: 'esc',
-    name: { pt: 'Edifício de Serviços Comuns', en: 'Common Services Building' },
-    coordinate: { latitude: 41.287868, longitude: -7.739188 },
-    color: '#C8D8C8',
     floors: [],
   },
   {
     id: 'kit',
     name: { pt: 'Kitchen Lab', en: 'Kitchen Lab' },
+    tipo: 'lab',
     coordinate: { latitude: 41.287400, longitude: -7.739700 },
-    color: '#F0D8C0',
     floors: [],
   },
   {
     id: 'jb',
     name: { pt: 'Herbário / Jardim Botânico', en: 'Herbarium / Botanical Garden' },
+    tipo: 'outro',
     coordinate: { latitude: 41.287200, longitude: -7.741400 },
-    color: '#B8D8B8',
+    floors: [],
+  },
+
+  // === Polo I — serviços ===
+  {
+    id: 'uc',
+    name: { pt: 'University Center (AAUTAD)', en: 'University Center (AAUTAD)' },
+    tipo: 'servico',
+    coordinate: { latitude: 41.288435, longitude: -7.739048 },
+    floors: [],
+  },
+  {
+    id: 'eaa',
+    name: { pt: 'Edifício de Apoio aos Alunos', en: 'Student Support Building' },
+    tipo: 'servico',
+    coordinate: { latitude: 41.288100, longitude: -7.739450 },
+    floors: [],
+  },
+  {
+    id: 'esc',
+    name: { pt: 'Edifício de Serviços Comuns', en: 'Common Services Building' },
+    tipo: 'servico',
+    coordinate: { latitude: 41.287868, longitude: -7.739188 },
     floors: [],
   },
   {
     id: 'hv',
     name: { pt: 'Hospital Veterinário', en: 'Veterinary Hospital' },
+    tipo: 'servico',
     coordinate: { latitude: 41.289576, longitude: -7.739880 },
-    color: '#E8C0C0',
     floors: [],
   },
   {
     id: 'port',
     name: { pt: 'Portaria', en: 'Main Gate' },
+    tipo: 'servico',
     coordinate: { latitude: 41.289683, longitude: -7.737329 },
-    color: '#D0D0D0',
     floors: [],
   },
   {
     id: 'cantina',
     name: { pt: 'Cantina de Prados / Restaurante Panorâmico', en: 'Cantina / Panoramic Restaurant' },
+    tipo: 'servico',
     coordinate: { latitude: 41.289699, longitude: -7.736478 },
-    color: '#F0D8B0',
     floors: [],
   },
 
-  // === Polo II ===
+  // === Polo II — escolas ===
   {
     id: 'ect2',
     name: { pt: 'ECT – Polo II', en: 'ECT – Campus II' },
+    tipo: 'escola',
     coordinate: { latitude: 41.285771, longitude: -7.743627 },
-    color: '#B4D2D4',
     floors: [],
   },
   {
     id: 'ecav2',
     name: { pt: 'ECAV – Polo II', en: 'ECAV – Campus II' },
+    tipo: 'escola',
     coordinate: { latitude: 41.285382, longitude: -7.743822 },
-    color: '#BCCEE0',
     floors: [],
   },
   {
     id: 'echs2',
     name: { pt: 'ECHS – Polo II', en: 'ECHS – Campus II' },
+    tipo: 'escola',
     coordinate: { latitude: 41.285204, longitude: -7.744535 },
-    color: '#C8E0F0',
-    floors: [],
-  },
-  {
-    id: 'hecav2',
-    name: { pt: 'Hangar ECAV – Polo II', en: 'ECAV Hangar – Campus II' },
-    coordinate: { latitude: 41.284575, longitude: -7.744239 },
-    color: '#C0CCD8',
-    floors: [],
-  },
-  {
-    id: 'nave',
-    name: { pt: 'Nave de Desportos', en: 'Sports Hall' },
-    coordinate: { latitude: 41.283125, longitude: -7.744929 },
-    color: '#B8E8C8',
     floors: [],
   },
   {
     id: 'ecva2',
     name: { pt: 'ECVA – Polo II / Complexo Desportivo', en: 'ECVA – Campus II / Sports Complex' },
+    tipo: 'escola',
     coordinate: { latitude: 41.282700, longitude: -7.743800 },
-    color: '#D6C0E0',
     floors: [],
   },
   {
     id: 'ess',
     name: { pt: 'Escola Superior de Saúde', en: 'School of Health' },
+    tipo: 'escola',
     coordinate: { latitude: 41.282500, longitude: -7.743400 },
-    color: '#F0C0D0',
+    floors: [],
+  },
+
+  // === Polo II — laboratórios e desporto ===
+  {
+    id: 'hecav2',
+    name: { pt: 'Hangar ECAV – Polo II', en: 'ECAV Hangar – Campus II' },
+    tipo: 'lab',
+    coordinate: { latitude: 41.284575, longitude: -7.744239 },
+    floors: [],
+  },
+  {
+    id: 'nave',
+    name: { pt: 'Nave de Desportos', en: 'Sports Hall' },
+    tipo: 'desporto',
+    coordinate: { latitude: 41.283125, longitude: -7.744929 },
     floors: [],
   },
 ];
 
-// Rota outdoor de exemplo (mantida para compat. com versão anterior do app)
+// Rota outdoor de exemplo
 export const OUTDOOR_ROUTE = [
   { latitude: 41.286934, longitude: -7.740588 }, // ECT-Polo I
   { latitude: 41.287400, longitude: -7.740700 },

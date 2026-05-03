@@ -60,11 +60,39 @@ export const api = {
   getSchedule: (userId: string) =>
     get<Schedule[]>(`/api/schedule/${userId}`),
 
-  // Favoritos
+  // Favoritos (deprecated — só salas)
   getFavorites: (userId: string) =>
     get<Favorite[]>(`/api/favorites/${userId}`),
   addFavorite: (roomId: string) =>
     post<Favorite>('/api/favorites', { room_id: roomId }),
   removeFavorite: (id: string) =>
     del(`/api/favorites/${id}`),
+
+  // Favoritos por utilizador (suporta edifícios + salas + serviços)
+  getUserFavorites: () =>
+    get<UserFavorite[]>(`/api/user-favorites`),
+  addUserFavorite: (item: {
+    item_id: string;
+    nome: string;
+    subtitulo?: string;
+    categoria?: string;
+    lat?: number | null;
+    lon?: number | null;
+    codigo?: string | null;
+  }) =>
+    post<UserFavorite>(`/api/user-favorites`, item),
+  removeUserFavorite: (itemId: string) =>
+    del(`/api/user-favorites/${encodeURIComponent(itemId)}`),
 };
+
+export interface UserFavorite {
+  id: string;
+  item_id: string;
+  nome: string;
+  subtitulo: string | null;
+  categoria: string | null;
+  lat: number | null;
+  lon: number | null;
+  codigo: string | null;
+  created_at: string;
+}

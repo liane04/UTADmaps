@@ -6,7 +6,15 @@ import { useRouter } from 'expo-router';
 import CampusMap from '../../components/CampusMap';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { POLO1_CENTER, POLO1_BUILDINGS, Building } from '../../constants/polo1Data';
+import {
+  POLO1_CENTER,
+  POLO1_BUILDINGS,
+  Building,
+  TIPO_COR,
+  TIPO_SIMBOLO,
+  TIPO_LABEL_PT,
+  TIPO_LABEL_EN,
+} from '../../constants/polo1Data';
 
 export default function MapaScreen() {
   const router = useRouter();
@@ -35,7 +43,8 @@ export default function MapaScreen() {
         id: b.id,
         coordinate: b.coordinate,
         title: language === 'pt' ? b.name.pt : b.name.en,
-        color: '#007AFF',
+        color: TIPO_COR[b.tipo],
+        symbol: TIPO_SIMBOLO[b.tipo],
         onPress: () => setSelectedBuilding(b),
       })),
     [language],
@@ -94,7 +103,10 @@ export default function MapaScreen() {
                   {language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en}
                 </Text>
                 <Text style={[styles.placeDescription, { fontSize: fs(13) }]}>
-                  {selectedBuilding.floors.length} {tr('pisos', 'floors')} · {totalRooms(selectedBuilding)} {tr('salas', 'rooms')}
+                  {(language === 'pt' ? TIPO_LABEL_PT : TIPO_LABEL_EN)[selectedBuilding.tipo]}
+                  {selectedBuilding.floors.length > 0
+                    ? ` · ${selectedBuilding.floors.length} ${tr('pisos', 'floors')} · ${totalRooms(selectedBuilding)} ${tr('salas', 'rooms')}`
+                    : ''}
                 </Text>
               </View>
               <TouchableOpacity

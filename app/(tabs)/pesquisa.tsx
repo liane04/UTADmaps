@@ -118,6 +118,9 @@ export default function PesquisaScreen() {
         nome: local.nome,
         subtitulo: subtituloDe(local, language),
         categoria: local.categoria,
+        lat: local.lat,
+        lon: local.lon,
+        codigo: local.codigo,
       });
     }
   };

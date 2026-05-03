@@ -10,6 +10,8 @@ export type CampusMarker = {
   coordinate: Coord;
   title?: string;
   color?: string;
+  /** Letra/símbolo curto (1 char) desenhado dentro do marker para distinção sem depender só de cor (acessibilidade WCAG 2.2). */
+  symbol?: string;
   onPress?: () => void;
 };
 

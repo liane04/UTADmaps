@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore, FavoriteItem } from '../../store/useAppStore';
 
 function avatarCor(categoria: string): string {
   if (categoria === 'edificio') return '#C8E6C9';
@@ -23,6 +23,28 @@ export default function FavoritosScreen() {
   const { colors, fs } = useSettings();
   const { tr } = useLanguage();
   const { favorites, removeFavorite } = useAppStore();
+
+  const navegar = (item: FavoriteItem) => {
+    if (item.categoria === 'sala') {
+      router.push({
+        pathname: '/navigacao-indoor',
+        params: { destino: item.codigo ?? item.id },
+      });
+      return;
+    }
+    if (item.lat != null && item.lon != null) {
+      router.push({
+        pathname: '/navigacao-outdoor',
+        params: {
+          destLat: String(item.lat),
+          destLng: String(item.lon),
+          destName: item.nome,
+        },
+      });
+      return;
+    }
+    router.push('/navigacao-outdoor');
+  };
 
   if (favorites.length === 0) {
     return (
@@ -56,7 +78,10 @@ export default function FavoritosScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card }]}
+            onPress={() => navegar(item)}
+            accessibilityLabel={tr(`Navegar para ${item.nome}`, `Navigate to ${item.nome}`)}>
             <View style={[styles.avatar, { backgroundColor: avatarCor(item.categoria) }]}>
               <Text style={styles.avatarText}>{avatarLetra(item.categoria)}</Text>
             </View>
@@ -69,12 +94,16 @@ export default function FavoritosScreen() {
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => removeFavorite(item.id)}
+              onPress={(e) => {
+                e.stopPropagation();
+                removeFavorite(item.id);
+              }}
               style={styles.removeBtn}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               accessibilityLabel={tr('Remover dos favoritos', 'Remove from favourites')}>
               <Ionicons name="heart" size={22} color="#FF3B30" />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </SafeAreaView>
