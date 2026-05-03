@@ -1,28 +1,48 @@
-import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { LOCAIS, type Categoria, type Local } from '../data/locais';
+import { api } from '../../services/api';
+import { SearchResult, SearchCategoria } from '../../types';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
 
-type FiltroCategoria = 'todos' | Categoria;
+type FiltroCategoria = 'todos' | SearchCategoria;
 
-const RECENTES_PT = ['Biblioteca', 'Cantina', 'Secretaria'];
-const RECENTES_EN = ['Library', 'Canteen', 'Secretariat'];
+const RECENTES_PT = ['Biblioteca', 'Setor F', 'Reitoria'];
+const RECENTES_EN = ['Library', 'Sector F', 'Rectory'];
 
-function avatarLetra(categoria: Categoria): string {
+function avatarLetra(categoria: SearchCategoria): string {
   if (categoria === 'edificio') return 'E';
   if (categoria === 'sala') return 'S';
   return 'V';
 }
 
-function avatarCor(categoria: Categoria): string {
+function avatarCor(categoria: SearchCategoria): string {
   if (categoria === 'edificio') return '#C8E6C9';
   if (categoria === 'sala') return '#BBDEFB';
   return '#FFE0B2';
+}
+
+function subtituloDe(item: SearchResult, language: 'pt' | 'en'): string {
+  const pisoLabel = language === 'pt' ? 'Piso' : 'Floor';
+  if (item.categoria === 'edificio') {
+    return language === 'pt' ? 'Edifício' : 'Building';
+  }
+  if (item.piso) {
+    return `${pisoLabel} ${item.piso}${item.edificio ? ` – ${item.edificio}` : ''}`;
+  }
+  return item.edificio || '';
 }
 
 export default function PesquisaScreen() {
@@ -32,6 +52,9 @@ export default function PesquisaScreen() {
   const { isFavorite, addFavorite, removeFavorite } = useAppStore();
   const [query, setQuery] = useState('');
   const [categoria, setCategoria] = useState<FiltroCategoria>('todos');
+  const [resultados, setResultados] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   const FILTROS: { key: FiltroCategoria; label: string }[] = [
     { key: 'todos', label: tr('Todos', 'All') },
@@ -40,37 +63,60 @@ export default function PesquisaScreen() {
     { key: 'servico', label: tr('Serviços', 'Services') },
   ];
 
-  const resultados = useMemo<Local[]>(() => {
-    const q = query.trim().toLowerCase();
-    return LOCAIS.filter((l) => {
-      if (categoria !== 'todos' && l.categoria !== categoria) return false;
-      if (!q) return true;
-      return (
-        l.nome.toLowerCase().includes(q) ||
-        l.nomeEn.toLowerCase().includes(q) ||
-        l.subtitulo.toLowerCase().includes(q) ||
-        l.subtituloEn.toLowerCase().includes(q) ||
-        l.edificio.toLowerCase().includes(q)
-      );
-    }).sort((a, b) => a.distancia - b.distancia);
-  }, [query, categoria]);
+  // Pesquisa com debounce 300ms
+  useEffect(() => {
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      setLoading(true);
+      setErro(null);
+      try {
+        const data = await api.search(query, categoria);
+        if (!cancelled) setResultados(data);
+      } catch (e) {
+        if (!cancelled) {
+          setResultados([]);
+          setErro(tr('Erro a contactar o servidor', 'Server error'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [query, categoria, tr]);
 
-  const aoSelecionar = (local: Local) => {
+  const aoSelecionar = (local: SearchResult) => {
     if (local.categoria === 'sala') {
-      router.push({ pathname: '/navigacao-indoor', params: { destino: local.id } });
-    } else {
-      router.push('/navigacao-outdoor');
+      router.push({
+        pathname: '/navigacao-indoor',
+        params: { destino: local.codigo ?? local.id },
+      });
+      return;
     }
+    if (local.lat != null && local.lon != null) {
+      router.push({
+        pathname: '/navigacao-outdoor',
+        params: {
+          destLat: String(local.lat),
+          destLng: String(local.lon),
+          destName: local.nome,
+        },
+      });
+      return;
+    }
+    router.push('/navigacao-outdoor');
   };
 
-  const toggleFavorito = (local: Local) => {
+  const toggleFavorito = (local: SearchResult) => {
     if (isFavorite(local.id)) {
       removeFavorite(local.id);
     } else {
       addFavorite({
         id: local.id,
-        nome: language === 'pt' ? local.nome : local.nomeEn,
-        subtitulo: language === 'pt' ? local.subtitulo : local.subtituloEn,
+        nome: local.nome,
+        subtitulo: subtituloDe(local, language),
         categoria: local.categoria,
       });
     }
@@ -119,14 +165,29 @@ export default function PesquisaScreen() {
       </View>
 
       <ScrollView style={styles.resultsContainer} contentContainerStyle={styles.resultsContent}>
-        {resultados.length === 0 ? (
+        {loading && resultados.length === 0 ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="small" color="#8E8E93" />
+            <Text style={styles.emptyText}>{tr('A pesquisar...', 'Searching...')}</Text>
+          </View>
+        ) : erro ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="cloud-offline-outline" size={40} color="#8E8E93" />
+            <Text style={styles.emptyText}>{erro}</Text>
+          </View>
+        ) : resultados.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={40} color="#8E8E93" />
-            <Text style={styles.emptyText}>{tr('Sem resultados para', 'No results for')} "{query}"</Text>
+            <Text style={styles.emptyText}>
+              {query
+                ? `${tr('Sem resultados para', 'No results for')} "${query}"`
+                : tr('Sem resultados', 'No results')}
+            </Text>
           </View>
         ) : (
           resultados.map((local) => {
             const fav = isFavorite(local.id);
+            const subtitulo = subtituloDe(local, language);
             return (
               <TouchableOpacity
                 key={local.id}
@@ -136,14 +197,13 @@ export default function PesquisaScreen() {
                   <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
                 </View>
                 <View style={styles.resultInfo}>
-                  <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]}>
-                    {language === 'pt' ? local.nome : local.nomeEn}
+                  <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
+                    {local.nome}
                   </Text>
-                  <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]}>
-                    {language === 'pt' ? local.subtitulo : local.subtituloEn}
+                  <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]} numberOfLines={1}>
+                    {subtitulo}
                   </Text>
                 </View>
-                <Text style={[styles.resultDistance, { color: colors.text, fontSize: fs(14) }]}>{local.distancia}m</Text>
                 <TouchableOpacity
                   onPress={() => toggleFavorito(local)}
                   style={styles.favBtn}
@@ -155,7 +215,7 @@ export default function PesquisaScreen() {
           })
         )}
 
-        {query.length === 0 && (
+        {query.length === 0 && resultados.length > 0 && (
           <>
             <Text style={[styles.recentTitle, { color: colors.text, fontSize: fs(18) }]}>{tr('Pesquisas recentes', 'Recent searches')}</Text>
             <View style={styles.recentContainer}>
@@ -265,14 +325,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
   },
-  resultDistance: {
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '500',
-    marginRight: 8,
-  },
   favBtn: {
     padding: 4,
+    marginLeft: 8,
   },
   recentTitle: {
     fontSize: 18,

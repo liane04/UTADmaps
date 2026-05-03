@@ -45,3 +45,16 @@ export interface Schedule {
   end_time: string;
   room_id: string | null;
 }
+
+export type SearchCategoria = 'edificio' | 'sala' | 'servico';
+
+export interface SearchResult {
+  id: string;
+  categoria: SearchCategoria;
+  nome: string;
+  codigo: string | null;
+  edificio: string;
+  piso: string;
+  lat: number | null;
+  lon: number | null;
+}

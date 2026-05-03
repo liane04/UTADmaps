@@ -1,5 +1,5 @@
 import { useAppStore } from '../store/useAppStore';
-import { Building, Floor, Room, Favorite, Schedule, User } from '../types';
+import { Building, Floor, Room, Favorite, Schedule, User, SearchResult } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
 
@@ -45,6 +45,10 @@ export const api = {
   // Pesquisa
   searchRooms: (q: string, type?: string) =>
     get<Room[]>(`/api/rooms/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}`),
+  search: (q: string, type?: string) =>
+    get<SearchResult[]>(
+      `/api/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}`,
+    ),
 
   // Auth
   login: (email: string, password: string) =>

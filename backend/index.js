@@ -7,6 +7,7 @@ const roomsRouter = require('./routes/rooms');
 const scheduleRouter = require('./routes/schedule');
 const favoritesRouter = require('./routes/favorites');
 const authRouter = require('./routes/auth');
+const searchRouter = require('./routes/search');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api/rooms', roomsRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/search', searchRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
