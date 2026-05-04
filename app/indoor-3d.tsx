@@ -156,6 +156,36 @@ const THREE_HTML = `<!DOCTYPE html>
     function isCollider(name) {
       return !!name && name.toLowerCase().startsWith('col_');
     }
+    // Apenas meshes "sala_*" participam no sistema de room-blocking dinâmico.
+    function isBlockableRoom(name) {
+      if (!name) return false;
+      return name.toLowerCase().startsWith('sala_');
+    }
+    // Bar e casas de banho são sempre livres — nunca bloqueados.
+    // O A* pode atravessá-los como atalho de caminho.
+    function isAlwaysOpen(name) {
+      if (!name) return false;
+      const lo = name.toLowerCase();
+      return lo === 'bar' || lo.startsWith('wc_');
+    }
+
+    // ─── ROOM-BLOCKING STATE ─────────────────────────────────────────────────
+    let activeRooms = new Set();      // nomes dos meshes de sala desbloqueados
+    let currentRoom = null;           // sala onde o boneco está agora
+    let destinationRoom = null;       // sala de destino atual
+    let roomBBoxes = new Map();       // Map<string, THREE.Box3>
+    let onAnimationEnd = null;        // callback quando personAnimT >= 1
+
+    // Devolve o nome da sala cujo bbox XZ contém o ponto, ou null.
+    function getRoomAtPoint(point) {
+      for (const [name, bb] of roomBBoxes) {
+        if (point.x >= bb.min.x && point.x <= bb.max.x &&
+            point.z >= bb.min.z && point.z <= bb.max.z) {
+          return name;
+        }
+      }
+      return null;
+    }
 
     // ─── CAMERA (static top-down, zoom only) ─────────────────────────────────
     // theta and phi are fixed — only radius changes (zoom)
@@ -359,6 +389,23 @@ const THREE_HTML = `<!DOCTYPE html>
       }
 
       dest.y = personFloorY;
+
+      // Determinar sala de destino e atualizar activeRooms.
+      // getRoomAtPoint só procura em roomBBoxes (apenas sala_*), por isso
+      // cliques no bar, wc, ou corredores cube* devolvem null.
+      const tappedRoom = getRoomAtPoint(dest);
+      if (tappedRoom && tappedRoom !== currentRoom) {
+        // Nova sala de destino — desbloquear destino + manter origem ativa
+        destinationRoom = tappedRoom;
+        activeRooms.add(tappedRoom);
+        if (currentRoom) activeRooms.add(currentRoom);
+        buildGrid();
+      } else if (!tappedRoom) {
+        // Clicou num corredor / bar / wc — sem nova sala de destino
+        destinationRoom = null;
+      }
+      // Se tappedRoom === currentRoom: o boneco já está nessa sala, sem alterações
+
       navigateToPoint(dest);
 
       const hint = document.getElementById('hint');
@@ -424,6 +471,16 @@ const THREE_HTML = `<!DOCTYPE html>
     function buildGrid() {
       grid = null;
       if (!currentModel) return;
+
+      // Re-popular roomBBoxes a cada chamada para garantir consistência.
+      // Apenas meshes "sala_*" participam no sistema de room-blocking;
+      // bar, wc_*, cube*, col_* e qualquer outro nome são ignorados aqui.
+      roomBBoxes.clear();
+      currentModel.traverse(obj => {
+        if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
+        roomBBoxes.set(obj.name, new THREE.Box3().setFromObject(obj));
+      });
+
       const mb = new THREE.Box3().setFromObject(currentModel);
       const sx = mb.max.x - mb.min.x;
       const sz = mb.max.z - mb.min.z;
@@ -439,9 +496,9 @@ const THREE_HTML = `<!DOCTYPE html>
       for (const bb of wallBBoxes) {
         // Block cells whose CENTER is inside the wall bbox.  Using
         // floor()..ceil() on edges over-blocks borderline cells which can
-        // close narrow doorways when cell ≥ door width.  Center-based is
+        // close narrow doorways when cell >= door width.  Center-based is
         // strictly safer for navigation (narrow gaps stay passable; the only
-        // cost is the character may clip wall corners by ½ cell visually).
+        // cost is the character may clip wall corners by half a cell visually).
         const c0 = Math.max(0, Math.ceil((bb.min.x - x0) / cell));
         const c1 = Math.min(cols - 1, Math.floor((bb.max.x - x0) / cell));
         const r0 = Math.max(0, Math.ceil((bb.min.z - z0) / cell));
@@ -450,6 +507,25 @@ const THREE_HTML = `<!DOCTYPE html>
           for (let c = c0; c <= c1; c++)
             blocked[r * cols + c] = 1;
       }
+
+      // Bloquear salas (sala_*) que NÃO estão em activeRooms.
+      // Ao contrário dos col_* (onde se usa ceil/floor conservador para preservar
+      // brechas de portas), aqui usamos floor/ceil AGRESSIVO e expandimos 1 célula
+      // em todas as direções. Isto cobre a faixa entre o plano sala_* e as paredes
+      // col_*, impedindo que o A* "deslize" pela borda da sala através das portas.
+      // As portas dos col_* (que têm 10-20 células de largura) continuam abertas —
+      // 1 célula de expansão (~6-10 cm) não as fecha.
+      for (const [name, bb] of roomBBoxes) {
+        if (activeRooms.has(name)) continue;
+        const c0 = Math.max(0, Math.floor((bb.min.x - x0) / cell) - 1);
+        const c1 = Math.min(cols - 1, Math.ceil((bb.max.x - x0) / cell) + 1);
+        const r0 = Math.max(0, Math.floor((bb.min.z - z0) / cell) - 1);
+        const r1 = Math.min(rows - 1, Math.ceil((bb.max.z - z0) / cell) + 1);
+        for (let r = r0; r <= r1; r++)
+          for (let c = c0; c <= c1; c++)
+            blocked[r * cols + c] = 1;
+      }
+
       grid = { x0, z0, cols, rows, cell, blocked };
       try {
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -636,7 +712,10 @@ const THREE_HTML = `<!DOCTYPE html>
           personMarker.position.copy(pos);
         }
         personPos.copy(pos);
-        if (personAnimT >= 1) personAnimating = false;
+        if (personAnimT >= 1) {
+          personAnimating = false;
+          if (onAnimationEnd) { const cb = onAnimationEnd; onAnimationEnd = null; cb(); }
+        }
       }
       renderer.render(scene, camera);
     }
@@ -693,6 +772,20 @@ const THREE_HTML = `<!DOCTYPE html>
       if (!grid) { showToast('Mapa de navegação ainda a carregar...'); return; }
       clearPath();
 
+      // Capturar a sala de origem agora — currentRoom pode ser null se o
+      // boneco estiver num corredor/bar/wc, e isso é correto.
+      const originRoom = currentRoom;
+      // Callback chamado quando o boneco chega ao destino: fechar a sala de
+      // origem e tornar a sala de destino na "sala atual".
+      onAnimationEnd = () => {
+        if (originRoom && originRoom !== destinationRoom) {
+          activeRooms.delete(originRoom);
+        }
+        currentRoom = destinationRoom || currentRoom;
+        destinationRoom = null;
+        buildGrid();
+      };
+
       // Check direct path using the GRID (not bbox LOS — grid is always consistent)
       if (gridLineIsClear(personPos.x, personPos.z, goalPos.x, goalPos.z)) {
         drawDestMarker(goalPos);
@@ -733,6 +826,19 @@ const THREE_HTML = `<!DOCTYPE html>
       const goal = nodes.find(n => n.id === destName)
                 || nodes.find(n => n.id.toLowerCase() === destName.toLowerCase());
       if (!goal) { showError(destName + ' não encontrada'); return; }
+
+      // Atualizar activeRooms — mesmo comportamento do handleTap para
+      // garantir que a sala de destino está desbloqueada antes de navegar.
+      const destRoom = isBlockableRoom(goal.id) ? goal.id : null;
+      if (destRoom && destRoom !== currentRoom) {
+        destinationRoom = destRoom;
+        activeRooms.add(destRoom);
+        if (currentRoom) activeRooms.add(currentRoom);
+        buildGrid();
+      } else if (!destRoom) {
+        destinationRoom = null;
+      }
+
       navigateToPoint(goal.pos);
     }
 
@@ -745,6 +851,11 @@ const THREE_HTML = `<!DOCTYPE html>
       wallMeshes = [];
       wallBBoxes  = [];
       grid = null;
+      activeRooms.clear();
+      roomBBoxes.clear();
+      currentRoom = null;
+      destinationRoom = null;
+      onAnimationEnd = null;
 
       const binaryStr = atob(base64);
       const bytes = new Uint8Array(binaryStr.length);
@@ -822,7 +933,7 @@ const THREE_HTML = `<!DOCTYPE html>
           });
         }
 
-        // Build the navigation grid from the col_ bboxes
+        // Build navigation grid (1ª passagem — popula roomBBoxes)
         buildGrid();
 
         // Place person at first nav node; fallback to floor centre if none found
@@ -837,6 +948,15 @@ const THREE_HTML = `<!DOCTYPE html>
         personFloorY = startPos.y;
         personPos.copy(startPos);
         createPersonMarker(startPos);
+
+        // Determinar sala inicial do boneco e marcá-la como ativa.
+        // Reconstruir grid para que essa sala não esteja bloqueada.
+        const startRoom = getRoomAtPoint(startPos);
+        if (startRoom) {
+          currentRoom = startRoom;
+          activeRooms.add(startRoom);
+          buildGrid();
+        }
 
         // Debug — visible in Metro / Expo console
         const dbg = { type: 'DEBUG_LOAD', walls: wallMeshes.length,
