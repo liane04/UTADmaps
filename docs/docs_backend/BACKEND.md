@@ -12,24 +12,47 @@ Frontend:  https://utadmaps.b-host.me
 Backend:   https://api.utadmaps.b-host.me
 ```
 
-## Rotas da API![alt text]
+## Rotas da API
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
 | GET | `/health` | Não | Estado do servidor |
 | GET | `/api/buildings` | Não | Lista todos os edifícios |
 | GET | `/api/buildings/:id/floors` | Não | Pisos de um edifício |
-| GET | `/api/rooms/search?q=&type=` | Não | Pesquisa salas e serviços |
+| GET | `/api/rooms/search?q=&type=` | Não | Pesquisa salas e serviços (legacy) |
+| GET | `/api/search?q=&type=` | Não | **Pesquisa unificada** edifícios + salas + serviços |
 | POST | `/api/auth/register` | Não | Registo (só @utad.eu / @alunos.utad.pt) |
 | POST | `/api/auth/login` | Não | Login — devolve `{ user, token }` |
 | GET | `/api/schedule/:userId` | JWT | Horário do utilizador |
 | POST | `/api/schedule/ical/import-url` | Não* | Importar via chave Infraestudante |
 | POST | `/api/schedule/ical/import` | JWT | Importar ficheiro .ics |
-| GET | `/api/favorites/:userId` | JWT | Favoritos do utilizador |
-| POST | `/api/favorites` | JWT | Adicionar favorito |
-| DELETE | `/api/favorites/:id` | JWT | Remover favorito |
+| GET | `/api/favorites/:userId` | JWT | Favoritos legacy (só salas) |
+| POST | `/api/favorites` | JWT | Adicionar favorito legacy |
+| DELETE | `/api/favorites/:id` | JWT | Remover favorito legacy |
+| GET | `/api/user-favorites` | JWT | **Favoritos do utilizador** (suporta edifícios + salas + serviços) |
+| POST | `/api/user-favorites` | JWT | Adicionar/atualizar favorito (upsert por `item_id`) |
+| DELETE | `/api/user-favorites/:itemId` | JWT | Remover favorito pelo `item_id` |
 
 > \* `/api/schedule/ical/import-url` não requer auth, mas se enviares `Authorization: Bearer <token>` guarda a chave no `user_metadata` do Supabase para sincronização entre dispositivos.
+
+### Formato `/api/search`
+```json
+[
+  {
+    "id": "b-<uuid>" | "r-<uuid>",
+    "categoria": "edificio" | "sala" | "servico",
+    "nome": "ECT – Polo I",
+    "codigo": "ECT1",
+    "edificio": "ECT – Polo I",
+    "piso": "" | "0" | "1" | "2",
+    "lat": 41.286934,
+    "lon": -7.740588
+  }
+]
+```
+- `id` tem prefixo `b-` para edifícios, `r-` para rooms (salas/serviços)
+- `lat`/`lon` para `room` vêm do edifício pai (JOIN automático)
+- Filtro `type` ∈ `{ todos, edificio, sala, servico }`
 
 ### Contas de demonstração (Supabase Auth)
 | Email | Password |
@@ -47,14 +70,18 @@ backend/
 ├── supabase.js               ← cliente Supabase
 ├── Dockerfile
 ├── docker-compose.yml
-├── supabase-schema.sql       ← schema da DB
-├── .env.example              ← template (nunca commitar .env)
+├── supabase-schema.sql       ← schema base
+├── seed-polo1.sql            ← seed dos 24 edifícios + pisos + salas reais
+├── seed-user-favorites.sql   ← tabela user_favorites + RLS
+├── .env.example
 ├── routes/
 │   ├── buildings.js
 │   ├── rooms.js
 │   ├── schedule.js
-│   ├── favorites.js
-│   └── auth.js
+│   ├── favorites.js          ← legacy (só salas)
+│   ├── auth.js
+│   ├── search.js             ← pesquisa unificada
+│   └── userFavorites.js      ← favoritos por utilizador (suporta edifícios)
 ├── middleware/
 │   └── auth.js               ← verificação JWT Supabase
 └── services/
@@ -62,10 +89,11 @@ backend/
 ```
 
 ## Tabelas no Supabase
-- `buildings` — edifícios com coordenadas GPS reais (já populado)
-- `floors` — pisos por edifício
-- `rooms` — salas e serviços (por popular com dados reais da UTAD)
-- `favorites` — favoritos por utilizador
+- `buildings` — 24 edifícios com coordenadas reais (OSM)
+- `floors` — pisos por edifício (8 pisos para os 4 principais)
+- `rooms` — 57 salas/serviços (códigos F/E/G/I do Inforestudante)
+- `favorites` — legacy, só `room_id` (FK rígida)
+- `user_favorites` — **flexível**: `item_id text` + lat/lon/codigo, suporta edifícios e salas. RLS por utilizador.
 - `schedules` — horário importado via iCal
 
 ---
