@@ -16,6 +16,11 @@ const MODEL_MAP: Record<string, Record<number, number>> = {
   },
 };
 
+// Marker assets — substituem visualmente a bandeira de destino (GLB) e o
+// personagem (PNG vista de topo, deitado no chão como sprite horizontal).
+const MARKER_FLAG_MODULE = require('../assets/models/markers/bandeira_final.glb');
+const MARKER_PERSON_PNG_MODULE = require('../assets/models/markers/pessoautad.png');
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -27,20 +32,31 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-async function loadModelAsBase64(buildingId: string, level: number): Promise<string> {
-  const moduleId = MODEL_MAP[buildingId]?.[level];
-  if (moduleId == null) throw new Error(`Sem modelo registado para ${buildingId}/piso ${level}`);
-
+async function loadAssetAsBase64(moduleId: number): Promise<string> {
   const asset = Asset.fromModule(moduleId);
   await asset.downloadAsync();
-
   const localUri = asset.localUri;
   if (!localUri) throw new Error(`localUri null após download (asset.uri: ${asset.uri})`);
-
-  // expo-file-system v19 — nova API com classe File
   const file = new File(localUri);
   const buffer = await file.arrayBuffer();
   return arrayBufferToBase64(buffer);
+}
+
+async function loadModelAsBase64(buildingId: string, level: number): Promise<string> {
+  const moduleId = MODEL_MAP[buildingId]?.[level];
+  if (moduleId == null) throw new Error(`Sem modelo registado para ${buildingId}/piso ${level}`);
+  return loadAssetAsBase64(moduleId);
+}
+
+let markerCache: { flagBase64: string; personPngBase64: string } | null = null;
+async function loadMarkerModels() {
+  if (markerCache) return markerCache;
+  const [flagBase64, personPngBase64] = await Promise.all([
+    loadAssetAsBase64(MARKER_FLAG_MODULE),
+    loadAssetAsBase64(MARKER_PERSON_PNG_MODULE),
+  ]);
+  markerCache = { flagBase64, personPngBase64 };
+  return markerCache;
 }
 
 const THREE_HTML = `<!DOCTYPE html>
@@ -101,41 +117,81 @@ const THREE_HTML = `<!DOCTYPE html>
     let personFloorY = 0;
     let modelSpan = 20; // updated after each model load; drives person scale
 
-    function createPersonMarker(pos) {
-      if (personMarker) { scene.remove(personMarker); personMarker = null; }
+    // ─── MARKER ASSETS (loaded once via LOAD_MARKERS) ────────────────────────
+    // Person is a top-down PNG laid flat on the floor. Flag is a 3D GLB.
+    let personTexture = null;        // THREE.Texture loaded from pessoautad.png
+    let personTextureAspect = 1;     // image width / height
+    let flagTemplate = null;         // THREE.Object3D loaded from bandeira_final.glb
+    // Rotation offset applied to the person plane so the head points toward +Z
+    // (matches movement direction when wrap.rotation.y = 0). The PNG has the
+    // head at the top of the image; rotating x=-π/2 then y=π aligns it.
+    const PERSON_FACING_OFFSET = Math.PI;
+
+    function buildFallbackPerson() {
       const group = new THREE.Group();
-
-      // Scale so person is ~5% of building width — always visible from default zoom
       const s = Math.max(0.3, modelSpan * 0.05);
-
       const bodyMat = new THREE.MeshStandardMaterial({ color: 0xFF6B00, emissive: 0xDD2200, emissiveIntensity: 0.5 });
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.55, 12), bodyMat);
-      body.position.y = 0.27 * s;
-      body.scale.setScalar(s);
-      group.add(body);
-
+      body.position.y = 0.27 * s; body.scale.setScalar(s); group.add(body);
       const headMat = new THREE.MeshStandardMaterial({ color: 0xFFCC33, emissive: 0xFF8800, emissiveIntensity: 0.5 });
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), headMat);
-      head.position.y = 0.72 * s;
-      head.scale.setScalar(s);
-      group.add(head);
-
+      head.position.y = 0.72 * s; head.scale.setScalar(s); group.add(head);
       const arrowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 });
       const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), arrowMat);
-      arrow.position.set(0, 0.28 * s, -0.28 * s);
-      arrow.rotation.x = Math.PI / 2;
-      arrow.scale.setScalar(s);
-      group.add(arrow);
+      arrow.position.set(0, 0.28 * s, -0.28 * s); arrow.rotation.x = Math.PI / 2;
+      arrow.scale.setScalar(s); group.add(arrow);
+      return group;
+    }
 
+    function buildPersonFromTexture() {
+      // Wrap holds the world position/rotation; the inner plane carries the PNG.
+      // The plane is laid flat on the floor (rotation.x = -π/2) and rotated 180°
+      // around Y so the head (top of the PNG) points toward +Z by default.
+      const wrap = new THREE.Group();
+      // Sprite long-axis ≈ 9% of building span, lower bound for very small maps.
+      const longAxis = Math.max(1.4, modelSpan * 0.09);
+      const w = longAxis;
+      const h = longAxis / Math.max(personTextureAspect, 0.001);
+      const geom = new THREE.PlaneGeometry(w, h);
+      const mat = new THREE.MeshBasicMaterial({
+        map: personTexture,
+        transparent: true,
+        alphaTest: 0.05,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const inner = new THREE.Mesh(geom, mat);
+      inner.rotation.x = -Math.PI / 2;
+      inner.rotation.y = PERSON_FACING_OFFSET;
+      // Lift well above the floor / decorative planes to avoid z-fighting glitches.
+      inner.position.y = Math.max(0.25, modelSpan * 0.01);
+      wrap.add(inner);
+      return wrap;
+    }
+
+    function createPersonMarker(pos) {
+      if (personMarker) { scene.remove(personMarker); personMarker = null; }
+      const group = personTexture ? buildPersonFromTexture() : buildFallbackPerson();
       group.position.copy(pos);
       personMarker = group;
       scene.add(personMarker);
+    }
+
+    // Swap the placeholder for the textured plane once the PNG arrives.
+    function upgradePersonMarkerIfPossible() {
+      if (!personTexture || !personMarker) return;
+      const pos = personMarker.position.clone();
+      const rotY = personMarker.rotation.y;
+      scene.remove(personMarker); personMarker = null;
+      createPersonMarker(pos);
+      personMarker.rotation.y = rotY;
     }
 
     function clearPerson() {
       if (personMarker) { scene.remove(personMarker); personMarker = null; }
       personAnimating = false;
       personAnimPath = null;
+      lastGoalPos = null;
     }
 
     function beginPersonAnimation(curve) {
@@ -143,8 +199,9 @@ const THREE_HTML = `<!DOCTYPE html>
       personAnimT = 0;
       personAnimating = true;
       const len = curve.getLength();
-      // speed adapts: full path in ~2s at 60fps regardless of distance
-      personAnimSpeedPerFrame = 1 / Math.max(60, len * 6);
+      // ~2.5x faster than before; full path in ~0.8s at 60fps for short paths,
+      // longer paths still scale with distance but with a smaller multiplier.
+      personAnimSpeedPerFrame = 1 / Math.max(24, len * 2.4);
     }
 
     // ─── HELPERS ─────────────────────────────────────────────────────────────
@@ -206,10 +263,14 @@ const THREE_HTML = `<!DOCTYPE html>
       renderer.shadowMap.enabled = true;
       renderer.outputEncoding = THREE.sRGBEncoding;
       document.body.appendChild(renderer.domElement);
-      scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.8));
+      const dir = new THREE.DirectionalLight(0xffffff, 1.1);
       dir.position.set(5, 20, 10); dir.castShadow = true; scene.add(dir);
-      scene.add(new THREE.HemisphereLight(0xddeeff, 0x222211, 0.5));
+      const dir2 = new THREE.DirectionalLight(0xffffff, 0.7);
+      dir2.position.set(-8, 15, -6); scene.add(dir2);
+      const dir3 = new THREE.DirectionalLight(0xffffff, 0.5);
+      dir3.position.set(0, 10, -12); scene.add(dir3);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.9));
       setupControls();
       window.addEventListener('resize', onResize);
       animate();
@@ -695,10 +756,23 @@ const THREE_HTML = `<!DOCTYPE html>
 
     // ─── RENDER / ANIMATION LOOP ──────────────────────────────────────────────
     let pathLine = null, destMarker = null, pulseT = 0;
+    // Original unmodified path positions — kept so we can rebuild the tube with
+    // only the section ahead of the character, and so we can restore the full
+    // path each time the loop restarts.
+    let pathPositions = null;
+    // Cached cumulative segment lengths of pathPositions (avoids recomputing per frame).
+    let pathSegLens = null;
+    let pathTotalLen = 0;
+    // Loop the walking animation until the user picks a different destination.
+    let personAnimLoop = false;
 
     function animate() {
       requestAnimationFrame(animate);
-      if (destMarker) { pulseT += 0.05; destMarker.scale.setScalar(1 + 0.3 * Math.sin(pulseT)); }
+      if (destMarker) {
+        pulseT += 0.05;
+        const baseScale = destMarker.userData.baseScale || 1;
+        destMarker.scale.setScalar(baseScale * (1 + 0.3 * Math.sin(pulseT)));
+      }
       if (personAnimating && personAnimPath) {
         personAnimT = Math.min(1, personAnimT + personAnimSpeedPerFrame);
         const pos = personAnimPath.getPoint(personAnimT);
@@ -712,9 +786,18 @@ const THREE_HTML = `<!DOCTYPE html>
           personMarker.position.copy(pos);
         }
         personPos.copy(pos);
+        // Consume path behind the character.
+        consumePathBehind(personAnimT, pos);
         if (personAnimT >= 1) {
-          personAnimating = false;
+          // Fire the room-state callback exactly once, even when looping.
           if (onAnimationEnd) { const cb = onAnimationEnd; onAnimationEnd = null; cb(); }
+          if (personAnimLoop && pathPositions && pathPositions.length >= 2) {
+            // Restart: full tube back, character pops to start.
+            personAnimT = 0;
+            rebuildTube(pathPositions);
+          } else {
+            personAnimating = false;
+          }
         }
       }
       renderer.render(scene, camera);
@@ -730,7 +813,12 @@ const THREE_HTML = `<!DOCTYPE html>
 
     function clearPath() {
       [pathLine, destMarker].forEach(m => { if (m) scene.remove(m); });
+      if (pathLine && pathLine.geometry) pathLine.geometry.dispose();
       pathLine = destMarker = null;
+      pathPositions = null;
+      pathSegLens = null;
+      pathTotalLen = 0;
+      personAnimLoop = false;
     }
 
     // Build a path of straight line segments — no curve smoothing so the path
@@ -744,8 +832,14 @@ const THREE_HTML = `<!DOCTYPE html>
       return cp;
     }
 
-    function drawPath(positions) {
-      if (positions.length < 2) return;
+    // Rebuild the visible tube from a new set of positions. Disposes the old one.
+    function rebuildTube(positions) {
+      if (pathLine) {
+        scene.remove(pathLine);
+        if (pathLine.geometry) pathLine.geometry.dispose();
+        pathLine = null;
+      }
+      if (!positions || positions.length < 2) return;
       const tubeR = Math.max(0.05, modelSpan * 0.012);
       const cp = buildLinearPath(positions);
       const segs = Math.max(positions.length * 4, 30);
@@ -756,20 +850,113 @@ const THREE_HTML = `<!DOCTYPE html>
       scene.add(pathLine);
     }
 
+    function drawPath(positions) {
+      if (positions.length < 2) return;
+      // Cache the original points + segment lengths for the consume-behind logic.
+      pathPositions = positions.map(p => p.clone());
+      pathSegLens = [];
+      pathTotalLen = 0;
+      for (let i = 0; i < pathPositions.length - 1; i++) {
+        const seg = pathPositions[i].distanceTo(pathPositions[i + 1]);
+        pathSegLens.push(seg);
+        pathTotalLen += seg;
+      }
+      rebuildTube(pathPositions);
+    }
+
+    // Rebuild the tube to start at the character's current position so the
+    // section behind them visually disappears as they walk. Cheap because the
+    // tube has few segments and we only run it while animating.
+    function consumePathBehind(t, curPos) {
+      if (!pathPositions || pathPositions.length < 2 || pathTotalLen <= 0) return;
+      const targetLen = pathTotalLen * t;
+      let cumLen = 0;
+      let segIdx = pathPositions.length - 2; // default: at end
+      for (let i = 0; i < pathSegLens.length; i++) {
+        if (cumLen + pathSegLens[i] >= targetLen) { segIdx = i; break; }
+        cumLen += pathSegLens[i];
+      }
+      // Remaining = [curPos, segment_end_of_segIdx, ...rest of pathPositions]
+      const remaining = [curPos.clone()];
+      for (let i = segIdx + 1; i < pathPositions.length; i++) {
+        remaining.push(pathPositions[i].clone());
+      }
+      if (remaining.length < 2) {
+        if (pathLine) {
+          scene.remove(pathLine);
+          if (pathLine.geometry) pathLine.geometry.dispose();
+          pathLine = null;
+        }
+        return;
+      }
+      rebuildTube(remaining);
+    }
+
     function drawDestMarker(pos) {
-      const r = Math.max(0.1, modelSpan * 0.035);
-      destMarker = new THREE.Mesh(
-        new THREE.SphereGeometry(r, 16, 16),
-        new THREE.MeshStandardMaterial({ color: 0xFF2D55, emissive: 0xFF0000, emissiveIntensity: 0.9 })
-      );
-      destMarker.position.copy(pos); destMarker.position.y += r;
+      let marker;
+      let baseScale = 1;
+      if (flagTemplate) {
+        // Wrap+inner: scaling the wrap pulses the flag without shifting its base
+        // off the floor (inner's local offsets cancel against parent scaling).
+        const wrap = new THREE.Group();
+        const inner = flagTemplate.clone(true);
+        const preBox = new THREE.Box3().setFromObject(inner);
+        const sz = preBox.getSize(new THREE.Vector3());
+        const targetH = Math.max(0.4, modelSpan * 0.08);
+        const innerScale = targetH / Math.max(sz.y, 0.001);
+        inner.scale.setScalar(innerScale);
+        const scaledBox = new THREE.Box3().setFromObject(inner);
+        const center = scaledBox.getCenter(new THREE.Vector3());
+        inner.position.x = -center.x;
+        inner.position.z = -center.z;
+        inner.position.y = -scaledBox.min.y;
+        wrap.add(inner);
+        wrap.position.copy(pos);
+        marker = wrap;
+        baseScale = 1; // wrap scale = 1, inner already scaled
+      } else {
+        const r = Math.max(0.1, modelSpan * 0.035);
+        marker = new THREE.Mesh(
+          new THREE.SphereGeometry(r, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xFF2D55, emissive: 0xFF0000, emissiveIntensity: 0.9 })
+        );
+        marker.position.copy(pos); marker.position.y += r;
+      }
+      marker.userData.baseScale = baseScale;
+      marker.userData.goalPos = pos.clone();
+      destMarker = marker;
       pulseT = 0; scene.add(destMarker);
     }
 
+    // Swap the destination marker visual once the flag GLB template arrives.
+    function upgradeDestMarkerIfPossible() {
+      if (!flagTemplate || !destMarker) return;
+      const goalPos = destMarker.userData.goalPos;
+      if (!goalPos) return;
+      scene.remove(destMarker); destMarker = null;
+      drawDestMarker(goalPos);
+    }
+
     // ─── NAVIGATE ────────────────────────────────────────────────────────────
+    // Last destination the user picked — used so that re-routing mid-walk starts
+    // from the previous goal instead of the character's current in-flight position.
+    let lastGoalPos = null;
+
     function navigateToPoint(goalPos) {
       if (!currentModel) { showToast('Modelo ainda não carregado'); return; }
       if (!grid) { showToast('Mapa de navegação ainda a carregar...'); return; }
+
+      // Only snap to the previous goal if the user is INTERRUPTING the first
+      // traversal (character still on its way). After the first arrival
+      // onAnimationEnd has been consumed (set to null) and we're in the visual
+      // loop — in that case the new path should start from the character's
+      // current position, with no teleport.
+      if (personAnimating && lastGoalPos && onAnimationEnd) {
+        const cb = onAnimationEnd; onAnimationEnd = null; cb();
+        personPos.copy(lastGoalPos);
+        if (personMarker) personMarker.position.copy(lastGoalPos);
+      }
+
       clearPath();
 
       // Capturar a sala de origem agora — currentRoom pode ser null se o
@@ -791,6 +978,8 @@ const THREE_HTML = `<!DOCTYPE html>
         drawDestMarker(goalPos);
         const pts = [personPos.clone(), goalPos.clone()];
         drawPath(pts); beginPersonAnimation(buildLinearPath(pts));
+        personAnimLoop = true;
+        lastGoalPos = goalPos.clone();
         return;
       }
 
@@ -814,6 +1003,8 @@ const THREE_HTML = `<!DOCTYPE html>
       drawDestMarker(goalPos);
       drawPath(pts);
       beginPersonAnimation(buildLinearPath(pts));
+      personAnimLoop = true;
+      lastGoalPos = goalPos.clone();
     }
 
     // Called from NAVIGATE message with a named destination
@@ -1009,9 +1200,124 @@ const THREE_HTML = `<!DOCTYPE html>
 
     // ─── MESSAGE HANDLER ─────────────────────────────────────────────────────
     let pendingDestino = null;
+
+    function parseMarkerGLB(base64, onReady) {
+      // Defer if GLTFLoader script has not finished loading yet.
+      if (typeof THREE.GLTFLoader === 'undefined') {
+        setTimeout(() => parseMarkerGLB(base64, onReady), 100);
+        return;
+      }
+      const binaryStr = atob(base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+      new THREE.GLTFLoader().parse(
+        bytes.buffer, '',
+        gltf => onReady(gltf.scene),
+        err => { try { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'MARKER_PARSE_ERR: ' + err.message })); } catch(_) {} }
+      );
+    }
+
+    // Meshy/PBR GLBs come with high metalness and need an environment map to be
+    // visible. Without one they render black under direct lights. Force materials
+    // to a fully diffuse setup so the existing scene lights are enough.
+    function flattenMaterials(root) {
+      root.traverse(obj => {
+        if (!obj.isMesh || !obj.material) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+          if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+            m.metalness = 0;
+            m.roughness = 1;
+            m.envMapIntensity = 0;
+          }
+          // Some Meshy exports embed transmission/clearcoat that goes black; clear them.
+          if (m.transmission !== undefined) m.transmission = 0;
+          if (m.clearcoat !== undefined) m.clearcoat = 0;
+          m.side = THREE.DoubleSide;
+          m.needsUpdate = true;
+        });
+      });
+    }
+
+    // Procedural racing-flag texture (checkered black/white).
+    let racingFlagTexture = null;
+    function makeRacingFlagTexture() {
+      if (racingFlagTexture) return racingFlagTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const cells = 8;
+      const cellSize = canvas.width / cells;
+      for (let y = 0; y < cells; y++) {
+        for (let x = 0; x < cells; x++) {
+          ctx.fillStyle = (x + y) % 2 === 0 ? '#0a0a0a' : '#ffffff';
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.encoding = THREE.sRGBEncoding;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      tex.needsUpdate = true;
+      racingFlagTexture = tex;
+      return tex;
+    }
+
+    // Repaint the flag template: checker pattern on the fabric, neutral metal on
+    // the pole. We classify by mesh shape (tall+thin = pole).
+    function paintRacingFlag(root) {
+      const checker = makeRacingFlagTexture();
+      const fabricMat = new THREE.MeshStandardMaterial({
+        map: checker, color: 0xffffff, metalness: 0, roughness: 0.85, side: THREE.DoubleSide,
+      });
+      const poleMat = new THREE.MeshStandardMaterial({
+        color: 0x9a9a9a, metalness: 0.1, roughness: 0.5, side: THREE.DoubleSide,
+      });
+      root.traverse(obj => {
+        if (!obj.isMesh) return;
+        const bbox = new THREE.Box3().setFromObject(obj);
+        const sz = bbox.getSize(new THREE.Vector3());
+        const longest = Math.max(sz.x, sz.y, sz.z);
+        const shortest = Math.min(sz.x, sz.y, sz.z);
+        const isPole = sz.y === longest && longest > Math.max(sz.x, sz.z) * 2.5 && shortest < longest * 0.25;
+        obj.material = isPole ? poleMat : fabricMat;
+      });
+    }
+
+    function loadPersonPng(base64) {
+      const img = new Image();
+      img.onload = () => {
+        const tex = new THREE.Texture(img);
+        tex.encoding = THREE.sRGBEncoding;
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+        personTexture = tex;
+        personTextureAspect = img.width / Math.max(img.height, 1);
+        upgradePersonMarkerIfPossible();
+      };
+      img.onerror = () => {
+        try { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'PERSON_PNG_LOAD_ERR' })); } catch(_) {}
+      };
+      img.src = 'data:image/png;base64,' + base64;
+    }
+
+    function handleLoadMarkers(msg) {
+      if (msg.personPngBase64) loadPersonPng(msg.personPngBase64);
+      if (msg.flagBase64) {
+        parseMarkerGLB(msg.flagBase64, scene_ => {
+          flattenMaterials(scene_);
+          paintRacingFlag(scene_);
+          flagTemplate = scene_;
+          upgradeDestMarkerIfPossible();
+        });
+      }
+    }
+
     function handleMessage(raw) {
       try {
         const msg = JSON.parse(raw);
+        if (msg.type === 'LOAD_MARKERS') handleLoadMarkers(msg);
         if (msg.type === 'LOAD_MODEL') {
           pendingDestino = msg.destinoPendente || null;
           loadGLBFromBase64(msg.base64, () => {
@@ -1085,10 +1391,18 @@ export default function Indoor3DScreen() {
     }
   }, [buildingId, destino]);
 
-  const handleWebViewLoad = useCallback(() => {
+  const handleWebViewLoad = useCallback(async () => {
     const initialFloor = floorDestino ?? (floorLevels.length > 0 ? Math.min(...floorLevels) : 0);
     setCurrentFloor(initialFloor);
     webViewRef.current?.postMessage(JSON.stringify({ type: 'SET_BG', color: colors.bg }));
+    try {
+      const markers = await loadMarkerModels();
+      webViewRef.current?.postMessage(
+        JSON.stringify({ type: 'LOAD_MARKERS', flagBase64: markers.flagBase64, personPngBase64: markers.personPngBase64 })
+      );
+    } catch (e) {
+      console.warn('[Indoor3D] failed to load marker GLBs:', e);
+    }
     sendModelToWebView(initialFloor);
   }, [floorLevels, floorDestino, colors.bg, sendModelToWebView]);
 
