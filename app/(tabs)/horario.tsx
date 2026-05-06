@@ -36,6 +36,40 @@ const DIAS = [
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+const DIAS_LONG_PT: Record<string, string> = {
+  segunda: 'Segunda-feira',
+  terca: 'Terça-feira',
+  quarta: 'Quarta-feira',
+  quinta: 'Quinta-feira',
+  sexta: 'Sexta-feira',
+  sabado: 'Sábado',
+};
+const DIAS_LONG_EN: Record<string, string> = {
+  segunda: 'Monday',
+  terca: 'Tuesday',
+  quarta: 'Wednesday',
+  quinta: 'Thursday',
+  sexta: 'Friday',
+  sabado: 'Saturday',
+};
+
+const DIA_INDEX: Record<string, number> = {
+  segunda: 0, terca: 1, quarta: 2, quinta: 3, sexta: 4, sabado: 5,
+};
+
+function dataDoDiaActivo(
+  diaAtivo: string,
+  inicioSemana: Date,
+  language: 'pt' | 'en',
+): string {
+  const offset = DIA_INDEX[diaAtivo] ?? 0;
+  const data = new Date(inicioSemana);
+  data.setDate(inicioSemana.getDate() + offset);
+  const dias = language === 'pt' ? DIAS_LONG_PT : DIAS_LONG_EN;
+  const meses = language === 'pt' ? MESES_PT : MESES_EN;
+  return `${dias[diaAtivo]}, ${data.getDate()} ${meses[data.getMonth()]}`;
+}
+
 // Segunda-feira da semana à qual pertence `hoje` + offset de semanas
 function calcularSemana(offset: number): { inicio: Date; fim: Date } {
   const hoje = new Date();
@@ -64,6 +98,42 @@ function diaHoje(): string {
 function extrairChave(input: string): string {
   const match = input.match(/chave=([a-zA-Z0-9]+)/i);
   return match ? match[1] : input.trim();
+}
+
+// Parsing dos títulos do Inforestudante.
+// Formatos comuns: "Aula - CG (PL1) - F2.01"  ·  "CG (T1)"  ·  "Programação Web"
+function parsearAula(raw: string): { sigla: string; tipo: string | null; sala: string | null } {
+  if (!raw) return { sigla: '', tipo: null, sala: null };
+  const semPrefixo = raw.replace(/^Aula\s*[-–—]\s*/i, '').trim();
+  // Formato com sala: "<sigla> (<tipo>) - <sala>"
+  const m1 = semPrefixo.match(/^(.+?)\s*\(([^)]+)\)\s*[-–—]\s*(.+)$/);
+  if (m1) return { sigla: m1[1].trim(), tipo: m1[2].trim(), sala: m1[3].trim() };
+  // Formato sem sala: "<sigla> (<tipo>)"
+  const m2 = semPrefixo.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  if (m2) return { sigla: m2[1].trim(), tipo: m2[2].trim(), sala: null };
+  return { sigla: semPrefixo, tipo: null, sala: null };
+}
+
+// Gera blocos "Livre" entre aulas consecutivas com gap >= 60 min
+type ItemTimeline =
+  | { kind: 'aula'; aula: Aula }
+  | { kind: 'livre'; horaInicio: string; horaFim: string };
+
+function montarTimeline(aulasOrdenadas: Aula[]): ItemTimeline[] {
+  const out: ItemTimeline[] = [];
+  for (let i = 0; i < aulasOrdenadas.length; i++) {
+    const a = aulasOrdenadas[i];
+    out.push({ kind: 'aula', aula: a });
+    const proxima = aulasOrdenadas[i + 1];
+    if (!proxima) continue;
+    const [h1, m1] = a.horaFim.split(':').map(Number);
+    const [h2, m2] = proxima.horaInicio.split(':').map(Number);
+    const gap = h2 * 60 + m2 - (h1 * 60 + m1);
+    if (gap >= 60) {
+      out.push({ kind: 'livre', horaInicio: a.horaFim, horaFim: proxima.horaInicio });
+    }
+  }
+  return out;
 }
 
 export default function HorarioScreen() {
@@ -135,6 +205,9 @@ export default function HorarioScreen() {
     [aulasSemana, diaAtivo],
   );
 
+  // Timeline com blocos "Livre" intercalados
+  const timeline = useMemo(() => montarTimeline(aulasDia), [aulasDia]);
+
   const importar = useCallback(async () => {
     const chave = extrairChave(chaveInput);
     if (!chave) return;
@@ -177,12 +250,13 @@ export default function HorarioScreen() {
 
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(24) }]}>
+        <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(20) }]}>
           {tr('Horário', 'Schedule')}
         </Text>
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
           style={styles.importBtn}
+          accessibilityRole="button"
           accessibilityLabel={tr('Importar horário', 'Import schedule')}>
           <Ionicons name="cloud-upload-outline" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -217,23 +291,36 @@ export default function HorarioScreen() {
         })}
       </View>
 
-      {/* Navegação de semana */}
+      {/* Data do dia activo (por extenso) */}
+      <Text style={[styles.dataExtenso, { color: colors.text, fontSize: fs(15) }]}>
+        {dataDoDiaActivo(diaAtivo, inicioSemana, language)}
+      </Text>
+
+      {/* Navegação de semana — discreta */}
       <View style={styles.weekNav}>
-        <TouchableOpacity onPress={() => setSemanaOffset(o => o - 1)} style={styles.weekNavBtn}>
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        <TouchableOpacity
+          onPress={() => setSemanaOffset(o => o - 1)}
+          style={styles.weekNavBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Semana anterior', 'Previous week')}>
+          <Ionicons name="chevron-back" size={18} color={colors.subtext} />
         </TouchableOpacity>
-        <Text style={[styles.weekLabel, { color: colors.subtext, fontSize: fs(14) }]}>
+        <Text style={[styles.weekLabel, { color: colors.subtext, fontSize: fs(13) }]}>
           {labelSemana(inicioSemana, fimSemana, language)}
         </Text>
-        <TouchableOpacity onPress={() => setSemanaOffset(o => o + 1)} style={styles.weekNavBtn}>
-          <Ionicons name="chevron-forward" size={20} color={colors.text} />
+        <TouchableOpacity
+          onPress={() => setSemanaOffset(o => o + 1)}
+          style={styles.weekNavBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Próxima semana', 'Next week')}>
+          <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </TouchableOpacity>
       </View>
 
       {/* Conteúdo */}
       {importado ? (
         <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
-          {aulasDia.length === 0 ? (
+          {timeline.length === 0 ? (
             <View style={styles.emptyDay}>
               <Ionicons name="checkmark-circle-outline" size={56} color={colors.subtext} />
               <Text style={[styles.emptyDayText, { color: colors.subtext, fontSize: fs(16) }]}>
@@ -241,33 +328,77 @@ export default function HorarioScreen() {
               </Text>
             </View>
           ) : (
-            aulasDia.map((aula, i) => (
-              <TouchableOpacity
-                key={i}
-                style={styles.timelineRow}
-                onPress={() => router.push('/navigacao-indoor')}>
-                <Text style={[styles.timeText, { color: colors.subtext }]}>{aula.horaInicio}</Text>
-                <View style={[styles.timelineLine, { backgroundColor: colors.divider }]} />
-                <View style={styles.cardContainer}>
-                  <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
-                    <View style={styles.cardContent}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.classTitle, { color: colors.text, fontSize: fs(16) }]}>
-                          {aula.disciplina}
-                        </Text>
-                        <Text style={[styles.classLocation, { fontSize: fs(14), color: colors.subtext }]}>
-                          {aula.locationRaw || aula.sala}
-                        </Text>
-                        <Text style={[styles.classTime, { color: colors.subtext }]}>
-                          {aula.horaInicio} - {aula.horaFim}
+            timeline.map((item, i) => {
+              if (item.kind === 'livre') {
+                return (
+                  <View key={`livre-${i}`} style={styles.timelineRow}>
+                    <Text style={[styles.timeText, { color: colors.subtext, fontSize: fs(13) }]}>
+                      {item.horaInicio}
+                    </Text>
+                    <View style={[styles.timelineLine, { backgroundColor: colors.divider }]} />
+                    <View style={styles.cardContainer}>
+                      <View style={[styles.livreBlock, { borderColor: colors.divider }]}>
+                        <Text style={[styles.livreText, { color: colors.subtext, fontSize: fs(14) }]}>
+                          {tr('Livre', 'Free')}
                         </Text>
                       </View>
-                      <Ionicons name="navigate-outline" size={20} color={colors.subtext} />
                     </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))
+                );
+              }
+              const { aula } = item;
+              const parsed = parsearAula(aula.disciplina);
+              const titulo = parsed.tipo ? `${parsed.sigla} · ${parsed.tipo}` : parsed.sigla;
+              const local = aula.sala || parsed.sala || aula.locationRaw;
+              return (
+                <TouchableOpacity
+                  key={`aula-${i}`}
+                  style={styles.timelineRow}
+                  onPress={() => router.push('/navigacao-indoor')}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr(
+                    `Navegar para ${titulo} em ${local}`,
+                    `Navigate to ${titulo} at ${local}`,
+                  )}>
+                  <Text style={[styles.timeText, { color: colors.subtext, fontSize: fs(13) }]}>
+                    {aula.horaInicio}
+                  </Text>
+                  <View style={[styles.timelineLine, { backgroundColor: colors.divider }]} />
+                  <View style={styles.cardContainer}>
+                    <View
+                      style={[
+                        styles.card,
+                        {
+                          backgroundColor: colors.card,
+                          borderWidth: altoContraste ? 2 : 0,
+                          borderColor: colors.border,
+                        },
+                      ]}>
+                      <View style={styles.cardContent}>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[styles.classTitle, { color: colors.text, fontSize: fs(16) }]}
+                            numberOfLines={1}>
+                            {titulo}
+                          </Text>
+                          {!!local && (
+                            <Text
+                              style={[styles.classLocation, { color: colors.subtext, fontSize: fs(14) }]}
+                              numberOfLines={1}>
+                              {local}
+                            </Text>
+                          )}
+                          <Text style={[styles.classTime, { color: colors.subtext, fontSize: fs(12) }]}>
+                            {aula.horaInicio} – {aula.horaFim}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -365,18 +496,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingTop: 12,
+    paddingBottom: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   importBtn: {
-    padding: 8,
+    position: 'absolute',
+    right: 8,
+    top: 6,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   daysContainer: {
     flexDirection: 'row',
@@ -400,21 +538,29 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
+  // Data do dia activo
+  dataExtenso: {
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: 14,
+    marginBottom: 4,
+  },
   // Navegação de semana
   weekNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: 18,
+    gap: 8,
   },
   weekNavBtn: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   weekLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
-    minWidth: 140,
+    minWidth: 120,
     textAlign: 'center',
   },
   // Timeline
@@ -473,6 +619,20 @@ const styles = StyleSheet.create({
   classTime: {
     fontSize: 12,
     color: '#8E8E93',
+  },
+  // Bloco "Livre"
+  livreBlock: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  livreText: {
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
   // Dia sem aulas
   emptyDay: {
