@@ -98,11 +98,12 @@ export const POLO1_BUILDINGS: Building[] = [
     ],
   },
   {
-    // Setor E → Escola de Ciências e Tecnologias (ECT) - Polo I
+    // ECT – Polo I (Escola de Ciências e Tecnologias). id 'sectorE' mantido
+    // por compatibilidade com o indoor 3D (assets/models/sectorE/floor_0.glb).
     id: 'sectorE',
-    name: { pt: 'Setor E (ECT)', en: 'Sector E (ECT)' },
+    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
+    tipo: 'escola',
     coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
-    color: '#B4D2D4',
     hasIndoor: true,
     floors: [
       {
@@ -307,6 +308,29 @@ export const POLO1_BUILDINGS: Building[] = [
     floors: [],
   },
 ];
+
+// Devolve o id do edifício se este tiver navegação indoor 3D disponível.
+// Tenta match exacto do nome PT/EN e fallback para "contém" (lida com variações
+// como "ECT – Polo I" vs "ECT – Campus I").
+export function getIndoorIdByName(name: string): string | null {
+  if (!name) return null;
+  const norm = name.trim().toLowerCase();
+  // 1) Match exacto primeiro
+  for (const b of POLO1_BUILDINGS) {
+    if (!b.hasIndoor) continue;
+    if (b.name.pt.toLowerCase() === norm || b.name.en.toLowerCase() === norm) {
+      return b.id;
+    }
+  }
+  // 2) Fallback "contém"
+  for (const b of POLO1_BUILDINGS) {
+    if (!b.hasIndoor) continue;
+    if (norm.includes(b.name.pt.toLowerCase()) || norm.includes(b.name.en.toLowerCase())) {
+      return b.id;
+    }
+  }
+  return null;
+}
 
 // Rota outdoor de exemplo
 export const OUTDOOR_ROUTE = [

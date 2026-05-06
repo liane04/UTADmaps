@@ -36,6 +36,7 @@ insert into rooms (building_id, nome, codigo, tipo, horario, descricao)
 select b.id, x.nome, x.codigo, 'servico', x.horario, x.descricao
 from buildings b
 join (values
+  -- === Alimentação SASUTAD ===
   ('ECT1',  'Snack-Bar Polo I ECT',     'SNACK-ECT1',  'Seg–Sex 08:00–18:00',
     'Snack-bar SASUTAD no Polo I ECT — refeições rápidas, café, lanches'),
   ('ECAV1', 'Snack-Bar Polo I ECAV',    'SNACK-ECAV1', 'Seg–Sex 08:00–18:00',
@@ -46,10 +47,40 @@ join (values
     'Refeições SASUTAD — almoço diário com menu fixo e vegetariano'),
   ('CAN',   'Restaurante Panorâmico',   'PANORAMICO',  'Almoço Seg–Sex 12:00–15:00',
     'Restaurante SASUTAD com vista panorâmica do campus'),
+
+  -- === Serviços académicos (cada escola tem secretaria própria) ===
+  ('ECT1',  'Secretaria ECT – Polo I',  'SEC-ECT1',    'Seg–Sex 09:30–12:30 e 14:00–16:30',
+    'Secretaria da Escola de Ciências e Tecnologias — Polo I'),
+  ('ECAV1', 'Secretaria ECAV – Polo I', 'SEC-ECAV1',   'Seg–Sex 09:30–12:30 e 14:00–16:30',
+    'Secretaria da Escola de Ciências Agrárias e Veterinárias — Polo I'),
+  ('ECHS1', 'Secretaria ECHS – Polo I', 'SEC-ECHS1',   'Seg–Sex 09:30–12:30 e 14:00–16:30',
+    'Secretaria da Escola de Ciências Humanas e Sociais — Polo I'),
+  ('ECVA1', 'Secretaria ECVA – Polo I', 'SEC-ECVA1',   'Seg–Sex 09:30–12:30 e 14:00–16:30',
+    'Secretaria da Escola de Ciências da Vida e do Ambiente — Polo I'),
+  ('ESS',   'Secretaria ESS',           'SEC-ESS',     'Seg–Sex 09:30–12:30 e 14:00–16:30',
+    'Secretaria da Escola Superior de Saúde'),
+  ('ESC',   'Serviços Académicos Centrais', 'SERV-ACAD', 'Presencial Seg–Sex 09:15–12:30 e 14:00–16:30 (4ª manhã encerrado); Telefone Seg–Sex 10:00–16:00',
+    'Serviços académicos centrais — documentação, matrículas, certidões'),
+
+  -- === Apoio ao estudante ===
+  ('EAA',   'SASUTAD – Apoio Social',   'SASUTAD-EAA', 'Seg–Sex 09:15–12:30 (4ª manhã encerrado)',
+    'Bolsas de estudo, alojamento e apoio social ao estudante'),
+  ('EAA',   'GAPsi – Apoio Psicológico', 'GAPSI',      'Seg–Sex 09:00–17:00 (mediante marcação)',
+    'Gabinete de apoio psicológico aos estudantes'),
+  ('UC',    'AAUTAD – Associação Académica', 'AAUTAD-SEC', 'Seg–Sex 10:00–18:00',
+    'Associação Académica da UTAD — apoio e actividades aos alunos'),
+
+  -- === Documentação ===
   ('BIB',   'Biblioteca Central',       'BIB-SERV',    'Seg–Sex 09:00–19:30 (letivo); 09:00–17:30 (agosto)',
     'Empréstimo de livros, salas de estudo, computadores e acesso a bases de dados'),
-  ('ESC',   'Serviços Académicos',      'SERV-ACAD',   'Presencial Seg–Sex 09:15–12:30 e 14:00–16:30 (4ª manhã encerrado); Telefone Seg–Sex 10:00–16:00',
-    'Documentação, matrículas, certidões e apoio académico')
+
+  -- === Saúde ===
+  ('HV',    'Hospital Veterinário',     'HV-SERV',     'Seg–Sex 09:00–18:00 (urgências 24h)',
+    'Consultas veterinárias e cirurgia. Urgências 24h por marcação telefónica'),
+
+  -- === Acesso ===
+  ('PORT',  'Portaria UTAD',            'PORT-SERV',   '24 horas',
+    'Portaria principal de acesso ao campus')
 ) as x(bcod, nome, codigo, horario, descricao)
   on b.codigo = x.bcod
 on conflict (codigo) do update set

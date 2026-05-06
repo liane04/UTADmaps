@@ -19,8 +19,8 @@ import { useAppStore } from '../../store/useAppStore';
 
 type FiltroCategoria = 'todos' | SearchCategoria;
 
-const RECENTES_PT = ['Biblioteca', 'Setor F', 'Reitoria'];
-const RECENTES_EN = ['Library', 'Sector F', 'Rectory'];
+const RECENTES_PT = ['Biblioteca', 'ECT', 'Reitoria', 'Cantina'];
+const RECENTES_EN = ['Library', 'ECT', 'Rectory', 'Canteen'];
 
 function avatarLetra(categoria: SearchCategoria): string {
   if (categoria === 'edificio') return 'E';

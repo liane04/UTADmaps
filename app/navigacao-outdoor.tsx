@@ -10,11 +10,20 @@ import { useLanguage } from '../contexts/LanguageContext';
 import {
   POLO1_CENTER,
   OUTDOOR_ROUTE_END,
+  getIndoorIdByName,
 } from '../constants/polo1Data';
 
 type Coord = { latitude: number; longitude: number };
 
 type RouteMode = 'foot' | 'driving';
+
+type Step = {
+  type: string;
+  modifier?: string;
+  location: Coord;
+  distance: number;     // metros desta perna
+  street?: string;
+};
 
 // router.project-osrm.org só tem perfil 'driving' — sempre devolve tempos de carro.
 // Para 'foot' usamos o servidor da OpenStreetMap (FOSSGIS) que tem perfis dedicados.
@@ -27,8 +36,8 @@ async function fetchOsrmRoute(
   start: Coord,
   end: Coord,
   mode: RouteMode,
-): Promise<{ coords: Coord[]; distance: number; duration: number } | null> {
-  const url = `${OSRM_BASES[mode]}/${mode}/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson`;
+): Promise<{ coords: Coord[]; distance: number; duration: number; steps: Step[] } | null> {
+  const url = `${OSRM_BASES[mode]}/${mode}/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson&steps=true`;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
@@ -38,19 +47,116 @@ async function fetchOsrmRoute(
     const coords: Coord[] = route.geometry.coordinates.map(
       ([lng, lat]: [number, number]) => ({ latitude: lat, longitude: lng }),
     );
-    return { coords, distance: route.distance, duration: route.duration };
+    const steps: Step[] = [];
+    for (const leg of route.legs ?? []) {
+      for (const step of leg.steps ?? []) {
+        const m = step.maneuver ?? {};
+        const loc = m.location ?? [0, 0];
+        steps.push({
+          type: m.type ?? 'continue',
+          modifier: m.modifier,
+          location: { latitude: loc[1], longitude: loc[0] },
+          distance: step.distance ?? 0,
+          street: step.name || undefined,
+        });
+      }
+    }
+    return { coords, distance: route.distance, duration: route.duration, steps };
   } catch {
     return null;
   }
 }
 
 function formatDistance(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+  if (m < 50) return `${Math.round(m / 5) * 5} m`;
+  return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
 function formatDuration(s: number): string {
   const min = Math.max(1, Math.round(s / 60));
   return `${min} min`;
+}
+
+// Distância Haversine em metros entre dois pontos GPS
+function haversine(a: Coord, b: Coord): number {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.latitude - a.latitude);
+  const dLon = toRad(b.longitude - a.longitude);
+  const lat1 = toRad(a.latitude);
+  const lat2 = toRad(b.latitude);
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// Localiza uma manobra OSRM em PT/EN
+function instrucaoStep(s: Step, language: 'pt' | 'en'): string {
+  const dirPT: Record<string, string> = {
+    left: 'à esquerda',
+    right: 'à direita',
+    'sharp left': 'fortemente à esquerda',
+    'sharp right': 'fortemente à direita',
+    'slight left': 'ligeiramente à esquerda',
+    'slight right': 'ligeiramente à direita',
+    straight: 'em frente',
+    uturn: 'em sentido contrário',
+  };
+  const dirEN: Record<string, string> = {
+    left: 'left',
+    right: 'right',
+    'sharp left': 'sharp left',
+    'sharp right': 'sharp right',
+    'slight left': 'slight left',
+    'slight right': 'slight right',
+    straight: 'straight',
+    uturn: 'around',
+  };
+  const dir = language === 'pt' ? dirPT : dirEN;
+  const street = s.street ? (language === 'pt' ? ` em ${s.street}` : ` on ${s.street}`) : '';
+
+  switch (s.type) {
+    case 'depart':
+      return language === 'pt' ? 'Inicie o percurso' : 'Start your route';
+    case 'arrive':
+      return language === 'pt' ? 'Chegou ao destino' : 'You have arrived';
+    case 'turn':
+    case 'end of road':
+    case 'fork':
+    case 'merge':
+    case 'on ramp':
+    case 'off ramp': {
+      const m = s.modifier ?? 'straight';
+      if (m === 'straight') {
+        return language === 'pt' ? `Continue em frente${street}` : `Continue straight${street}`;
+      }
+      return language === 'pt'
+        ? `Vire ${dir[m] ?? m}${street}`
+        : `Turn ${dir[m] ?? m}${street}`;
+    }
+    case 'roundabout':
+    case 'rotary':
+    case 'roundabout turn':
+      return language === 'pt' ? 'Entre na rotunda' : 'Enter the roundabout';
+    case 'continue':
+    case 'new name':
+      return language === 'pt' ? `Continue em frente${street}` : `Continue straight${street}`;
+    default:
+      return language === 'pt' ? 'Continue' : 'Continue';
+  }
+}
+
+// Ícone Ionicons consoante o tipo de manobra
+function iconeStep(s: Step): keyof typeof Ionicons.glyphMap {
+  if (s.type === 'depart') return 'flag-outline';
+  if (s.type === 'arrive') return 'flag';
+  if (s.type === 'roundabout' || s.type === 'rotary') return 'sync-outline';
+  const m = s.modifier ?? '';
+  if (m.includes('left')) return 'arrow-back';
+  if (m.includes('right')) return 'arrow-forward';
+  if (m === 'uturn') return 'return-up-back';
+  return 'arrow-up';
 }
 
 export default function NavigacaoOutdoorScreen() {
@@ -100,9 +206,13 @@ export default function NavigacaoOutdoorScreen() {
   const [routeCoords, setRouteCoords] = useState<Coord[] | null>(null);
   const [distanceM, setDistanceM] = useState<number | null>(null);
   const [durationS, setDurationS] = useState<number | null>(null);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [stepIdx, setStepIdx] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isMapMovedByUser, setIsMapMovedByUser] = useState<boolean>(false);
+
+  const indoorId = useMemo(() => getIndoorIdByName(destination.name), [destination.name]);
 
   const recenterOnUser = () => {
     if (!userLocation || !mapRef.current) return;
@@ -130,8 +240,9 @@ export default function NavigacaoOutdoorScreen() {
     [destination.coordinate, destination.name],
   );
 
-  // Request GPS permission + position once on mount
+  // Request GPS permission + watch position
   useEffect(() => {
+    let sub: Location.LocationSubscription | null = null;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -140,6 +251,7 @@ export default function NavigacaoOutdoorScreen() {
           setLoading(false);
           return;
         }
+        // Posição inicial (rápida)
         const loc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
@@ -147,16 +259,37 @@ export default function NavigacaoOutdoorScreen() {
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
         });
+        // Atualizações contínuas para auto-avançar passos da rota
+        sub = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            distanceInterval: 5,
+            timeInterval: 3000,
+          },
+          (l) =>
+            setUserLocation({
+              latitude: l.coords.latitude,
+              longitude: l.coords.longitude,
+            }),
+        );
       } catch {
         setError(tr('Falha ao obter localização', 'Failed to get location'));
         setLoading(false);
       }
     })();
+    return () => {
+      sub?.remove();
+    };
   }, [tr]);
 
-  // Fetch route from OSRM whenever userLocation, destination or mode changes
+  // Fetch route from OSRM apenas quando o destino/modo muda (ou GPS inicial chega)
+  // — não a cada movimento do utilizador
+  const routeFetchedRef = useRef<string>('');
   useEffect(() => {
     if (!userLocation) return;
+    const key = `${destination.coordinate.latitude},${destination.coordinate.longitude},${mode}`;
+    if (routeFetchedRef.current === key) return;
+    routeFetchedRef.current = key;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -167,11 +300,13 @@ export default function NavigacaoOutdoorScreen() {
         setRouteCoords(result.coords);
         setDistanceM(result.distance);
         setDurationS(result.duration);
+        setSteps(result.steps);
+        setStepIdx(0);
       } else {
-        // Fallback: straight line
         setRouteCoords([userLocation, destination.coordinate]);
         setDistanceM(null);
         setDurationS(null);
+        setSteps([]);
         setError(tr('Sem rota disponível — a mostrar linha directa', 'No route available — showing straight line'));
       }
       setLoading(false);
@@ -180,6 +315,25 @@ export default function NavigacaoOutdoorScreen() {
       cancelled = true;
     };
   }, [userLocation, destination.coordinate, mode, tr]);
+
+  // Auto-avançar passo quando o utilizador passa próximo do waypoint da manobra
+  useEffect(() => {
+    if (!userLocation || steps.length === 0) return;
+    const next = steps[stepIdx + 1];
+    if (!next) return;
+    const dist = haversine(userLocation, next.location);
+    if (dist < 25) setStepIdx((i) => Math.min(i + 1, steps.length - 1));
+  }, [userLocation, steps, stepIdx]);
+
+  // Distância até à próxima manobra (para mostrar "em X m")
+  const distanciaProximaManobra = useMemo(() => {
+    if (!userLocation || steps.length === 0) return null;
+    const next = steps[stepIdx + 1] ?? steps[stepIdx];
+    if (!next) return null;
+    return Math.round(haversine(userLocation, next.location));
+  }, [userLocation, steps, stepIdx]);
+
+  const stepActual = steps[stepIdx];
 
   // Fit map to user + destination once route is ready
   useEffect(() => {
@@ -239,6 +393,49 @@ export default function NavigacaoOutdoorScreen() {
       <View style={[styles.bottomPanel, { backgroundColor: colors.card }]}>
         <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
 
+        {/* Instrução turn-by-turn em destaque */}
+        {stepActual && !loading && (
+          <View style={[styles.stepCard, { backgroundColor: colors.inputBg }]}>
+            <View style={[styles.stepIconWrap, { backgroundColor: colors.card }]}>
+              <Ionicons name={iconeStep(stepActual)} size={24} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.stepInstruction, { color: colors.text }]} numberOfLines={2}>
+                {instrucaoStep(stepActual, language)}
+              </Text>
+              <View style={styles.stepMeta}>
+                {distanciaProximaManobra != null && stepIdx < steps.length - 1 && (
+                  <Text style={[styles.stepDistance, { color: colors.subtext }]}>
+                    {tr('em', 'in')} {formatDistance(distanciaProximaManobra)}
+                  </Text>
+                )}
+                <Text style={[styles.stepCount, { color: colors.subtext }]}>
+                  {tr('Passo', 'Step')} {stepIdx + 1}/{steps.length}
+                </Text>
+              </View>
+            </View>
+            {/* Botões prev/next manuais (fallback) */}
+            <View style={styles.stepNav}>
+              <TouchableOpacity
+                onPress={() => setStepIdx((i) => Math.max(0, i - 1))}
+                disabled={stepIdx === 0}
+                style={[styles.stepNavBtn, { opacity: stepIdx === 0 ? 0.3 : 1 }]}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Passo anterior', 'Previous step')}>
+                <Ionicons name="chevron-back" size={18} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setStepIdx((i) => Math.min(steps.length - 1, i + 1))}
+                disabled={stepIdx >= steps.length - 1}
+                style={[styles.stepNavBtn, { opacity: stepIdx >= steps.length - 1 ? 0.3 : 1 }]}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Próximo passo', 'Next step')}>
+                <Ionicons name="chevron-forward" size={18} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.infoRow}>
           <View style={styles.infoTextWrap}>
             {loading ? (
@@ -258,9 +455,11 @@ export default function NavigacaoOutdoorScreen() {
                 {destination.name}
               </Text>
             )}
-            <Text style={styles.instruction} numberOfLines={2}>
-              {error ?? destination.name}
-            </Text>
+            {error && (
+              <Text style={[styles.instruction, { color: '#FF3B30' }]} numberOfLines={2}>
+                {error}
+              </Text>
+            )}
           </View>
 
           <View style={[styles.modeToggle, { backgroundColor: colors.inputBg }]}>
@@ -270,7 +469,9 @@ export default function NavigacaoOutdoorScreen() {
                 mode === 'foot' && [styles.modePillActive, { backgroundColor: colors.card }],
               ]}
               onPress={() => setMode('foot')}
-            >
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === 'foot' }}
+              accessibilityLabel={tr('A pé', 'Walking')}>
               <Text style={[styles.modeText, mode === 'foot' && styles.modeTextActive]}>
                 {tr('A pé', 'Walking')}
               </Text>
@@ -281,7 +482,9 @@ export default function NavigacaoOutdoorScreen() {
                 mode === 'driving' && [styles.modePillActive, { backgroundColor: colors.card }],
               ]}
               onPress={() => setMode('driving')}
-            >
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === 'driving' }}
+              accessibilityLabel={tr('Carro', 'Car')}>
               <Text style={[styles.modeText, mode === 'driving' && styles.modeTextActive]}>
                 {tr('Carro', 'Car')}
               </Text>
@@ -289,11 +492,37 @@ export default function NavigacaoOutdoorScreen() {
           </View>
         </View>
 
+        {/* Botão de transição outdoor → indoor (só se o destino tiver indoor) */}
+        {indoorId && (
+          <TouchableOpacity
+            style={[styles.indoorButton, { backgroundColor: colors.primary }]}
+            onPress={() =>
+              router.replace({
+                pathname: '/indoor-3d',
+                params: {
+                  buildingId: indoorId,
+                  buildingName: destination.name,
+                  floors: JSON.stringify([0, 1, 2]),
+                },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={tr('Entrar no edifício', 'Enter the building')}>
+            <Ionicons name="enter-outline" size={20} color={colors.bg} />
+            <Text style={[styles.indoorButtonText, { color: colors.bg }]}>
+              {tr('Entrar no edifício', 'Enter the building')}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
+          style={[styles.button, { backgroundColor: indoorId ? colors.inputBg : colors.primary }]}
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-        >
-          <Text style={[styles.buttonText, { color: colors.bg }]}>{tr('Terminar', 'Finish')}</Text>
+          accessibilityRole="button"
+          accessibilityLabel={tr('Terminar', 'Finish')}>
+          <Text style={[styles.buttonText, { color: indoorId ? colors.text : colors.bg }]}>
+            {tr('Terminar', 'Finish')}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -427,10 +656,72 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Indicações turn-by-turn
+  stepCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    gap: 12,
+  },
+  stepIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepInstruction: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  stepMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepDistance: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  stepCount: {
+    fontSize: 12,
+  },
+  stepNav: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  stepNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Botão de transição indoor
+  indoorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 24,
+    paddingVertical: 14,
+    marginBottom: 8,
+    minHeight: 48,
+  },
+  indoorButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

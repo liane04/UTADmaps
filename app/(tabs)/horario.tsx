@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, TextInput, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -431,60 +432,80 @@ export default function HorarioScreen() {
         transparent
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
-            <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(20) }]}>
-              {tr('Importar Horário', 'Import Schedule')}
-            </Text>
-            <Text style={[styles.modalSubtitle, { color: colors.subtext, fontSize: fs(14) }]}>
-              {tr(
-                'Cola o link privado do Infraestudante ou só a chave alfanumérica.',
-                'Paste your private Infraestudante link or just the alphanumeric key.',
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setModalVisible(false); }}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
+              <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+              <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(20) }]}>
+                {tr('Importar Horário', 'Import Schedule')}
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.subtext, fontSize: fs(14) }]}>
+                {tr(
+                  'Cola o link privado do Infraestudante ou só a chave alfanumérica.',
+                  'Paste your private Infraestudante link or just the alphanumeric key.',
+                )}
+              </Text>
+              <TextInput
+                style={[styles.modalInput, { backgroundColor: colors.inputBg, color: colors.text, fontSize: fs(14) }]}
+                value={chaveInput}
+                onChangeText={setChaveInput}
+                placeholder="https://inforestudante.utad.pt/...?chave=..."
+                placeholderTextColor={colors.subtext}
+                autoCapitalize="none"
+                autoCorrect={false}
+                multiline
+                numberOfLines={3}
+                returnKeyType="done"
+                blurOnSubmit
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalCancel, { backgroundColor: colors.inputBg, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
+                  onPress={() => { Keyboard.dismiss(); setModalVisible(false); setChaveInput(''); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr('Cancelar', 'Cancel')}>
+                  <Text style={[styles.modalCancelText, { color: colors.text, fontSize: fs(16) }]}>
+                    {tr('Cancelar', 'Cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modalConfirm,
+                    { backgroundColor: colors.primary, opacity: loading || !chaveInput.trim() ? 0.5 : 1 },
+                  ]}
+                  onPress={() => { Keyboard.dismiss(); importar(); }}
+                  disabled={loading || !chaveInput.trim()}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr('Importar', 'Import')}>
+                  {loading
+                    ? <ActivityIndicator color={colors.bg} size="small" />
+                    : <Text style={[styles.modalConfirmText, { color: colors.bg, fontSize: fs(16) }]}>
+                        {tr('Importar', 'Import')}
+                      </Text>}
+                </TouchableOpacity>
+              </View>
+              {importado && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={() => { Keyboard.dismiss(); limpar(); setModalVisible(false); }}
+                  accessibilityRole="button">
+                  <Text style={styles.clearText}>{tr('Limpar horário guardado', 'Clear saved schedule')}</Text>
+                </TouchableOpacity>
               )}
-            </Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.inputBg, color: colors.text, fontSize: fs(14) }]}
-              value={chaveInput}
-              onChangeText={setChaveInput}
-              placeholder="https://inforestudante.utad.pt/...?chave=..."
-              placeholderTextColor="#8E8E93"
-              autoCapitalize="none"
-              autoCorrect={false}
-              multiline
-              numberOfLines={3}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalCancel, { backgroundColor: colors.inputBg, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
-                onPress={() => { setModalVisible(false); setChaveInput(''); }}>
-                <Text style={[styles.modalCancelText, { color: colors.text, fontSize: fs(16) }]}>
-                  {tr('Cancelar', 'Cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirm,
-                  { backgroundColor: colors.primary, opacity: loading || !chaveInput.trim() ? 0.5 : 1 },
-                ]}
-                onPress={importar}
-                disabled={loading || !chaveInput.trim()}>
-                {loading
-                  ? <ActivityIndicator color={colors.bg} size="small" />
-                  : <Text style={[styles.modalConfirmText, { color: colors.bg, fontSize: fs(16) }]}>
-                      {tr('Importar', 'Import')}
-                    </Text>}
-              </TouchableOpacity>
             </View>
-            {importado && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => { limpar(); setModalVisible(false); }}>
-                <Text style={styles.clearText}>{tr('Limpar horário guardado', 'Clear saved schedule')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -680,7 +701,14 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalScroll: {
+    flexGrow: 1,
     justifyContent: 'flex-end',
   },
   modalSheet: {
@@ -688,7 +716,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 48,
+    paddingBottom: 32,
   },
   dragHandle: {
     width: 40,
