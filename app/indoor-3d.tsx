@@ -23,8 +23,8 @@ const MODEL_MAP: Record<string, Record<number, number>> = {
 const FLOOR_START_POSITIONS: Record<string, Record<number, { x: number; z: number } | null>> = {
   sectorE: {
     0: { x:  77,   z:  230 },
-    1: { x: -225,   z:  20  },
-    2: { x:  -210,   z: 40  },
+    1: { x: -45,   z:  5  },
+    2: { x:  -480,   z: 90  },
   },
 };
 
@@ -121,17 +121,18 @@ const THREE_HTML = `<!DOCTYPE html>
 
     function buildFallbackPerson() {
       const group = new THREE.Group();
+      group.renderOrder = 10;
       const s = Math.max(0.15, modelSpan * 0.025);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xFF6B00, emissive: 0xDD2200, emissiveIntensity: 0.5 });
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xFF6B00, emissive: 0xDD2200, emissiveIntensity: 0.5, depthTest: false });
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.55, 12), bodyMat);
-      body.position.y = 0.27 * s; body.scale.setScalar(s); group.add(body);
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xFFCC33, emissive: 0xFF8800, emissiveIntensity: 0.5 });
+      body.position.y = 0.27 * s; body.scale.setScalar(s); body.renderOrder = 10; group.add(body);
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xFFCC33, emissive: 0xFF8800, emissiveIntensity: 0.5, depthTest: false });
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), headMat);
-      head.position.y = 0.72 * s; head.scale.setScalar(s); group.add(head);
-      const arrowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 });
+      head.position.y = 0.72 * s; head.scale.setScalar(s); head.renderOrder = 10; group.add(head);
+      const arrowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1, depthTest: false });
       const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), arrowMat);
       arrow.position.set(0, 0.28 * s, -0.28 * s); arrow.rotation.x = Math.PI / 2;
-      arrow.scale.setScalar(s); group.add(arrow);
+      arrow.scale.setScalar(s); arrow.renderOrder = 10; group.add(arrow);
       return group;
     }
 
@@ -145,11 +146,14 @@ const THREE_HTML = `<!DOCTYPE html>
         alphaTest: 0.05,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: false,
       });
       const inner = new THREE.Mesh(geom, mat);
       inner.rotation.x = -Math.PI / 2;
       inner.rotation.y = PERSON_FACING_OFFSET;
       inner.position.y = Math.max(0.25, modelSpan * 0.01);
+      inner.renderOrder = 10;
+      wrap.renderOrder = 10;
       wrap.add(inner);
       return wrap;
     }
@@ -237,12 +241,15 @@ const THREE_HTML = `<!DOCTYPE html>
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = true;
       renderer.outputEncoding = THREE.sRGBEncoding;
+      // ACESFilmic tone mapping igual ao Blender — evita que cores fortes derivem para amarelo
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
       document.body.appendChild(renderer.domElement);
-      // Melhor iluminação para corresponder ao Blender — luz ambiente forte + hem + sol
-      scene.add(new THREE.AmbientLight(0xffffff, 2.8));
-      scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0));
-      // Luz direcional intensa em ângulo similar ao Blender
-      const top = new THREE.DirectionalLight(0xffffff, 1.2);
+      // Iluminação equilibrada: ambiente + hemisférica suave + direcional principal
+      scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xccddff, 0.6));
+      // Luz direcional em ângulo similar ao Blender Sun
+      const top = new THREE.DirectionalLight(0xffffff, 1.5);
       top.position.set(15, 60, 15);
       top.castShadow = true;
       top.shadow.mapSize.width = 2048;
@@ -807,7 +814,7 @@ const THREE_HTML = `<!DOCTYPE html>
           map: pinTexture, transparent: true, depthWrite: false, sizeAttenuation: true,
         });
         const sprite = new THREE.Sprite(spriteMat);
-        const pinH = Math.max(0.9, modelSpan * 0.06);
+        const pinH = Math.max(0.6, modelSpan * 0.04);
         const pinW = pinH * (256 / 310);
         sprite.scale.set(pinW, pinH, 1);
         sprite.position.copy(pos);
@@ -818,7 +825,7 @@ const THREE_HTML = `<!DOCTYPE html>
         sprite.userData.goalPos = pos.clone();
         marker = sprite;
       } else {
-        const r = Math.max(0.1, modelSpan * 0.035);
+        const r = Math.max(0.07, modelSpan * 0.025);
         marker = new THREE.Mesh(
           new THREE.SphereGeometry(r, 16, 16),
           new THREE.MeshStandardMaterial({ color: 0xFF2D55, emissive: 0xFF0000, emissiveIntensity: 0.9 })
@@ -1023,11 +1030,11 @@ const THREE_HTML = `<!DOCTYPE html>
         });
         let startPos;
         if (pendingStartPos) {
-          const floorY = (floorMinY !== Infinity ? floorMinY : box.min.y) + 0.15;
+          const floorY = (floorMinY !== Infinity ? floorMinY : box.min.y) + 0.35;
           startPos = new THREE.Vector3(pendingStartPos.x, floorY, pendingStartPos.z);
           pendingStartPos = null;
         } else {
-          startPos = autoStartPos || new THREE.Vector3(0, box.min.y + 0.1, 0);
+          startPos = autoStartPos || new THREE.Vector3(0, box.min.y + 0.3, 0);
         }
         personFloorY = startPos.y;
         personPos.copy(startPos);
