@@ -13,13 +13,20 @@ import { useLanguage } from '../contexts/LanguageContext';
 const MODEL_MAP: Record<string, Record<number, number>> = {
   sectorE: {
     0: require('../assets/models/sectorE/floor_0.glb'),
+    1: require('../assets/models/sectorE/floor_1.glb'),
+    2: require('../assets/models/sectorE/floor_2.glb'),
   },
 };
 
-// Marker assets — substituem visualmente a bandeira de destino (GLB) e o
-// personagem (PNG vista de topo, deitado no chão como sprite horizontal).
-const MARKER_FLAG_MODULE = require('../assets/models/markers/bandeira_final.glb');
-const MARKER_PERSON_PNG_MODULE = require('../assets/models/markers/pessoautad.png');
+// Posição inicial do indicador por piso (null = auto-detectar o nó mais a sul do modelo).
+// Para definir manualmente: { x: number; z: number } nas coordenadas do modelo Blender.
+const FLOOR_START_POSITIONS: Record<string, Record<number, { x: number; z: number } | null>> = {
+  sectorE: {
+    0: { x:  77,   z:  230 },
+    1: { x: -225,   z:  20  },
+    2: { x:  -210,   z: 40  },
+  },
+};
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -48,16 +55,6 @@ async function loadModelAsBase64(buildingId: string, level: number): Promise<str
   return loadAssetAsBase64(moduleId);
 }
 
-let markerCache: { flagBase64: string; personPngBase64: string } | null = null;
-async function loadMarkerModels() {
-  if (markerCache) return markerCache;
-  const [flagBase64, personPngBase64] = await Promise.all([
-    loadAssetAsBase64(MARKER_FLAG_MODULE),
-    loadAssetAsBase64(MARKER_PERSON_PNG_MODULE),
-  ]);
-  markerCache = { flagBase64, personPngBase64 };
-  return markerCache;
-}
 
 const THREE_HTML = `<!DOCTYPE html>
 <html>
@@ -117,19 +114,14 @@ const THREE_HTML = `<!DOCTYPE html>
     let personFloorY = 0;
     let modelSpan = 20; // updated after each model load; drives person scale
 
-    // ─── MARKER ASSETS (loaded once via LOAD_MARKERS) ────────────────────────
-    // Person is a top-down PNG laid flat on the floor. Flag is a 3D GLB.
-    let personTexture = null;        // THREE.Texture loaded from pessoautad.png
-    let personTextureAspect = 1;     // image width / height
-    let flagTemplate = null;         // THREE.Object3D loaded from bandeira_final.glb
-    // Rotation offset applied to the person plane so the head points toward +Z
-    // (matches movement direction when wrap.rotation.y = 0). The PNG has the
-    // head at the top of the image; rotating x=-π/2 then y=π aligns it.
+    // ─── MARKER TEXTURES (canvas-generated at init) ───────────────────────────
+    let arrowTexture = null;   // THREE.Texture for person arrow (flat on floor)
+    let pinTexture   = null;   // THREE.Texture for destination pin (sprite)
     const PERSON_FACING_OFFSET = Math.PI;
 
     function buildFallbackPerson() {
       const group = new THREE.Group();
-      const s = Math.max(0.3, modelSpan * 0.05);
+      const s = Math.max(0.15, modelSpan * 0.025);
       const bodyMat = new THREE.MeshStandardMaterial({ color: 0xFF6B00, emissive: 0xDD2200, emissiveIntensity: 0.5 });
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.55, 12), bodyMat);
       body.position.y = 0.27 * s; body.scale.setScalar(s); group.add(body);
@@ -143,18 +135,12 @@ const THREE_HTML = `<!DOCTYPE html>
       return group;
     }
 
-    function buildPersonFromTexture() {
-      // Wrap holds the world position/rotation; the inner plane carries the PNG.
-      // The plane is laid flat on the floor (rotation.x = -π/2) and rotated 180°
-      // around Y so the head (top of the PNG) points toward +Z by default.
+    function buildPersonArrow() {
       const wrap = new THREE.Group();
-      // Sprite long-axis ≈ 9% of building span, lower bound for very small maps.
-      const longAxis = Math.max(1.4, modelSpan * 0.09);
-      const w = longAxis;
-      const h = longAxis / Math.max(personTextureAspect, 0.001);
-      const geom = new THREE.PlaneGeometry(w, h);
+      const sz = Math.max(0.4, modelSpan * 0.025);
+      const geom = new THREE.PlaneGeometry(sz, sz);
       const mat = new THREE.MeshBasicMaterial({
-        map: personTexture,
+        map: arrowTexture,
         transparent: true,
         alphaTest: 0.05,
         side: THREE.DoubleSide,
@@ -163,7 +149,6 @@ const THREE_HTML = `<!DOCTYPE html>
       const inner = new THREE.Mesh(geom, mat);
       inner.rotation.x = -Math.PI / 2;
       inner.rotation.y = PERSON_FACING_OFFSET;
-      // Lift well above the floor / decorative planes to avoid z-fighting glitches.
       inner.position.y = Math.max(0.25, modelSpan * 0.01);
       wrap.add(inner);
       return wrap;
@@ -171,27 +156,16 @@ const THREE_HTML = `<!DOCTYPE html>
 
     function createPersonMarker(pos) {
       if (personMarker) { scene.remove(personMarker); personMarker = null; }
-      const group = personTexture ? buildPersonFromTexture() : buildFallbackPerson();
+      const group = arrowTexture ? buildPersonArrow() : buildFallbackPerson();
       group.position.copy(pos);
       personMarker = group;
       scene.add(personMarker);
-    }
-
-    // Swap the placeholder for the textured plane once the PNG arrives.
-    function upgradePersonMarkerIfPossible() {
-      if (!personTexture || !personMarker) return;
-      const pos = personMarker.position.clone();
-      const rotY = personMarker.rotation.y;
-      scene.remove(personMarker); personMarker = null;
-      createPersonMarker(pos);
-      personMarker.rotation.y = rotY;
     }
 
     function clearPerson() {
       if (personMarker) { scene.remove(personMarker); personMarker = null; }
       personAnimating = false;
       personAnimPath = null;
-      lastGoalPos = null;
     }
 
     function beginPersonAnimation(curve) {
@@ -199,8 +173,7 @@ const THREE_HTML = `<!DOCTYPE html>
       personAnimT = 0;
       personAnimating = true;
       const len = curve.getLength();
-      // ~2.5x faster than before; full path in ~0.8s at 60fps for short paths,
-      // longer paths still scale with distance but with a smaller multiplier.
+      // ~2.5x faster than before; full path in ~0.8s for short paths.
       personAnimSpeedPerFrame = 1 / Math.max(24, len * 2.4);
     }
 
@@ -246,7 +219,8 @@ const THREE_HTML = `<!DOCTYPE html>
 
     // ─── CAMERA (static top-down, zoom only) ─────────────────────────────────
     // theta and phi are fixed — only radius changes (zoom)
-    let spherical = { theta: 0, phi: 0.35, radius: 30 };
+    // phi = 0 → camera directly above the target (pure top-down / 2D view).
+    let spherical = { theta: 0, phi: 0, radius: 30 };
     const target = new THREE.Vector3(0, 0, 0);
     let lastPinchDist = null;
     let tapStart = null, tapTime = 0;
@@ -254,6 +228,7 @@ const THREE_HTML = `<!DOCTYPE html>
     let zoomMin = 3, zoomMax = 500;
 
     function init() {
+      initMarkerTextures();
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf2f2f7);
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -263,14 +238,16 @@ const THREE_HTML = `<!DOCTYPE html>
       renderer.shadowMap.enabled = true;
       renderer.outputEncoding = THREE.sRGBEncoding;
       document.body.appendChild(renderer.domElement);
-      scene.add(new THREE.AmbientLight(0xffffff, 1.8));
-      const dir = new THREE.DirectionalLight(0xffffff, 1.1);
-      dir.position.set(5, 20, 10); dir.castShadow = true; scene.add(dir);
-      const dir2 = new THREE.DirectionalLight(0xffffff, 0.7);
-      dir2.position.set(-8, 15, -6); scene.add(dir2);
-      const dir3 = new THREE.DirectionalLight(0xffffff, 0.5);
-      dir3.position.set(0, 10, -12); scene.add(dir3);
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.9));
+      // Melhor iluminação para corresponder ao Blender — luz ambiente forte + hem + sol
+      scene.add(new THREE.AmbientLight(0xffffff, 2.8));
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.0));
+      // Luz direcional intensa em ângulo similar ao Blender
+      const top = new THREE.DirectionalLight(0xffffff, 1.2);
+      top.position.set(15, 60, 15);
+      top.castShadow = true;
+      top.shadow.mapSize.width = 2048;
+      top.shadow.mapSize.height = 2048;
+      scene.add(top);
       setupControls();
       window.addEventListener('resize', onResize);
       animate();
@@ -287,17 +264,11 @@ const THREE_HTML = `<!DOCTYPE html>
       return (2 * spherical.radius * Math.tan(camera.fov * Math.PI / 360)) / window.innerHeight;
     }
 
-    // Translate target along the camera's projected XZ axes by (dx,dy) screen pixels.
-    function panTargetBy(dx, dy) {
+    // Translate target only along the X axis (left/right).
+    // Vertical (Z) movement is intentionally disabled — the camera only scrolls left/right.
+    function panTargetBy(dx, _dy) {
       const s = pixelToWorld();
-      // Forward axis (camera-to-target) projected onto XZ
-      const fwd = new THREE.Vector3(target.x - camera.position.x, 0, target.z - camera.position.z);
-      if (fwd.lengthSq() < 1e-6) return;
-      fwd.normalize();
-      // Right axis (perpendicular to forward, in XZ)
-      const rh = new THREE.Vector3(-fwd.z, 0, fwd.x);
-      target.addScaledVector(rh,  -dx * s);
-      target.addScaledVector(fwd,  dy * s);
+      target.x -= dx * s;
       updateCamera();
     }
 
@@ -756,22 +727,21 @@ const THREE_HTML = `<!DOCTYPE html>
 
     // ─── RENDER / ANIMATION LOOP ──────────────────────────────────────────────
     let pathLine = null, destMarker = null, pulseT = 0;
-    // Original unmodified path positions — kept so we can rebuild the tube with
-    // only the section ahead of the character, and so we can restore the full
-    // path each time the loop restarts.
-    let pathPositions = null;
-    // Cached cumulative segment lengths of pathPositions (avoids recomputing per frame).
-    let pathSegLens = null;
-    let pathTotalLen = 0;
-    // Loop the walking animation until the user picks a different destination.
-    let personAnimLoop = false;
 
     function animate() {
       requestAnimationFrame(animate);
       if (destMarker) {
         pulseT += 0.05;
-        const baseScale = destMarker.userData.baseScale || 1;
-        destMarker.scale.setScalar(baseScale * (1 + 0.3 * Math.sin(pulseT)));
+        const pulse = 1 + 0.15 * Math.sin(pulseT);
+        if (destMarker.isSprite) {
+          destMarker.scale.set(
+            (destMarker.userData.baseSX || 1) * pulse,
+            (destMarker.userData.baseSY || 1) * pulse,
+            1
+          );
+        } else {
+          destMarker.scale.setScalar((destMarker.userData.baseScale || 1) * pulse);
+        }
       }
       if (personAnimating && personAnimPath) {
         personAnimT = Math.min(1, personAnimT + personAnimSpeedPerFrame);
@@ -781,23 +751,14 @@ const THREE_HTML = `<!DOCTYPE html>
           if (personAnimT < 0.999) {
             const ahead = personAnimPath.getPoint(Math.min(1, personAnimT + 0.01));
             const d2 = new THREE.Vector2(ahead.x - pos.x, ahead.z - pos.z);
-            if (d2.lengthSq() > 0.00001) personMarker.rotation.y = Math.atan2(d2.x, d2.y);
+            if (d2.lengthSq() > 0.00001) personMarker.rotation.y = Math.atan2(-d2.x, -d2.y);
           }
           personMarker.position.copy(pos);
         }
         personPos.copy(pos);
-        // Consume path behind the character.
-        consumePathBehind(personAnimT, pos);
         if (personAnimT >= 1) {
-          // Fire the room-state callback exactly once, even when looping.
+          personAnimating = false;
           if (onAnimationEnd) { const cb = onAnimationEnd; onAnimationEnd = null; cb(); }
-          if (personAnimLoop && pathPositions && pathPositions.length >= 2) {
-            // Restart: full tube back, character pops to start.
-            personAnimT = 0;
-            rebuildTube(pathPositions);
-          } else {
-            personAnimating = false;
-          }
         }
       }
       renderer.render(scene, camera);
@@ -813,12 +774,7 @@ const THREE_HTML = `<!DOCTYPE html>
 
     function clearPath() {
       [pathLine, destMarker].forEach(m => { if (m) scene.remove(m); });
-      if (pathLine && pathLine.geometry) pathLine.geometry.dispose();
       pathLine = destMarker = null;
-      pathPositions = null;
-      pathSegLens = null;
-      pathTotalLen = 0;
-      personAnimLoop = false;
     }
 
     // Build a path of straight line segments — no curve smoothing so the path
@@ -832,14 +788,8 @@ const THREE_HTML = `<!DOCTYPE html>
       return cp;
     }
 
-    // Rebuild the visible tube from a new set of positions. Disposes the old one.
-    function rebuildTube(positions) {
-      if (pathLine) {
-        scene.remove(pathLine);
-        if (pathLine.geometry) pathLine.geometry.dispose();
-        pathLine = null;
-      }
-      if (!positions || positions.length < 2) return;
+    function drawPath(positions) {
+      if (positions.length < 2) return;
       const tubeR = Math.max(0.05, modelSpan * 0.012);
       const cp = buildLinearPath(positions);
       const segs = Math.max(positions.length * 4, 30);
@@ -850,70 +800,23 @@ const THREE_HTML = `<!DOCTYPE html>
       scene.add(pathLine);
     }
 
-    function drawPath(positions) {
-      if (positions.length < 2) return;
-      // Cache the original points + segment lengths for the consume-behind logic.
-      pathPositions = positions.map(p => p.clone());
-      pathSegLens = [];
-      pathTotalLen = 0;
-      for (let i = 0; i < pathPositions.length - 1; i++) {
-        const seg = pathPositions[i].distanceTo(pathPositions[i + 1]);
-        pathSegLens.push(seg);
-        pathTotalLen += seg;
-      }
-      rebuildTube(pathPositions);
-    }
-
-    // Rebuild the tube to start at the character's current position so the
-    // section behind them visually disappears as they walk. Cheap because the
-    // tube has few segments and we only run it while animating.
-    function consumePathBehind(t, curPos) {
-      if (!pathPositions || pathPositions.length < 2 || pathTotalLen <= 0) return;
-      const targetLen = pathTotalLen * t;
-      let cumLen = 0;
-      let segIdx = pathPositions.length - 2; // default: at end
-      for (let i = 0; i < pathSegLens.length; i++) {
-        if (cumLen + pathSegLens[i] >= targetLen) { segIdx = i; break; }
-        cumLen += pathSegLens[i];
-      }
-      // Remaining = [curPos, segment_end_of_segIdx, ...rest of pathPositions]
-      const remaining = [curPos.clone()];
-      for (let i = segIdx + 1; i < pathPositions.length; i++) {
-        remaining.push(pathPositions[i].clone());
-      }
-      if (remaining.length < 2) {
-        if (pathLine) {
-          scene.remove(pathLine);
-          if (pathLine.geometry) pathLine.geometry.dispose();
-          pathLine = null;
-        }
-        return;
-      }
-      rebuildTube(remaining);
-    }
-
     function drawDestMarker(pos) {
       let marker;
-      let baseScale = 1;
-      if (flagTemplate) {
-        // Wrap+inner: scaling the wrap pulses the flag without shifting its base
-        // off the floor (inner's local offsets cancel against parent scaling).
-        const wrap = new THREE.Group();
-        const inner = flagTemplate.clone(true);
-        const preBox = new THREE.Box3().setFromObject(inner);
-        const sz = preBox.getSize(new THREE.Vector3());
-        const targetH = Math.max(0.4, modelSpan * 0.08);
-        const innerScale = targetH / Math.max(sz.y, 0.001);
-        inner.scale.setScalar(innerScale);
-        const scaledBox = new THREE.Box3().setFromObject(inner);
-        const center = scaledBox.getCenter(new THREE.Vector3());
-        inner.position.x = -center.x;
-        inner.position.z = -center.z;
-        inner.position.y = -scaledBox.min.y;
-        wrap.add(inner);
-        wrap.position.copy(pos);
-        marker = wrap;
-        baseScale = 1; // wrap scale = 1, inner already scaled
+      if (pinTexture) {
+        const spriteMat = new THREE.SpriteMaterial({
+          map: pinTexture, transparent: true, depthWrite: false, sizeAttenuation: true,
+        });
+        const sprite = new THREE.Sprite(spriteMat);
+        const pinH = Math.max(0.9, modelSpan * 0.06);
+        const pinW = pinH * (256 / 310);
+        sprite.scale.set(pinW, pinH, 1);
+        sprite.position.copy(pos);
+        sprite.position.y += pinH * 0.5;
+        sprite.renderOrder = 1;
+        sprite.userData.baseSX = pinW;
+        sprite.userData.baseSY = pinH;
+        sprite.userData.goalPos = pos.clone();
+        marker = sprite;
       } else {
         const r = Math.max(0.1, modelSpan * 0.035);
         marker = new THREE.Mesh(
@@ -921,42 +824,17 @@ const THREE_HTML = `<!DOCTYPE html>
           new THREE.MeshStandardMaterial({ color: 0xFF2D55, emissive: 0xFF0000, emissiveIntensity: 0.9 })
         );
         marker.position.copy(pos); marker.position.y += r;
+        marker.userData.baseSX = 1; marker.userData.baseSY = 1;
+        marker.userData.goalPos = pos.clone();
       }
-      marker.userData.baseScale = baseScale;
-      marker.userData.goalPos = pos.clone();
       destMarker = marker;
       pulseT = 0; scene.add(destMarker);
     }
 
-    // Swap the destination marker visual once the flag GLB template arrives.
-    function upgradeDestMarkerIfPossible() {
-      if (!flagTemplate || !destMarker) return;
-      const goalPos = destMarker.userData.goalPos;
-      if (!goalPos) return;
-      scene.remove(destMarker); destMarker = null;
-      drawDestMarker(goalPos);
-    }
-
     // ─── NAVIGATE ────────────────────────────────────────────────────────────
-    // Last destination the user picked — used so that re-routing mid-walk starts
-    // from the previous goal instead of the character's current in-flight position.
-    let lastGoalPos = null;
-
     function navigateToPoint(goalPos) {
       if (!currentModel) { showToast('Modelo ainda não carregado'); return; }
       if (!grid) { showToast('Mapa de navegação ainda a carregar...'); return; }
-
-      // Only snap to the previous goal if the user is INTERRUPTING the first
-      // traversal (character still on its way). After the first arrival
-      // onAnimationEnd has been consumed (set to null) and we're in the visual
-      // loop — in that case the new path should start from the character's
-      // current position, with no teleport.
-      if (personAnimating && lastGoalPos && onAnimationEnd) {
-        const cb = onAnimationEnd; onAnimationEnd = null; cb();
-        personPos.copy(lastGoalPos);
-        if (personMarker) personMarker.position.copy(lastGoalPos);
-      }
-
       clearPath();
 
       // Capturar a sala de origem agora — currentRoom pode ser null se o
@@ -978,8 +856,6 @@ const THREE_HTML = `<!DOCTYPE html>
         drawDestMarker(goalPos);
         const pts = [personPos.clone(), goalPos.clone()];
         drawPath(pts); beginPersonAnimation(buildLinearPath(pts));
-        personAnimLoop = true;
-        lastGoalPos = goalPos.clone();
         return;
       }
 
@@ -1003,8 +879,6 @@ const THREE_HTML = `<!DOCTYPE html>
       drawDestMarker(goalPos);
       drawPath(pts);
       beginPersonAnimation(buildLinearPath(pts));
-      personAnimLoop = true;
-      lastGoalPos = goalPos.clone();
     }
 
     // Called from NAVIGATE message with a named destination
@@ -1052,7 +926,7 @@ const THREE_HTML = `<!DOCTYPE html>
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-      function afterLoad(model) {
+      function afterLoad(model, floorLevel) {
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center);
@@ -1082,9 +956,15 @@ const THREE_HTML = `<!DOCTYPE html>
         zoomMin = modelSpan * 0.15;
         zoomMax = modelSpan * 3.0;
         spherical.radius = modelSpan * 1.3;
-        spherical.phi = 0.35;
-        spherical.theta = 0;
+        spherical.phi = 0; // pure top-down view
+        spherical.theta = (floorLevel === 1 || floorLevel === 2) ? Math.PI : 0;
         target.set(0, 0, 0);
+        // Ajustar near/far dinamicamente para que o modelo nunca desapareça
+        // ao fazer zoom out — o far fixo (2000) era insuficiente para modelos
+        // com modelSpan elevado onde zoomMax pode ultrapassar esse valor.
+        camera.near = Math.min(0.1, zoomMin * 0.1);
+        camera.far  = Math.max(2000, zoomMax * 2 + modelSpan);
+        camera.updateProjectionMatrix();
         updateCamera();
 
         // Collect wall meshes for LOS — set DoubleSide so raycasts work from
@@ -1127,18 +1007,35 @@ const THREE_HTML = `<!DOCTYPE html>
         // Build navigation grid (1ª passagem — popula roomBBoxes)
         buildGrid();
 
-        // Place person at first nav node; fallback to floor centre if none found
-        let startPos = null;
+        // Determinar posição inicial: usar pendingStartPos se definido, senão
+        // auto-detectar o nó de navegação mais a sul (maior Z na vista top-down).
         const navNodeNames = [];
+        let startMaxZ = -Infinity;
+        let autoStartPos = null;
+        let floorMinY = Infinity;
         model.traverse(obj => {
           if (!obj.isMesh || !isNavNode(obj.name)) return;
           navNodeNames.push(obj.name);
-          if (!startPos) startPos = getRoomCentroid(obj);
+          const b = new THREE.Box3().setFromObject(obj);
+          if (b.min.y < floorMinY) floorMinY = b.min.y;
+          const c = getRoomCentroid(obj);
+          if (c.z > startMaxZ) { startMaxZ = c.z; autoStartPos = c; }
         });
-        if (!startPos) startPos = new THREE.Vector3(0, box.min.y + 0.1, 0);
+        let startPos;
+        if (pendingStartPos) {
+          const floorY = (floorMinY !== Infinity ? floorMinY : box.min.y) + 0.15;
+          startPos = new THREE.Vector3(pendingStartPos.x, floorY, pendingStartPos.z);
+          pendingStartPos = null;
+        } else {
+          startPos = autoStartPos || new THREE.Vector3(0, box.min.y + 0.1, 0);
+        }
         personFloorY = startPos.y;
         personPos.copy(startPos);
         createPersonMarker(startPos);
+
+        // Centrar câmera na posição inicial da pessoa (não em 0,0,0)
+        target.set(personPos.x, personFloorY, personPos.z);
+        updateCamera();
 
         // Determinar sala inicial do boneco e marcá-la como ativa.
         // Reconstruir grid para que essa sala não esteja bloqueada.
@@ -1163,7 +1060,7 @@ const THREE_HTML = `<!DOCTYPE html>
       if (typeof THREE.GLTFLoader !== 'undefined') {
         new THREE.GLTFLoader().parse(
           bytes.buffer, '',
-          gltf => afterLoad(gltf.scene),
+          gltf => afterLoad(gltf.scene, currentFloorLevel),
           err => {
             const msg = 'GLTFLoader: ' + err.message;
             showError('Erro ao carregar: ' + err.message);
@@ -1173,7 +1070,7 @@ const THREE_HTML = `<!DOCTYPE html>
       } else {
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 6), new THREE.MeshStandardMaterial({ color: 0x4A90D9 }));
         mesh.name = 'sala_placeholder';
-        afterLoad(mesh);
+        afterLoad(mesh, currentFloorLevel);
       }
     }
 
@@ -1200,126 +1097,122 @@ const THREE_HTML = `<!DOCTYPE html>
 
     // ─── MESSAGE HANDLER ─────────────────────────────────────────────────────
     let pendingDestino = null;
+    let pendingStartPos = null;
+    let currentFloorLevel = 0;
 
-    function parseMarkerGLB(base64, onReady) {
-      // Defer if GLTFLoader script has not finished loading yet.
-      if (typeof THREE.GLTFLoader === 'undefined') {
-        setTimeout(() => parseMarkerGLB(base64, onReady), 100);
-        return;
-      }
-      const binaryStr = atob(base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-      new THREE.GLTFLoader().parse(
-        bytes.buffer, '',
-        gltf => onReady(gltf.scene),
-        err => { try { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'MARKER_PARSE_ERR: ' + err.message })); } catch(_) {} }
-      );
-    }
-
-    // Meshy/PBR GLBs come with high metalness and need an environment map to be
-    // visible. Without one they render black under direct lights. Force materials
-    // to a fully diffuse setup so the existing scene lights are enough.
-    function flattenMaterials(root) {
-      root.traverse(obj => {
-        if (!obj.isMesh || !obj.material) return;
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        mats.forEach(m => {
-          if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-            m.metalness = 0;
-            m.roughness = 1;
-            m.envMapIntensity = 0;
-          }
-          // Some Meshy exports embed transmission/clearcoat that goes black; clear them.
-          if (m.transmission !== undefined) m.transmission = 0;
-          if (m.clearcoat !== undefined) m.clearcoat = 0;
-          m.side = THREE.DoubleSide;
-          m.needsUpdate = true;
-        });
-      });
-    }
-
-    // Procedural racing-flag texture (checkered black/white).
-    let racingFlagTexture = null;
-    function makeRacingFlagTexture() {
-      if (racingFlagTexture) return racingFlagTexture;
+    function makeArrowTexture() {
+      const S = 256;
       const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 512;
+      canvas.width = S; canvas.height = S;
       const ctx = canvas.getContext('2d');
-      const cells = 8;
-      const cellSize = canvas.width / cells;
-      for (let y = 0; y < cells; y++) {
-        for (let x = 0; x < cells; x++) {
-          ctx.fillStyle = (x + y) % 2 === 0 ? '#0a0a0a' : '#ffffff';
-          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        }
-      }
+      ctx.clearRect(0, 0, S, S);
+      const cx = S / 2;
+      // Red glow
+      const grd = ctx.createRadialGradient(cx, S * 0.6, 10, cx, S * 0.6, S * 0.46);
+      grd.addColorStop(0, 'rgba(255,80,80,0.55)');
+      grd.addColorStop(1, 'rgba(255,50,50,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(cx, S * 0.6, S * 0.46, 0, Math.PI * 2); ctx.fill();
+      // Left face (darker red)
+      ctx.beginPath();
+      ctx.moveTo(cx, S * 0.08);
+      ctx.lineTo(S * 0.12, S * 0.76);
+      ctx.lineTo(cx, S * 0.60);
+      ctx.closePath();
+      ctx.fillStyle = '#b71c1c'; ctx.fill();
+      // Right face (brighter red)
+      ctx.beginPath();
+      ctx.moveTo(cx, S * 0.08);
+      ctx.lineTo(S * 0.88, S * 0.76);
+      ctx.lineTo(cx, S * 0.60);
+      ctx.closePath();
+      ctx.fillStyle = '#ef5350'; ctx.fill();
+      // Tail left
+      ctx.beginPath();
+      ctx.moveTo(S * 0.12, S * 0.76);
+      ctx.lineTo(cx, S * 0.90);
+      ctx.lineTo(cx, S * 0.60);
+      ctx.closePath();
+      ctx.fillStyle = '#c62828'; ctx.fill();
+      // Tail right
+      ctx.beginPath();
+      ctx.moveTo(S * 0.88, S * 0.76);
+      ctx.lineTo(cx, S * 0.90);
+      ctx.lineTo(cx, S * 0.60);
+      ctx.closePath();
+      ctx.fillStyle = '#e53935'; ctx.fill();
       const tex = new THREE.CanvasTexture(canvas);
-      tex.encoding = THREE.sRGBEncoding;
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(2, 2);
       tex.needsUpdate = true;
-      racingFlagTexture = tex;
       return tex;
     }
 
-    // Repaint the flag template: checker pattern on the fabric, neutral metal on
-    // the pole. We classify by mesh shape (tall+thin = pole).
-    function paintRacingFlag(root) {
-      const checker = makeRacingFlagTexture();
-      const fabricMat = new THREE.MeshStandardMaterial({
-        map: checker, color: 0xffffff, metalness: 0, roughness: 0.85, side: THREE.DoubleSide,
-      });
-      const poleMat = new THREE.MeshStandardMaterial({
-        color: 0x9a9a9a, metalness: 0.1, roughness: 0.5, side: THREE.DoubleSide,
-      });
-      root.traverse(obj => {
-        if (!obj.isMesh) return;
-        const bbox = new THREE.Box3().setFromObject(obj);
-        const sz = bbox.getSize(new THREE.Vector3());
-        const longest = Math.max(sz.x, sz.y, sz.z);
-        const shortest = Math.min(sz.x, sz.y, sz.z);
-        const isPole = sz.y === longest && longest > Math.max(sz.x, sz.z) * 2.5 && shortest < longest * 0.25;
-        obj.material = isPole ? poleMat : fabricMat;
-      });
-    }
+    function makeLocationPinTexture() {
+      const W = 256, H = 310;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2;
+      const R = 92, cy = R + 8, tipY = H - 6;
 
-    function loadPersonPng(base64) {
-      const img = new Image();
-      img.onload = () => {
-        const tex = new THREE.Texture(img);
-        tex.encoding = THREE.sRGBEncoding;
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.needsUpdate = true;
-        personTexture = tex;
-        personTextureAspect = img.width / Math.max(img.height, 1);
-        upgradePersonMarkerIfPossible();
-      };
-      img.onerror = () => {
-        try { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'PERSON_PNG_LOAD_ERR' })); } catch(_) {}
-      };
-      img.src = 'data:image/png;base64,' + base64;
-    }
-
-    function handleLoadMarkers(msg) {
-      if (msg.personPngBase64) loadPersonPng(msg.personPngBase64);
-      if (msg.flagBase64) {
-        parseMarkerGLB(msg.flagBase64, scene_ => {
-          flattenMaterials(scene_);
-          paintRacingFlag(scene_);
-          flagTemplate = scene_;
-          upgradeDestMarkerIfPossible();
-        });
+      function fillPinShape(r, _cy, _tip) {
+        const hw = r * 0.65;
+        const chy = _cy + Math.sqrt(r * r - hw * hw);
+        ctx.beginPath(); ctx.arc(cx, _cy, r, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx - hw, chy); ctx.lineTo(cx, _tip); ctx.lineTo(cx + hw, chy);
+        ctx.closePath(); ctx.fill();
       }
+
+      // Main body — radial gradient for 3D rounded look
+      const bodyGrad = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.3, R * 0.05, cx, cy + R * 0.3, R * 1.5);
+      bodyGrad.addColorStop(0,    '#ff8a65');
+      bodyGrad.addColorStop(0.25, '#f44336');
+      bodyGrad.addColorStop(0.7,  '#e53935');
+      bodyGrad.addColorStop(1,    '#c62828');
+      ctx.fillStyle = bodyGrad;
+      fillPinShape(R, cy, tipY);
+
+      // Dark rim around the hole (tunnel effect)
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.56, 0, Math.PI * 2);
+      ctx.fillStyle = '#b71c1c'; ctx.fill();
+
+      // Mid transition ring
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.50, 0, Math.PI * 2);
+      ctx.fillStyle = '#d4a090'; ctx.fill();
+
+      // White/beige hole interior with subtle radial gradient
+      const holeGrad = ctx.createRadialGradient(cx - R * 0.12, cy - R * 0.12, R * 0.02, cx, cy, R * 0.46);
+      holeGrad.addColorStop(0,   '#ffffff');
+      holeGrad.addColorStop(0.7, '#f5e8de');
+      holeGrad.addColorStop(1,   '#e8d0c0');
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.44, 0, Math.PI * 2);
+      ctx.fillStyle = holeGrad; ctx.fill();
+
+      // Specular highlight (upper-left gloss)
+      const hlGrad = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 0, cx - R * 0.3, cy - R * 0.3, R * 0.65);
+      hlGrad.addColorStop(0, 'rgba(255,255,255,0.38)');
+      hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hlGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function initMarkerTextures() {
+      arrowTexture = makeArrowTexture();
+      pinTexture   = makeLocationPinTexture();
     }
 
     function handleMessage(raw) {
       try {
         const msg = JSON.parse(raw);
-        if (msg.type === 'LOAD_MARKERS') handleLoadMarkers(msg);
         if (msg.type === 'LOAD_MODEL') {
           pendingDestino = msg.destinoPendente || null;
+          pendingStartPos = msg.startPos || null;
+          currentFloorLevel = msg.level ?? 0;
           loadGLBFromBase64(msg.base64, () => {
             if (pendingDestino) { navigateFromPersonTo(pendingDestino); pendingDestino = null; }
           });
@@ -1379,8 +1272,9 @@ export default function Indoor3DScreen() {
 
     try {
       const base64 = await loadModelAsBase64(buildingId, level);
+      const startPos = FLOOR_START_POSITIONS[buildingId]?.[level] ?? null;
       webViewRef.current.postMessage(
-        JSON.stringify({ type: 'LOAD_MODEL', base64, destinoPendente: destino ?? null })
+        JSON.stringify({ type: 'LOAD_MODEL', base64, destinoPendente: destino ?? null, startPos, level })
       );
       setTimeout(() => setLoading(false), 800);
     } catch (e: unknown) {
@@ -1395,14 +1289,6 @@ export default function Indoor3DScreen() {
     const initialFloor = floorDestino ?? (floorLevels.length > 0 ? Math.min(...floorLevels) : 0);
     setCurrentFloor(initialFloor);
     webViewRef.current?.postMessage(JSON.stringify({ type: 'SET_BG', color: colors.bg }));
-    try {
-      const markers = await loadMarkerModels();
-      webViewRef.current?.postMessage(
-        JSON.stringify({ type: 'LOAD_MARKERS', flagBase64: markers.flagBase64, personPngBase64: markers.personPngBase64 })
-      );
-    } catch (e) {
-      console.warn('[Indoor3D] failed to load marker GLBs:', e);
-    }
     sendModelToWebView(initialFloor);
   }, [floorLevels, floorDestino, colors.bg, sendModelToWebView]);
 
