@@ -37,18 +37,17 @@ export default function MapaScreen() {
     router.push({ pathname: '/navigacao-outdoor', params: dest });
   };
 
-  const markers = useMemo(
-    () =>
-      POLO1_BUILDINGS.map(b => ({
-        id: b.id,
-        coordinate: b.coordinate,
-        title: language === 'pt' ? b.name.pt : b.name.en,
-        color: TIPO_COR[b.tipo],
-        symbol: TIPO_SIMBOLO[b.tipo],
-        onPress: () => setSelectedBuilding(b),
-      })),
-    [language],
-  );
+  const handleIndoor = () => {
+    if (!selectedBuilding) return;
+    router.push({
+      pathname: '/indoor-3d',
+      params: {
+        buildingId: selectedBuilding.id,
+        buildingName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
+        floors: JSON.stringify(selectedBuilding.floors.map(f => f.level)),
+      },
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -117,10 +116,28 @@ export default function MapaScreen() {
                 <Ionicons name="close" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.goButton} onPress={handleGo} activeOpacity={0.85}>
-              <Ionicons name="navigate" size={18} color="#FFFFFF" />
-              <Text style={[styles.goButtonText, { fontSize: fs(16) }]}>{tr('Ir', 'Go')}</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              {selectedBuilding.hasIndoor && (
+                <TouchableOpacity
+                  style={[styles.indoorButton, { borderColor: colors.border }]}
+                  onPress={handleIndoor}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="layers-outline" size={18} color={colors.text} />
+                  <Text style={[styles.indoorButtonText, { color: colors.text, fontSize: fs(14) }]}>
+                    {tr('Explorar Indoor', 'Explore Indoor')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.goButton, { flex: selectedBuilding.hasIndoor ? 1 : undefined }]}
+                onPress={handleGo}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="navigate" size={18} color="#FFFFFF" />
+                <Text style={[styles.goButtonText, { fontSize: fs(16) }]}>{tr('Ir', 'Go')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </SafeAreaView>
       )}
@@ -237,6 +254,23 @@ const styles = StyleSheet.create({
   closeBtn: {
     padding: 2,
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  indoorButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  indoorButtonText: {
+    fontWeight: '600',
+  },
   goButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,6 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
+    paddingHorizontal: 24,
   },
   goButtonText: {
     color: '#FFFFFF',

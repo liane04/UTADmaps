@@ -15,6 +15,7 @@ export type Building = {
   tipo: BuildingTipo;
   coordinate: { latitude: number; longitude: number };
   floors: Floor[];
+  hasIndoor?: boolean;
 };
 
 // Centro do campus UTAD, Vila Real — enquadra Polo I + Polo II
@@ -97,11 +98,21 @@ export const POLO1_BUILDINGS: Building[] = [
     ],
   },
   {
-    id: 'ect1',
-    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
-    tipo: 'escola',
-    coordinate: { latitude: 41.286934, longitude: -7.740588 },
+    // Setor E → Escola de Ciências e Tecnologias (ECT) - Polo I
+    id: 'sectorE',
+    name: { pt: 'Setor E (ECT)', en: 'Sector E (ECT)' },
+    coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
+    color: '#B4D2D4',
+    hasIndoor: true,
     floors: [
+      {
+        level: 0,
+        rooms: [
+          { code: 'E0.01' },
+          { code: 'E0.02' },
+          { code: 'E0.03' },
+        ],
+      },
       {
         level: 1,
         rooms: [
