@@ -26,6 +26,19 @@ export default function MapaScreen() {
   const totalRooms = (b: Building) =>
     b.floors.reduce((sum, floor) => sum + floor.rooms.length, 0);
 
+  const markers = useMemo(
+    () =>
+      POLO1_BUILDINGS.map(b => ({
+        id: b.id,
+        coordinate: b.coordinate,
+        title: language === 'pt' ? b.name.pt : b.name.en,
+        color: TIPO_COR[b.tipo],
+        symbol: TIPO_SIMBOLO[b.tipo],
+        onPress: () => setSelectedBuilding(b),
+      })),
+    [language],
+  );
+
   const handleGo = () => {
     if (!selectedBuilding) return;
     const dest = {
