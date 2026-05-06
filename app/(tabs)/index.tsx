@@ -18,24 +18,13 @@ import {
 
 export default function MapaScreen() {
   const router = useRouter();
-  const { colors, fs, altoContraste } = useSettings();
+  const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
 
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 
   const totalRooms = (b: Building) =>
     b.floors.reduce((sum, floor) => sum + floor.rooms.length, 0);
-
-  const handleGo = () => {
-    if (!selectedBuilding) return;
-    const dest = {
-      destLat: selectedBuilding.coordinate.latitude.toString(),
-      destLng: selectedBuilding.coordinate.longitude.toString(),
-      destName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
-    };
-    setSelectedBuilding(null);
-    router.push({ pathname: '/navigacao-outdoor', params: dest });
-  };
 
   const markers = useMemo(
     () =>
@@ -50,6 +39,29 @@ export default function MapaScreen() {
     [language],
   );
 
+  const handleGo = () => {
+    if (!selectedBuilding) return;
+    const dest = {
+      destLat: selectedBuilding.coordinate.latitude.toString(),
+      destLng: selectedBuilding.coordinate.longitude.toString(),
+      destName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
+    };
+    setSelectedBuilding(null);
+    router.push({ pathname: '/navigacao-outdoor', params: dest });
+  };
+
+  const handleIndoor = () => {
+    if (!selectedBuilding) return;
+    router.push({
+      pathname: '/indoor-3d',
+      params: {
+        buildingId: selectedBuilding.id,
+        buildingName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
+        floors: JSON.stringify(selectedBuilding.floors.map(f => f.level)),
+      },
+    });
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <CampusMap
@@ -61,12 +73,12 @@ export default function MapaScreen() {
       {/* Floating UI Elements */}
       <SafeAreaView style={styles.uiContainer} pointerEvents="box-none">
         {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
-          <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
+          <Ionicons name="search" size={20} color={colors.text} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.text, fontSize: fs(16) }]}
             placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
-            placeholderTextColor={colors.subtext}
+            placeholderTextColor="#8E8E93"
             editable={false} // static prototype
           />
         </View>
@@ -74,14 +86,14 @@ export default function MapaScreen() {
         {/* Bottom Right Controls — hidden when card is open */}
         {!selectedBuilding && (
           <View style={styles.controlsContainer}>
-            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.card }]}>
               <Ionicons name="locate" size={24} color={colors.text} />
             </TouchableOpacity>
-            <View style={[styles.zoomControls, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
+            <View style={[styles.zoomControls, { backgroundColor: colors.card }]}>
               <TouchableOpacity style={styles.zoomButton}>
                 <Ionicons name="add" size={24} color={colors.text} />
               </TouchableOpacity>
-              <View style={[styles.zoomDivider, { backgroundColor: colors.divider }]} />
+              <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
               <TouchableOpacity style={styles.zoomButton}>
                 <Ionicons name="remove" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -93,7 +105,7 @@ export default function MapaScreen() {
       {/* Location info card (Google-Maps style mini-tab) */}
       {selectedBuilding && (
         <SafeAreaView edges={['bottom']} style={styles.cardContainer} pointerEvents="box-none">
-          <View style={[styles.placeCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
+          <View style={[styles.placeCard, { backgroundColor: colors.card }]}>
             <View style={styles.cardHeader}>
               <View style={styles.cardTextWrap}>
                 <Text
@@ -102,7 +114,7 @@ export default function MapaScreen() {
                 >
                   {language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en}
                 </Text>
-                <Text style={[styles.placeDescription, { fontSize: fs(13), color: colors.subtext }]}>
+                <Text style={[styles.placeDescription, { fontSize: fs(13) }]}>
                   {(language === 'pt' ? TIPO_LABEL_PT : TIPO_LABEL_EN)[selectedBuilding.tipo]}
                   {selectedBuilding.floors.length > 0
                     ? ` · ${selectedBuilding.floors.length} ${tr('pisos', 'floors')} · ${totalRooms(selectedBuilding)} ${tr('salas', 'rooms')}`
@@ -117,10 +129,28 @@ export default function MapaScreen() {
                 <Ionicons name="close" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={[styles.goButton, { backgroundColor: colors.primary }]} onPress={handleGo} activeOpacity={0.85}>
-              <Ionicons name="navigate" size={18} color={colors.bg} />
-              <Text style={[styles.goButtonText, { fontSize: fs(16), color: colors.bg }]}>{tr('Ir', 'Go')}</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              {selectedBuilding.hasIndoor && (
+                <TouchableOpacity
+                  style={[styles.indoorButton, { borderColor: colors.border }]}
+                  onPress={handleIndoor}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="layers-outline" size={18} color={colors.text} />
+                  <Text style={[styles.indoorButtonText, { color: colors.text, fontSize: fs(14) }]}>
+                    {tr('Explorar Indoor', 'Explore Indoor')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.goButton, { flex: selectedBuilding.hasIndoor ? 1 : undefined }]}
+                onPress={handleGo}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="navigate" size={18} color="#FFFFFF" />
+                <Text style={[styles.goButtonText, { fontSize: fs(16) }]}>{tr('Ir', 'Go')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </SafeAreaView>
       )}
@@ -237,6 +267,23 @@ const styles = StyleSheet.create({
   closeBtn: {
     padding: 2,
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  indoorButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  indoorButtonText: {
+    fontWeight: '600',
+  },
   goButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,6 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
+    paddingHorizontal: 24,
   },
   goButtonText: {
     color: '#FFFFFF',

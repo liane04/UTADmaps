@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="indoor-3d" />
         <Stack.Screen name="navigacao-outdoor" />
         <Stack.Screen name="navigacao-indoor" />
         <Stack.Screen name="definicoes" />
