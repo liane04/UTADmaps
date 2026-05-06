@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Tema = 'claro' | 'escuro';
 export type TamanhoTexto = 'pequeno' | 'normal' | 'grande';
@@ -48,6 +49,33 @@ const darkColors: Colors = {
   tabBarBorder: '#38383A',
 };
 
+// Cores para Alto Contraste
+const highContrastLight: Colors = {
+  bg: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#000000',
+  subtext: '#000000',
+  border: '#000000',
+  divider: '#000000',
+  inputBg: '#FFFFFF',
+  primary: '#000000',
+  tabBar: '#FFFFFF',
+  tabBarBorder: '#000000',
+};
+
+const highContrastDark: Colors = {
+  bg: '#000000',
+  card: '#000000',
+  text: '#FFFFFF',
+  subtext: '#FFFFFF',
+  border: '#FFFFFF',
+  divider: '#FFFFFF',
+  inputBg: '#000000',
+  primary: '#FFFFFF',
+  tabBar: '#000000',
+  tabBarBorder: '#FFFFFF',
+};
+
 interface SettingsContextType {
   tema: Tema;
   setTema: (t: Tema) => void;
@@ -56,6 +84,12 @@ interface SettingsContextType {
   setTamanhoTexto: (t: TamanhoTexto) => void;
   fontScale: number;
   fs: (size: number) => number;
+  altoContraste: boolean;
+  setAltoContraste: (v: boolean) => void;
+  rotasAcessiveis: boolean;
+  setRotasAcessiveis: (v: boolean) => void;
+  leitorEcra: boolean;
+  setLeitorEcra: (v: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -66,17 +100,85 @@ const SettingsContext = createContext<SettingsContextType>({
   setTamanhoTexto: () => {},
   fontScale: 1,
   fs: (s) => s,
+  altoContraste: false,
+  setAltoContraste: () => {},
+  rotasAcessiveis: true,
+  setRotasAcessiveis: () => {},
+  leitorEcra: false,
+  setLeitorEcra: () => {},
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [tema, setTema] = useState<Tema>('claro');
-  const [tamanhoTexto, setTamanhoTexto] = useState<TamanhoTexto>('normal');
-  const colors = tema === 'escuro' ? darkColors : lightColors;
+  const [tema, setTemaState] = useState<Tema>('claro');
+  const [tamanhoTexto, setTamanhoTextoState] = useState<TamanhoTexto>('normal');
+  const [altoContraste, setAltoContrasteState] = useState<boolean>(false);
+  const [rotasAcessiveis, setRotasAcessiveisState] = useState<boolean>(true);
+  const [leitorEcra, setLeitorEcraState] = useState<boolean>(false);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const storedTema = await AsyncStorage.getItem('settings_tema');
+        const storedTamanho = await AsyncStorage.getItem('settings_tamanhoTexto');
+        const storedContraste = await AsyncStorage.getItem('settings_altoContraste');
+        const storedRotas = await AsyncStorage.getItem('settings_rotasAcessiveis');
+        const storedLeitor = await AsyncStorage.getItem('settings_leitorEcra');
+
+        if (storedTema) setTemaState(storedTema as Tema);
+        if (storedTamanho) setTamanhoTextoState(storedTamanho as TamanhoTexto);
+        if (storedContraste !== null) setAltoContrasteState(storedContraste === 'true');
+        if (storedRotas !== null) setRotasAcessiveisState(storedRotas === 'true');
+        if (storedLeitor !== null) setLeitorEcraState(storedLeitor === 'true');
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const setTema = async (t: Tema) => {
+    setTemaState(t);
+    await AsyncStorage.setItem('settings_tema', t);
+  };
+
+  const setTamanhoTexto = async (t: TamanhoTexto) => {
+    setTamanhoTextoState(t);
+    await AsyncStorage.setItem('settings_tamanhoTexto', t);
+  };
+
+  const setAltoContraste = async (v: boolean) => {
+    setAltoContrasteState(v);
+    await AsyncStorage.setItem('settings_altoContraste', v.toString());
+  };
+
+  const setRotasAcessiveis = async (v: boolean) => {
+    setRotasAcessiveisState(v);
+    await AsyncStorage.setItem('settings_rotasAcessiveis', v.toString());
+  };
+
+  const setLeitorEcra = async (v: boolean) => {
+    setLeitorEcraState(v);
+    await AsyncStorage.setItem('settings_leitorEcra', v.toString());
+  };
+
+  let colors = tema === 'escuro' ? darkColors : lightColors;
+  if (altoContraste) {
+    colors = tema === 'escuro' ? highContrastDark : highContrastLight;
+  }
+
   const fontScale = FONT_SCALES[tamanhoTexto];
   const fs = (size: number) => Math.round(size * fontScale);
 
   return (
-    <SettingsContext.Provider value={{ tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fontScale, fs }}>
+    <SettingsContext.Provider value={{
+      tema, setTema,
+      colors,
+      tamanhoTexto, setTamanhoTexto,
+      fontScale, fs,
+      altoContraste, setAltoContraste,
+      rotasAcessiveis, setRotasAcessiveis,
+      leitorEcra, setLeitorEcra
+    }}>
       {children}
     </SettingsContext.Provider>
   );

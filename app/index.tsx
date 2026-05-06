@@ -14,7 +14,7 @@ const STORAGE_KEY = 'utadmaps_schedule_v2';
 export default function WelcomeScreen() {
   const router = useRouter();
   const { language, t, setLanguage, tr } = useLanguage();
-  const { colors } = useSettings();
+  const { colors, altoContraste } = useSettings();
   const { setAuth } = useAppStore();
 
   const [email, setEmail] = useState('');
@@ -77,27 +77,35 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>Ü</Text>
-        <Ionicons name="compass-outline" size={24} color="#8E8E93" style={styles.logoIcon} />
+        <Text style={[styles.logoText, { color: colors.subtext }]}>Ü</Text>
+        <Ionicons name="compass-outline" size={24} color={colors.subtext} style={styles.logoIcon} />
       </View>
 
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>{t.welcome}</Text>
         <Text style={[styles.subtitle, { color: colors.text }]}>{t.welcomeSubtitle}</Text>
 
         <Text style={[styles.label, { color: colors.text }]}>Language</Text>
         <View style={styles.languageToggle}>
           <TouchableOpacity
-            style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'pt' ? colors.text : colors.border }]}
+            style={[styles.languagePill, { 
+              backgroundColor: language === 'pt' ? colors.primary : colors.inputBg, 
+              borderColor: colors.text, 
+              borderWidth: altoContraste ? 2 : 1 
+            }]}
             onPress={() => setLanguage('pt')}>
-            <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? colors.text : '#8E8E93'} />
-            <Text style={[styles.languageText, { color: colors.text }, language === 'pt' && styles.languageTextSelected]}>Português</Text>
+            <Ionicons name={language === 'pt' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'pt' ? colors.bg : colors.subtext} />
+            <Text style={[styles.languageText, { color: language === 'pt' ? colors.bg : colors.text }, language === 'pt' && styles.languageTextSelected]}>Português</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.languagePill, { backgroundColor: colors.card, borderColor: language === 'en' ? colors.text : colors.border }]}
+            style={[styles.languagePill, { 
+              backgroundColor: language === 'en' ? colors.primary : colors.inputBg, 
+              borderColor: colors.text, 
+              borderWidth: altoContraste ? 2 : 1 
+            }]}
             onPress={() => setLanguage('en')}>
-            <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? colors.text : '#8E8E93'} />
-            <Text style={[styles.languageText, { color: colors.text }, language === 'en' && styles.languageTextSelected]}>English</Text>
+            <Ionicons name={language === 'en' ? 'radio-button-on' : 'radio-button-off'} size={20} color={language === 'en' ? colors.bg : colors.subtext} />
+            <Text style={[styles.languageText, { color: language === 'en' ? colors.bg : colors.text }, language === 'en' && styles.languageTextSelected]}>English</Text>
           </TouchableOpacity>
         </View>
 
@@ -106,7 +114,7 @@ export default function WelcomeScreen() {
           <TextInput
             style={[styles.input, { color: colors.text }]}
             placeholder={t.emailPlaceholder}
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={colors.subtext}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -120,7 +128,7 @@ export default function WelcomeScreen() {
           <TextInput
             style={[styles.input, styles.passwordInput, { color: colors.text }]}
             placeholder="••••••"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={colors.subtext}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -128,7 +136,7 @@ export default function WelcomeScreen() {
             autoCorrect={false}
           />
           <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
-            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#8E8E93" />
+            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.subtext} />
           </TouchableOpacity>
         </View>
 
