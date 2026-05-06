@@ -203,10 +203,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    color: '#8E8E93',
     marginBottom: 8,
     marginLeft: 16,
     marginTop: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -227,7 +228,6 @@ const styles = StyleSheet.create({
   },
   rowSubtext: {
     fontSize: 14,
-    color: '#8E8E93',
     marginTop: 2,
   },
   rowValueContainer: {
@@ -236,32 +236,29 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     fontSize: 16,
-    color: '#8E8E93',
     marginRight: 8,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C7C7CC',
     marginLeft: 16,
   },
   footerText: {
     textAlign: 'center',
-    color: '#8E8E93',
     fontSize: 14,
     marginTop: 32,
     marginBottom: 32,
   },
-  // Pills "A"
+  // Pills "A" — 44×44 cumpre WCAG 2.5.5 (Target Size Enhanced AAA)
   pillsGroup: {
     flexDirection: 'row',
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 4,
     gap: 4,
   },
   pill: {
-    width: 40,
-    height: 32,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

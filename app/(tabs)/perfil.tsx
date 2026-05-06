@@ -171,18 +171,23 @@ export default function PerfilScreen() {
 
         {/* Menu */}
         <View style={[styles.menuContainer, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: altoContraste ? 2 : 0 }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/favoritos')}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/historico')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Histórico de Navegação', 'Navigation History')}>
             <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>
-              {tr('Favoritos', 'Favourites')}
+              {tr('Histórico de Navegação', 'Navigation History')}
             </Text>
-            <View style={styles.menuRight}>
-              <Text style={[styles.menuBadge, { color: colors.subtext, fontSize: fs(14) }]}>{favorites.length}</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
-            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/horario')}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/(tabs)/horario')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Horário Semanal', 'Weekly Schedule')}>
             <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>
               {tr('Horário Semanal', 'Weekly Schedule')}
             </Text>
@@ -190,7 +195,11 @@ export default function PerfilScreen() {
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/definicoes')}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/definicoes')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Definições', 'Settings')}>
             <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>
               {tr('Definições', 'Settings')}
             </Text>
