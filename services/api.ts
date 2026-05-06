@@ -83,6 +83,21 @@ export const api = {
     post<UserFavorite>(`/api/user-favorites`, item),
   removeUserFavorite: (itemId: string) =>
     del(`/api/user-favorites/${encodeURIComponent(itemId)}`),
+
+  // Histórico de navegação
+  getHistory: () =>
+    get<NavigationHistoryEntry[]>(`/api/history`),
+  addHistory: (entry: {
+    destino_id?: string | null;
+    destino_nome: string;
+    destino_categoria?: string | null;
+    navegacao_tipo: 'indoor' | 'outdoor';
+    lat?: number | null;
+    lon?: number | null;
+  }) =>
+    post<NavigationHistoryEntry>(`/api/history`, entry),
+  clearHistory: () =>
+    del(`/api/history`),
 };
 
 export interface UserFavorite {
@@ -94,5 +109,16 @@ export interface UserFavorite {
   lat: number | null;
   lon: number | null;
   codigo: string | null;
+  created_at: string;
+}
+
+export interface NavigationHistoryEntry {
+  id: string;
+  destino_id: string | null;
+  destino_nome: string;
+  destino_categoria: string | null;
+  navegacao_tipo: 'indoor' | 'outdoor';
+  lat: number | null;
+  lon: number | null;
   created_at: string;
 }
