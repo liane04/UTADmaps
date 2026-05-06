@@ -20,7 +20,7 @@ function avatarLetra(categoria: string): string {
 
 export default function FavoritosScreen() {
   const router = useRouter();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
   const { tr } = useLanguage();
   const { favorites, removeFavorite } = useAppStore();
 
@@ -53,7 +53,7 @@ export default function FavoritosScreen() {
           {tr('Favoritos', 'Favourites')}
         </Text>
         <View style={styles.emptyState}>
-          <Ionicons name="heart-outline" size={64} color="#D1D1D6" style={styles.emptyIcon} />
+          <Ionicons name="heart-outline" size={64} color={colors.subtext} style={styles.emptyIcon} />
           <Text style={[styles.emptyTitle, { color: colors.text, fontSize: fs(18) }]}>
             {tr('Sem favoritos ainda', 'No favourites yet')}
           </Text>
@@ -79,17 +79,17 @@ export default function FavoritosScreen() {
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.card, { backgroundColor: colors.card }]}
+            style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
             onPress={() => navegar(item)}
             accessibilityLabel={tr(`Navegar para ${item.nome}`, `Navigate to ${item.nome}`)}>
-            <View style={[styles.avatar, { backgroundColor: avatarCor(item.categoria) }]}>
-              <Text style={styles.avatarText}>{avatarLetra(item.categoria)}</Text>
+            <View style={[styles.avatar, { backgroundColor: altoContraste ? colors.inputBg : avatarCor(item.categoria), borderWidth: altoContraste ? 2 : 0, borderColor: colors.text }]}>
+              <Text style={[styles.avatarText, { color: altoContraste ? colors.text : '#000000' }]}>{avatarLetra(item.categoria)}</Text>
             </View>
             <View style={styles.cardInfo}>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
                 {item.nome}
               </Text>
-              <Text style={[styles.cardSubtitle, { fontSize: fs(13) }]} numberOfLines={1}>
+              <Text style={[styles.cardSubtitle, { fontSize: fs(13), color: colors.subtext }]} numberOfLines={1}>
                 {item.subtitulo}
               </Text>
             </View>

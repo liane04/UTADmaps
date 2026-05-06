@@ -9,6 +9,7 @@ const favoritesRouter = require('./routes/favorites');
 const authRouter = require('./routes/auth');
 const searchRouter = require('./routes/search');
 const userFavoritesRouter = require('./routes/userFavorites');
+const historyRouter = require('./routes/history');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/favorites', favoritesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/user-favorites', userFavoritesRouter);
+app.use('/api/history', historyRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

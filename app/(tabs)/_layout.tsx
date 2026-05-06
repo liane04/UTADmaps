@@ -7,28 +7,28 @@ import { useSettings } from '../../contexts/SettingsContext';
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarInactiveTintColor: colors.subtext,
         tabBarLabelStyle: {
           fontSize: fs(12),
           fontWeight: '500',
+          marginBottom: 8,
         },
         tabBarItemStyle: {
-          paddingVertical: 6,
+          paddingTop: 6,
         },
         tabBarStyle: {
           backgroundColor: colors.tabBar,
-          borderTopWidth: 1,
+          borderTopWidth: altoContraste ? 2 : 1,
           borderTopColor: colors.tabBarBorder,
-          height: fs(64) + insets.bottom,
-          paddingBottom: insets.bottom,
-          paddingTop: 0,
+          height: fs(75) + Math.max(insets.bottom, 12),
+          paddingBottom: Math.max(insets.bottom, 12),
         },
       }}>
       <Tabs.Screen

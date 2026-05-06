@@ -68,7 +68,7 @@ function extrairChave(input: string): string {
 
 export default function HorarioScreen() {
   const router = useRouter();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { token, user } = useAppStore();
 
@@ -196,9 +196,20 @@ export default function HorarioScreen() {
           return (
             <TouchableOpacity
               key={d.key}
-              style={[styles.dayChip, { backgroundColor: colors.inputBg }, isActive && styles.dayChipActive]}
+              style={[
+                styles.dayChip, 
+                { backgroundColor: isActive ? colors.primary : colors.inputBg,
+                  borderWidth: altoContraste ? 2 : 0, 
+                  borderColor: colors.text }
+              ]}
               onPress={() => setDiaAtivo(d.key)}>
-              <Text style={[styles.dayText, { color: colors.text }, isActive && styles.dayTextActive]}>
+              <Text style={[
+                styles.dayText, 
+                { color: isActive ? colors.bg : colors.text, 
+                  fontWeight: isActive ? 'bold' : 'normal',
+                  fontSize: fs(14)
+                }
+              ]}>
                 {label}
               </Text>
             </TouchableOpacity>
@@ -224,7 +235,7 @@ export default function HorarioScreen() {
         <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
           {aulasDia.length === 0 ? (
             <View style={styles.emptyDay}>
-              <Ionicons name="checkmark-circle-outline" size={56} color="#D1D1D6" />
+              <Ionicons name="checkmark-circle-outline" size={56} color={colors.subtext} />
               <Text style={[styles.emptyDayText, { color: colors.subtext, fontSize: fs(16) }]}>
                 {tr('Sem aulas neste dia', 'No classes this day')}
               </Text>
@@ -235,23 +246,23 @@ export default function HorarioScreen() {
                 key={i}
                 style={styles.timelineRow}
                 onPress={() => router.push('/navigacao-indoor')}>
-                <Text style={styles.timeText}>{aula.horaInicio}</Text>
-                <View style={styles.timelineLine} />
+                <Text style={[styles.timeText, { color: colors.subtext }]}>{aula.horaInicio}</Text>
+                <View style={[styles.timelineLine, { backgroundColor: colors.divider }]} />
                 <View style={styles.cardContainer}>
-                  <View style={[styles.card, { backgroundColor: colors.card }]}>
+                  <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
                     <View style={styles.cardContent}>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.classTitle, { color: colors.text, fontSize: fs(16) }]}>
                           {aula.disciplina}
                         </Text>
-                        <Text style={[styles.classLocation, { fontSize: fs(14) }]}>
+                        <Text style={[styles.classLocation, { fontSize: fs(14), color: colors.subtext }]}>
                           {aula.locationRaw || aula.sala}
                         </Text>
-                        <Text style={styles.classTime}>
+                        <Text style={[styles.classTime, { color: colors.subtext }]}>
                           {aula.horaInicio} - {aula.horaFim}
                         </Text>
                       </View>
-                      <Ionicons name="navigate-outline" size={20} color="#8E8E93" />
+                      <Ionicons name="navigate-outline" size={20} color={colors.subtext} />
                     </View>
                   </View>
                 </View>
@@ -262,7 +273,7 @@ export default function HorarioScreen() {
         </ScrollView>
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={72} color="#D1D1D6" style={{ marginBottom: 20 }} />
+          <Ionicons name="calendar-outline" size={72} color={colors.subtext} style={{ marginBottom: 20 }} />
           <Text style={[styles.emptyTitle, { color: colors.text, fontSize: fs(20) }]}>
             {tr('Sem horário importado', 'No schedule imported')}
           </Text>
@@ -314,7 +325,7 @@ export default function HorarioScreen() {
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalCancel, { backgroundColor: colors.inputBg }]}
+                style={[styles.modalCancel, { backgroundColor: colors.inputBg, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
                 onPress={() => { setModalVisible(false); setChaveInput(''); }}>
                 <Text style={[styles.modalCancelText, { color: colors.text, fontSize: fs(16) }]}>
                   {tr('Cancelar', 'Cancel')}
