@@ -47,7 +47,7 @@ function subtituloDe(item: SearchResult, language: 'pt' | 'en'): string {
 
 export default function PesquisaScreen() {
   const router = useRouter();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { isFavorite, addFavorite, removeFavorite } = useAppStore();
   const [query, setQuery] = useState('');
@@ -134,19 +134,19 @@ export default function PesquisaScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]}>UTAD Campus</Text>
 
-      <View style={[styles.searchContainer, { backgroundColor: colors.inputBg }]}>
-        <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+      <View style={[styles.searchContainer, { backgroundColor: colors.inputBg, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
+        <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
           value={query}
           onChangeText={setQuery}
           placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor={colors.subtext}
           returnKeyType="search"
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => setQuery('')}>
-            <Ionicons name="close" size={20} color="#8E8E93" />
+            <Ionicons name="close" size={20} color={colors.subtext} />
           </TouchableOpacity>
         )}
       </View>
@@ -158,9 +158,17 @@ export default function PesquisaScreen() {
             return (
               <TouchableOpacity
                 key={f.key}
-                style={[styles.filterChip, ativo && styles.filterChipActive]}
+                style={[
+                  styles.filterChip, 
+                  { backgroundColor: ativo ? colors.primary : colors.inputBg,
+                    borderWidth: altoContraste ? 2 : 0, 
+                    borderColor: colors.text }
+                ]}
                 onPress={() => setCategoria(f.key)}>
-                <Text style={[styles.filterText, ativo && styles.filterTextActive]}>{f.label}</Text>
+                <Text style={[
+                  styles.filterText, 
+                  { color: ativo ? colors.bg : colors.text, fontWeight: ativo ? 'bold' : 'normal' }
+                ]}>{f.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -170,18 +178,18 @@ export default function PesquisaScreen() {
       <ScrollView style={styles.resultsContainer} contentContainerStyle={styles.resultsContent}>
         {loading && resultados.length === 0 ? (
           <View style={styles.emptyState}>
-            <ActivityIndicator size="small" color="#8E8E93" />
-            <Text style={styles.emptyText}>{tr('A pesquisar...', 'Searching...')}</Text>
+            <ActivityIndicator size="small" color={colors.subtext} />
+            <Text style={[styles.emptyText, { color: colors.subtext }]}>{tr('A pesquisar...', 'Searching...')}</Text>
           </View>
         ) : erro ? (
           <View style={styles.emptyState}>
-            <Ionicons name="cloud-offline-outline" size={40} color="#8E8E93" />
-            <Text style={styles.emptyText}>{erro}</Text>
+            <Ionicons name="cloud-offline-outline" size={40} color={colors.subtext} />
+            <Text style={[styles.emptyText, { color: colors.subtext }]}>{erro}</Text>
           </View>
         ) : resultados.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={40} color="#8E8E93" />
-            <Text style={styles.emptyText}>
+            <Ionicons name="search-outline" size={40} color={colors.subtext} />
+            <Text style={[styles.emptyText, { color: colors.subtext }]}>
               {query
                 ? `${tr('Sem resultados para', 'No results for')} "${query}"`
                 : tr('Sem resultados', 'No results')}
@@ -194,16 +202,16 @@ export default function PesquisaScreen() {
             return (
               <TouchableOpacity
                 key={local.id}
-                style={[styles.resultCard, { backgroundColor: colors.card }]}
+                style={[styles.resultCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
                 onPress={() => aoSelecionar(local)}>
-                <View style={[styles.avatar, { backgroundColor: avatarCor(local.categoria) }]}>
-                  <Text style={styles.avatarText}>{avatarLetra(local.categoria)}</Text>
+                <View style={[styles.avatar, { backgroundColor: altoContraste ? colors.inputBg : avatarCor(local.categoria), borderWidth: altoContraste ? 2 : 0, borderColor: colors.text }]}>
+                  <Text style={[styles.avatarText, { color: altoContraste ? colors.text : '#000000' }]}>{avatarLetra(local.categoria)}</Text>
                 </View>
                 <View style={styles.resultInfo}>
                   <Text style={[styles.resultTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
                     {local.nome}
                   </Text>
-                  <Text style={[styles.resultSubtitle, { fontSize: fs(14) }]} numberOfLines={1}>
+                  <Text style={[styles.resultSubtitle, { fontSize: fs(14), color: colors.subtext }]} numberOfLines={1}>
                     {subtitulo}
                   </Text>
                 </View>
@@ -211,7 +219,7 @@ export default function PesquisaScreen() {
                   onPress={() => toggleFavorito(local)}
                   style={styles.favBtn}
                   accessibilityLabel={fav ? tr('Remover dos favoritos', 'Remove from favourites') : tr('Adicionar aos favoritos', 'Add to favourites')}>
-                  <Ionicons name={fav ? 'heart' : 'heart-outline'} size={22} color={fav ? '#FF3B30' : '#8E8E93'} />
+                  <Ionicons name={fav ? 'heart' : 'heart-outline'} size={22} color={fav ? '#FF3B30' : colors.subtext} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );

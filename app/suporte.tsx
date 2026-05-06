@@ -83,7 +83,7 @@ const REPORT_EMAIL = 'utadmaps@alunos.utad.pt';
 
 export default function SuporteScreen() {
   const router = useRouter();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
 
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -103,6 +103,15 @@ export default function SuporteScreen() {
       // fallback silencioso
     }
   };
+
+  const cardStyle = [
+    styles.card,
+    {
+      backgroundColor: colors.card,
+      borderWidth: altoContraste ? 2 : 0,
+      borderColor: colors.border,
+    },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -128,7 +137,7 @@ export default function SuporteScreen() {
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>
           {tr('PERGUNTAS FREQUENTES', 'FREQUENTLY ASKED QUESTIONS')}
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={cardStyle}>
           {FAQ.map((item, i) => {
             const open = expanded === i;
             return (
@@ -165,7 +174,7 @@ export default function SuporteScreen() {
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>
           {tr('CONTACTO', 'CONTACT')}
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={cardStyle}>
           <TouchableOpacity
             style={styles.actionRow}
             onPress={reportarErro}
@@ -188,7 +197,7 @@ export default function SuporteScreen() {
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>
           {tr('SOBRE', 'ABOUT')}
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={cardStyle}>
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: colors.text, fontSize: fs(15) }]}>
               {tr('Versão', 'Version')}

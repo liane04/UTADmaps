@@ -63,7 +63,7 @@ function formatarData(dataISO: string, language: 'pt' | 'en'): string {
 
 export default function PerfilScreen() {
   const router = useRouter();
-  const { colors, fs } = useSettings();
+  const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { user, favorites, logout } = useAppStore();
 
@@ -121,13 +121,13 @@ export default function PerfilScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{isAnonimo ? '?' : inicial}</Text>
+          <View style={[styles.avatar, { backgroundColor: colors.inputBg, borderColor: colors.border, borderWidth: altoContraste ? 2 : 4 }]}>
+            <Text style={[styles.avatarText, { color: colors.subtext }]}>{isAnonimo ? '?' : inicial}</Text>
           </View>
           <Text style={[styles.name, { color: colors.text, fontSize: fs(24) }]}>
             {isAnonimo ? tr('Convidado', 'Guest') : nome}
           </Text>
-          <Text style={[styles.email, { fontSize: fs(16) }]}>
+          <Text style={[styles.email, { fontSize: fs(16), color: colors.subtext }]}>
             {isAnonimo ? tr('Sem sessão iniciada', 'Not signed in') : user?.email}
           </Text>
         </View>
@@ -137,7 +137,7 @@ export default function PerfilScreen() {
           <View style={styles.nextClassContainer}>
             {loadingAula ? null : proximaAula ? (
               <TouchableOpacity
-                style={[styles.nextClassCard, { backgroundColor: colors.card }]}
+                style={[styles.nextClassCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
                 onPress={() => router.push({ pathname: '/navigacao-indoor', params: { destino: proximaAula.sala } })}
                 accessibilityLabel={tr('Navegar para próxima aula', 'Navigate to next class')}>
                 <View style={styles.nextClassHeader}>
@@ -157,7 +157,7 @@ export default function PerfilScreen() {
                 </Text>
               </TouchableOpacity>
             ) : (
-              <View style={[styles.nextClassCard, { backgroundColor: colors.card }]}>
+              <View style={[styles.nextClassCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
                 <Text style={[styles.nextClassLabel, { color: colors.text, fontSize: fs(14) }]}>
                   {tr('Sem aulas marcadas', 'No upcoming classes')}
                 </Text>
@@ -170,7 +170,7 @@ export default function PerfilScreen() {
         )}
 
         {/* Menu */}
-        <View style={[styles.menuContainer, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+        <View style={[styles.menuContainer, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: altoContraste ? 2 : 0 }]}>
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/favoritos')}>
             <Text style={[styles.menuText, { color: colors.text, fontSize: fs(16) }]}>
               {tr('Favoritos', 'Favourites')}
@@ -200,8 +200,8 @@ export default function PerfilScreen() {
 
         {/* Sair / Entrar */}
         {isAnonimo ? (
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#007AFF' }]} onPress={() => router.replace('/')}>
-            <Text style={[styles.actionButtonText, { fontSize: fs(16) }]}>{tr('Iniciar sessão', 'Sign in')}</Text>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.replace('/')}>
+            <Text style={[styles.actionButtonText, { fontSize: fs(16), color: colors.bg }]}>{tr('Iniciar sessão', 'Sign in')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>

@@ -2,20 +2,26 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function DefinicoesScreen() {
   const router = useRouter();
   const { language, t, setLanguage, tr } = useLanguage();
-  const { tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fs, highContrast, setHighContrast } = useSettings();
-
-  // Toggles ainda sem efeito real:
-  // - rotasAcessiveis depende de extensão ao A* indoor (em desenvolvimento na branch indoor)
-  // - leitorEcra: no Web, screen readers funcionam nativamente quando há accessibility labels
-  const [rotasAcessiveis, setRotasAcessiveis] = useState(true);
-  const [leitorEcra, setLeitorEcra] = useState(false);
+  const {
+    tema,
+    setTema,
+    colors,
+    tamanhoTexto,
+    setTamanhoTexto,
+    fs,
+    altoContraste,
+    setAltoContraste,
+    rotasAcessiveis,
+    setRotasAcessiveis,
+    leitorEcra,
+    setLeitorEcra,
+  } = useSettings();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -33,11 +39,11 @@ export default function DefinicoesScreen() {
         
         {/* ACESSIBILIDADE Section */}
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.acessibilidade}</Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
           <View style={styles.cardRow}>
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tamanhoTexto}</Text>
             {/* 3 Pills: Pequeno / Normal / Grande */}
-            <View style={[styles.pillsGroup, { backgroundColor: colors.inputBg }]}>
+            <View style={[styles.pillsGroup, { backgroundColor: altoContraste ? colors.card : colors.inputBg }]}>
               {(['pequeno', 'normal', 'grande'] as const).map((op) => {
                 const ativo = tamanhoTexto === op;
                 const label = op === 'pequeno' ? 'A' : op === 'normal' ? 'A' : 'A';
@@ -45,10 +51,15 @@ export default function DefinicoesScreen() {
                 return (
                   <TouchableOpacity
                     key={op}
-                    style={[styles.pill, ativo && { backgroundColor: colors.card }]}
+                    style={[
+                      styles.pill, 
+                      { backgroundColor: ativo ? colors.primary : 'transparent',
+                        borderWidth: altoContraste ? 2 : 0,
+                        borderColor: colors.text }
+                    ]}
                     onPress={() => setTamanhoTexto(op)}
                   >
-                    <Text style={[styles.pillText, { color: colors.text, fontSize: pillFontSize, fontWeight: ativo ? '700' : '400' }]}>{label}</Text>
+                    <Text style={[styles.pillText, { color: ativo ? colors.bg : colors.text, fontSize: pillFontSize, fontWeight: ativo ? '700' : '400' }]}>{label}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -64,13 +75,14 @@ export default function DefinicoesScreen() {
               </Text>
             </View>
             <Switch
-              value={highContrast}
-              onValueChange={setHighContrast}
-              trackColor={{ false: '#E5E5EA', true: '#000000' }}
+              value={altoContraste}
+              onValueChange={setAltoContraste}
+              trackColor={{ false: '#E5E5EA', true: colors.primary }}
+              thumbColor={altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
               accessibilityLabel={t.altoContraste}
               accessibilityRole="switch"
-              accessibilityState={{ checked: highContrast }}
+              accessibilityState={{ checked: altoContraste }}
             />
           </View>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -83,7 +95,8 @@ export default function DefinicoesScreen() {
             <Switch
               value={rotasAcessiveis}
               onValueChange={setRotasAcessiveis}
-              trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }}
+              trackColor={{ false: '#E5E5EA', true: colors.primary }}
+              thumbColor={rotasAcessiveis && altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
               accessibilityLabel={t.rotasAcessiveis}
               accessibilityRole="switch"
@@ -102,7 +115,8 @@ export default function DefinicoesScreen() {
             <Switch
               value={leitorEcra}
               onValueChange={setLeitorEcra}
-              trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }}
+              trackColor={{ false: '#E5E5EA', true: colors.primary }}
+              thumbColor={leitorEcra && altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
               accessibilityLabel={t.leitorEcra}
               accessibilityRole="switch"
@@ -113,15 +127,15 @@ export default function DefinicoesScreen() {
 
         {/* PERSONALIZAÇÃO Section */}
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.personalizacao}</Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
           >
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.idioma}</Text>
             <View style={styles.rowValueContainer}>
-              <Text style={styles.rowValue}>{language === 'pt' ? 'Português' : 'English'}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+              <Text style={[styles.rowValue, { color: colors.subtext }]}>{language === 'pt' ? 'Português' : 'English'}</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
             </View>
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -132,15 +146,15 @@ export default function DefinicoesScreen() {
           >
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tema}</Text>
             <View style={styles.rowValueContainer}>
-              <Text style={styles.rowValue}>{tema === 'claro' ? t.claro : t.escuro}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+              <Text style={[styles.rowValue, { color: colors.subtext }]}>{tema === 'claro' ? t.claro : t.escuro}</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
             </View>
           </TouchableOpacity>
         </View>
 
         {/* SOBRE Section */}
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.sobre}</Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => router.push('/suporte')}
