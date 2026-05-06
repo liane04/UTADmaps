@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -75,13 +86,22 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>Ü</Text>
-        <Ionicons name="compass-outline" size={24} color="#8E8E93" style={styles.logoIcon} />
-      </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>Ü</Text>
+            <Ionicons name="compass-outline" size={24} color="#8E8E93" style={styles.logoIcon} />
+          </View>
 
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
         <Text style={[styles.title, { color: colors.text }]}>{t.welcome}</Text>
         <Text style={[styles.subtitle, { color: colors.text }]}>{t.welcomeSubtitle}</Text>
 
@@ -142,20 +162,29 @@ export default function WelcomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-        <Text style={[styles.skipText, { color: colors.text }]}>{t.saltarExplorar}</Text>
-      </TouchableOpacity>
+          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+            <Text style={[styles.skipText, { color: colors.text }]}>{t.saltarExplorar}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
     backgroundColor: '#F2F2F7',
+  },
+  flex1: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    paddingVertical: 32,
   },
   logoContainer: {
     flexDirection: 'row',

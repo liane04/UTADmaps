@@ -8,10 +8,12 @@ import { useSettings } from '../contexts/SettingsContext';
 
 export default function DefinicoesScreen() {
   const router = useRouter();
-  const { language, t, setLanguage } = useLanguage();
-  const { tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fs } = useSettings();
+  const { language, t, setLanguage, tr } = useLanguage();
+  const { tema, setTema, colors, tamanhoTexto, setTamanhoTexto, fs, highContrast, setHighContrast } = useSettings();
 
-  const [altoContraste, setAltoContraste] = useState(false);
+  // Toggles ainda sem efeito real:
+  // - rotasAcessiveis depende de extensão ao A* indoor (em desenvolvimento na branch indoor)
+  // - leitorEcra: no Web, screen readers funcionam nativamente quando há accessibility labels
   const [rotasAcessiveis, setRotasAcessiveis] = useState(true);
   const [leitorEcra, setLeitorEcra] = useState(false);
 
@@ -55,37 +57,56 @@ export default function DefinicoesScreen() {
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           
           <View style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.altoContraste}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.altoContraste}</Text>
+              <Text style={[styles.rowSubtext, { color: colors.subtext }]}>
+                {tr('Cores preto/branco para máxima legibilidade', 'Black/white colours for maximum legibility')}
+              </Text>
+            </View>
             <Switch
-              value={altoContraste}
-              onValueChange={setAltoContraste}
-              trackColor={{ false: '#E5E5EA', true: '#34C759' }}
+              value={highContrast}
+              onValueChange={setHighContrast}
+              trackColor={{ false: '#E5E5EA', true: '#000000' }}
               ios_backgroundColor="#E5E5EA"
+              accessibilityLabel={t.altoContraste}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: highContrast }}
             />
           </View>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <View style={styles.cardRow}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.rotasAcessiveis}</Text>
-              <Text style={styles.rowSubtext}>{t.evitarEscadas}</Text>
+              <Text style={[styles.rowSubtext, { color: colors.subtext }]}>{t.evitarEscadas}</Text>
             </View>
             <Switch
               value={rotasAcessiveis}
               onValueChange={setRotasAcessiveis}
               trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }}
               ios_backgroundColor="#E5E5EA"
+              accessibilityLabel={t.rotasAcessiveis}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: rotasAcessiveis }}
             />
           </View>
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <View style={styles.cardRow}>
-            <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.leitorEcra}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.leitorEcra}</Text>
+              <Text style={[styles.rowSubtext, { color: colors.subtext }]}>
+                {tr('Compatível com VoiceOver e TalkBack', 'Compatible with VoiceOver and TalkBack')}
+              </Text>
+            </View>
             <Switch
               value={leitorEcra}
               onValueChange={setLeitorEcra}
-              trackColor={{ false: '#E5E5EA', true: '#34C759' }}
+              trackColor={{ false: '#E5E5EA', true: '#2C2C2E' }}
               ios_backgroundColor="#E5E5EA"
+              accessibilityLabel={t.leitorEcra}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: leitorEcra }}
             />
           </View>
         </View>
@@ -120,9 +141,13 @@ export default function DefinicoesScreen() {
         {/* SOBRE Section */}
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.sobre}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <TouchableOpacity style={styles.cardRow}>
+          <TouchableOpacity
+            style={styles.cardRow}
+            onPress={() => router.push('/suporte')}
+            accessibilityRole="button"
+            accessibilityLabel={t.suporteAjuda}>
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.suporteAjuda}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </View>
 
