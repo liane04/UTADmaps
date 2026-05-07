@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "UTADmaps",
-    "slug": "UTADmaps",
+    "slug": "utadmaps-6t4jvuxrupspkf0ed5zhv",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,13 @@
         "googleMaps": {
           "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -40,6 +46,18 @@
           "locationWhenInUsePermission": "Permitir que UTADmaps use a tua localização para te guiar pelo campus."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "00af1d8c-7312-4595-b56b-e39d14087ead"
+      }
+    },
+    "owner": "todfilipe",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/00af1d8c-7312-4595-b56b-e39d14087ead"
+    }
   }
 }
