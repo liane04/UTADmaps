@@ -7,12 +7,12 @@
       "largura": 1000,
       "altura": 600,
       "locais": [
-        { "id": "s1", "nome": "Sala 2.1", "tipo": "sala", "x": 780, "y": 30, "largura": 190, "altura": 210 },
-        { "id": "s2", "nome": "Sala 2.10", "tipo": "sala", "x": 470, "y": 30, "largura": 290, "altura": 210 },
-        { "id": "s22", "nome": "Sala 2.2", "tipo": "sala", "x": 30, "y": 30, "largura": 180, "altura": 210 },
-        { "id": "s23", "nome": "Sala 2.3", "tipo": "sala", "x": 250, "y": 30, "largura": 180, "altura": 210 },
-        { "id": "wc", "nome": "WC", "tipo": "servico", "x": 30, "y": 360, "largura": 180, "altura": 150 },
-        { "id": "lab", "nome": "Lab. Informática", "tipo": "sala", "x": 250, "y": 360, "largura": 290, "altura": 210 }
+        { "id": "s1", "codigo": "2.1", "nome": "Sala 2.1", "tipo": "sala", "x": 780, "y": 30, "largura": 190, "altura": 210 },
+        { "id": "s2", "codigo": "2.10", "nome": "Sala 2.10", "tipo": "sala", "x": 470, "y": 30, "largura": 290, "altura": 210 },
+        { "id": "s22", "codigo": "2.2", "nome": "Sala 2.2", "tipo": "sala", "x": 30, "y": 30, "largura": 180, "altura": 210 },
+        { "id": "s23", "codigo": "2.3", "nome": "Sala 2.3", "tipo": "sala", "x": 250, "y": 30, "largura": 180, "altura": 210 },
+        { "id": "wc", "codigo": "WC", "nome": "WC", "tipo": "servico", "x": 30, "y": 360, "largura": 180, "altura": 150 },
+        { "id": "lab", "codigo": "LAB", "nome": "Lab. Informática", "tipo": "sala", "x": 250, "y": 360, "largura": 290, "altura": 210 }
       ],
       "grafo": {
         "nos": [

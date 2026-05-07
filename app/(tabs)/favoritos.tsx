@@ -28,7 +28,10 @@ export default function FavoritosScreen() {
     if (item.categoria === 'sala') {
       router.push({
         pathname: '/navigacao-indoor',
-        params: { destino: item.codigo ?? item.id },
+        params: {
+          destino: item.codigo ?? item.id,
+          destinoNome: item.nome,
+        },
       });
       return;
     }

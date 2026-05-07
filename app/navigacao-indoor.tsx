@@ -10,6 +10,7 @@ import { aStar, comprimentoCaminho, type Grafo, type No } from './lib/pathfindin
 
 type Local = {
   id: string;
+  codigo?: string;
   nome: string;
   tipo: string;
   x: number;
@@ -17,6 +18,22 @@ type Local = {
   largura: number;
   altura: number;
 };
+
+// "F2.01" → "2.1", "Sala 2.10" → "2.10", "E2.10A" → "2.10A"
+function normalizarCodigo(s: string): string {
+  const m = s.match(/\d+(?:\.\d+[A-Za-z]?)+/);
+  if (!m) return s.trim().toLowerCase();
+  return m[0]
+    .toUpperCase()
+    .split('.')
+    .map((seg) => {
+      const match = seg.match(/^(\d+)([A-Z]?)$/);
+      if (!match) return seg;
+      const num = String(parseInt(match[1], 10));
+      return num + match[2];
+    })
+    .join('.');
+}
 
 type Piso = {
   numero: number;
@@ -30,17 +47,54 @@ export default function NavigacaoIndoorScreen() {
   const router = useRouter();
   const { colors } = useSettings();
   const { tr } = useLanguage();
-  const { destino } = useLocalSearchParams<{ destino?: string }>();
+  const { destino, destinoNome } = useLocalSearchParams<{ destino?: string; destinoNome?: string }>();
 
   const piso = blocoA.pisos[0] as Piso;
   const PLANTA_W = piso.largura;
   const PLANTA_H = piso.altura;
 
-  // Encontra o local de destino (fallback: Sala 2.1)
+  // Encontra o local de destino: tenta por id, código (com normalização) e nome.
+  // Fallback: Sala 2.1.
   const localDestino = useMemo<Local>(() => {
-    const encontrado = piso.locais.find((l) => l.id === destino);
-    return encontrado ?? piso.locais.find((l) => l.id === 's1')!;
-  }, [destino, piso]);
+    const candidatos = [destino, destinoNome].filter((s): s is string => !!s && s.length > 0);
+    const fallback = piso.locais.find((l) => l.id === 's1')!;
+    if (candidatos.length === 0) return fallback;
+
+    // 1) Match por id exato
+    for (const c of candidatos) {
+      const m = piso.locais.find((l) => l.id === c);
+      if (m) return m;
+    }
+
+    // 2) Match por nome exato (case-insensitive)
+    for (const c of candidatos) {
+      const cl = c.toLowerCase();
+      const m = piso.locais.find((l) => l.nome.toLowerCase() === cl);
+      if (m) return m;
+    }
+
+    // 3) Match por código normalizado (ex: "F2.01" ↔ "2.1")
+    for (const c of candidatos) {
+      const norm = normalizarCodigo(c);
+      if (!norm) continue;
+      const m = piso.locais.find((l) => {
+        if (l.codigo && normalizarCodigo(l.codigo) === norm) return true;
+        return normalizarCodigo(l.nome) === norm;
+      });
+      if (m) return m;
+    }
+
+    // 4) Match parcial por nome (substring)
+    for (const c of candidatos) {
+      const cl = c.toLowerCase();
+      const m = piso.locais.find(
+        (l) => l.nome.toLowerCase().includes(cl) || cl.includes(l.nome.toLowerCase()),
+      );
+      if (m) return m;
+    }
+
+    return fallback;
+  }, [destino, destinoNome, piso]);
 
   // Calcula a rota do nó "escada" até à porta do local
   const { caminho, passos } = useMemo(() => {

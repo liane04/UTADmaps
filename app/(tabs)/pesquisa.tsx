@@ -91,7 +91,10 @@ export default function PesquisaScreen() {
     if (local.categoria === 'sala') {
       router.push({
         pathname: '/navigacao-indoor',
-        params: { destino: local.codigo ?? local.id },
+        params: {
+          destino: local.codigo ?? local.id,
+          destinoNome: local.nome,
+        },
       });
       return;
     }

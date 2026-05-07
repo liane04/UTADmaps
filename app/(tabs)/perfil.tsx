@@ -138,7 +138,7 @@ export default function PerfilScreen() {
             {loadingAula ? null : proximaAula ? (
               <TouchableOpacity
                 style={[styles.nextClassCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
-                onPress={() => router.push({ pathname: '/navigacao-indoor', params: { destino: proximaAula.sala } })}
+                onPress={() => router.push({ pathname: '/navigacao-indoor', params: { destino: proximaAula.sala, destinoNome: proximaAula.sala } })}
                 accessibilityLabel={tr('Navegar para próxima aula', 'Navigate to next class')}>
                 <View style={styles.nextClassHeader}>
                   <Text style={[styles.nextClassLabel, { color: colors.text, fontSize: fs(14) }]}>

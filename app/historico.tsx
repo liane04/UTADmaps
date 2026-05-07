@@ -118,7 +118,10 @@ export default function HistoricoScreen() {
     if (entry.navegacao_tipo === 'indoor') {
       router.push({
         pathname: '/navigacao-indoor',
-        params: entry.destino_id ? { destino: entry.destino_id } : undefined,
+        params: {
+          ...(entry.destino_id ? { destino: entry.destino_id } : {}),
+          destinoNome: entry.destino_nome,
+        },
       });
       return;
     }
