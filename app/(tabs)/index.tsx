@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -72,16 +72,18 @@ export default function MapaScreen() {
 
       {/* Floating UI Elements */}
       <SafeAreaView style={styles.uiContainer} pointerEvents="box-none">
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
-          <Ionicons name="search" size={20} color={colors.text} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text, fontSize: fs(16) }]}
-            placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
-            placeholderTextColor="#8E8E93"
-            editable={false} // static prototype
-          />
-        </View>
+        {/* Search Bar — abre o tab Pesquisa ao tocar */}
+        <TouchableOpacity
+          style={[styles.searchContainer, { backgroundColor: colors.card }]}
+          activeOpacity={0.7}
+          onPress={() => router.push('/(tabs)/pesquisa')}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Abrir pesquisa', 'Open search')}>
+          <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
+          <Text style={[styles.searchPlaceholder, { color: colors.subtext, fontSize: fs(16) }]} numberOfLines={1}>
+            {tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
+          </Text>
+        </TouchableOpacity>
 
         {/* Bottom Right Controls — hidden when card is open */}
         {!selectedBuilding && (
@@ -185,10 +187,9 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 12,
   },
-  searchInput: {
+  searchPlaceholder: {
     flex: 1,
     fontSize: 16,
-    color: '#000000',
   },
   controlsContainer: {
     alignItems: 'flex-end',
