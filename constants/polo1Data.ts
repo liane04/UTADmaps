@@ -79,6 +79,20 @@ export const POLO1_BUILDINGS: Building[] = [
     coordinate: { latitude: 41.288144, longitude: -7.741173 },
     // Entrada principal estimada — face ao caminho central (lado sul-este).
     entrada: { latitude: 41.288050, longitude: -7.741080 },
+    floors: [],
+  },
+  {
+    // ECT – Polo I (Escola de Ciências e Tecnologias).
+    // É UM único edifício com setores internos E, F, G, I — todas as salas
+    // (ver docs/docs_backend/SALAS.txt) pertencem-lhe.
+    // id 'sectorE' mantido por compat. com o indoor 3D (assets/models/sectorE/floor_0.glb).
+    id: 'sectorE',
+    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
+    tipo: 'escola',
+    coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
+    // Entrada principal — face ao passadiço central (lado sul).
+    entrada: { latitude: 41.286830, longitude: -7.740580 },
+    hasIndoor: true,
     floors: [
       {
         level: 0,
@@ -87,11 +101,16 @@ export const POLO1_BUILDINGS: Building[] = [
           { code: 'F0.01' }, { code: 'F0.02' }, { code: 'F0.05' }, { code: 'F0.06' },
           { code: 'F0.07' }, { code: 'F0.08' }, { code: 'F0.10' }, { code: 'F0.12' },
           { code: 'F0.14' }, { code: 'F0.16' }, { code: 'F0.18' }, { code: 'F0.19' },
+          { code: 'G0.01' }, { code: 'G0.03' }, { code: 'G0.04B' },
+          { code: 'G0.08' }, { code: 'G0.12' }, { code: 'G0.14' },
+          { code: 'I0.06' },
         ],
       },
       {
         level: 1,
         rooms: [
+          { code: 'E1.01' }, { code: 'E1.02' }, { code: 'E1.06' }, { code: 'E1.08' },
+          { code: 'E1.11' }, { code: 'E1.12' }, { code: 'E1.15' }, { code: 'E1.16' },
           { code: 'SECRETARIA' },
           { code: 'F1.17' }, { code: 'F1.18' }, { code: 'F1.19' }, { code: 'F1.20' },
           { code: 'F1.21' }, { code: 'F1.22' }, { code: 'F1.24' },
@@ -104,39 +123,6 @@ export const POLO1_BUILDINGS: Building[] = [
           { code: 'F2.12' }, { code: 'F2.13' }, { code: 'F2.15' }, { code: 'F2.16' },
           { code: 'F2.17' }, { code: 'F2.18' }, { code: 'F2.19' }, { code: 'F2.20A' },
           { code: 'F2.22' },
-        ],
-      },
-    ],
-  },
-  {
-    // ECT – Polo I (Escola de Ciências e Tecnologias). id 'sectorE' mantido
-    // por compatibilidade com o indoor 3D (assets/models/sectorE/floor_0.glb).
-    id: 'sectorE',
-    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
-    tipo: 'escola',
-    coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
-    // Entrada principal — face ao passadiço central (lado sul).
-    entrada: { latitude: 41.286830, longitude: -7.740580 },
-    hasIndoor: true,
-    floors: [
-      {
-        level: 0,
-        rooms: [
-          { code: 'E0.01' },
-          { code: 'E0.02' },
-          { code: 'E0.03' },
-        ],
-      },
-      {
-        level: 1,
-        rooms: [
-          { code: 'E1.01' }, { code: 'E1.02' }, { code: 'E1.06' }, { code: 'E1.08' },
-          { code: 'E1.11' }, { code: 'E1.12' }, { code: 'E1.15' }, { code: 'E1.16' },
-        ],
-      },
-      {
-        level: 2,
-        rooms: [
           { code: 'E2.01' }, { code: 'E2.02' }, { code: 'E2.04' }, { code: 'E2.10' },
           { code: 'E2.11' }, { code: 'E2.13' }, { code: 'E2.14' }, { code: 'E2.15' },
         ],
@@ -150,15 +136,7 @@ export const POLO1_BUILDINGS: Building[] = [
     coordinate: { latitude: 41.285822, longitude: -7.740542 },
     // Entrada principal — face ao caminho pedonal a leste.
     entrada: { latitude: 41.285822, longitude: -7.740440 },
-    floors: [
-      {
-        level: 0,
-        rooms: [
-          { code: 'G0.01' }, { code: 'G0.03' }, { code: 'G0.04B' },
-          { code: 'G0.08' }, { code: 'G0.12' }, { code: 'G0.14' },
-        ],
-      },
-    ],
+    floors: [],
   },
   {
     id: 'rei',
@@ -167,12 +145,7 @@ export const POLO1_BUILDINGS: Building[] = [
     coordinate: { latitude: 41.286264, longitude: -7.738626 },
     // Entrada principal — Largo das Pedrinhas, lado sul.
     entrada: { latitude: 41.286170, longitude: -7.738626 },
-    floors: [
-      {
-        level: 0,
-        rooms: [{ code: 'I0.06' }],
-      },
-    ],
+    floors: [],
   },
 
   // === Polo I — outros edifícios académicos ===

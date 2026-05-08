@@ -16,9 +16,15 @@ router.get('/', async (req, res) => {
 
     // ---- Edifícios ----
     if (type === 'todos' || type === 'edificio') {
-      let bq = supabase.from('buildings').select('id, nome, codigo, lat, lon');
+      let bq = supabase
+        .from('buildings')
+        .select('id, nome, nome_completo, codigo, lat, lon');
       if (qTrim) {
-        bq = bq.or(`nome.ilike.%${qTrim}%,codigo.ilike.%${qTrim}%`);
+        // Procura em nome (sigla, ex: "ECT") + nome_completo (descrição,
+        // ex: "Escola de Ciências e Tecnologias") + codigo.
+        bq = bq.or(
+          `nome.ilike.%${qTrim}%,nome_completo.ilike.%${qTrim}%,codigo.ilike.%${qTrim}%`,
+        );
       }
       const { data: buildings, error: bErr } = await bq.order('nome');
       if (bErr) return res.status(500).json({ error: bErr.message });
