@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { api } from '../../services/api';
 import { SearchResult, SearchCategoria } from '../../types';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { haversine, formatDistance, type Coord } from '../../lib/geo';
 
 type FiltroCategoria = 'todos' | SearchCategoria;
 
@@ -55,6 +57,37 @@ export default function PesquisaScreen() {
   const [resultados, setResultados] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<Coord | null>(null);
+
+  // Pede GPS uma vez ao montar (silencioso — sem alertar se falhar)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Lowest,
+        });
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } catch {
+        // silencioso — distância apenas não aparece
+      }
+    })();
+  }, []);
+
+  // Resultados ordenados por distância (se GPS disponível)
+  const resultadosOrdenados = useMemo(() => {
+    if (!userLocation) return resultados;
+    return [...resultados].sort((a, b) => {
+      const da = a.lat != null && a.lon != null
+        ? haversine(userLocation, { latitude: a.lat, longitude: a.lon })
+        : Number.POSITIVE_INFINITY;
+      const db = b.lat != null && b.lon != null
+        ? haversine(userLocation, { latitude: b.lat, longitude: b.lon })
+        : Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+  }, [resultados, userLocation]);
 
   const FILTROS: { key: FiltroCategoria; label: string }[] = [
     { key: 'todos', label: tr('Todos', 'All') },
@@ -199,9 +232,13 @@ export default function PesquisaScreen() {
             </Text>
           </View>
         ) : (
-          resultados.map((local) => {
+          resultadosOrdenados.map((local) => {
             const fav = isFavorite(local.id);
             const subtitulo = subtituloDe(local, language);
+            const dist =
+              userLocation && local.lat != null && local.lon != null
+                ? haversine(userLocation, { latitude: local.lat, longitude: local.lon })
+                : null;
             return (
               <TouchableOpacity
                 key={local.id}
@@ -218,6 +255,11 @@ export default function PesquisaScreen() {
                     {subtitulo}
                   </Text>
                 </View>
+                {dist != null && (
+                  <Text style={[styles.distance, { color: colors.subtext, fontSize: fs(12) }]}>
+                    {formatDistance(dist)}
+                  </Text>
+                )}
                 <TouchableOpacity
                   onPress={() => toggleFavorito(local)}
                   style={styles.favBtn}
@@ -339,9 +381,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
   },
+  distance: {
+    fontWeight: '500',
+    marginLeft: 8,
+    marginRight: 4,
+  },
   favBtn: {
     padding: 4,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   recentTitle: {
     fontSize: 18,

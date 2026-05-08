@@ -7,6 +7,8 @@ import * as Location from 'expo-location';
 import CampusMap, { CampusMapHandle } from '../components/CampusMap';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAppStore } from '../store/useAppStore';
+import { api } from '../services/api';
 import {
   POLO1_CENTER,
   OUTDOOR_ROUTE_END,
@@ -186,6 +188,7 @@ export default function NavigacaoOutdoorScreen() {
   }
   const { colors } = useSettings();
   const { tr } = useLanguage();
+  const { token } = useAppStore();
   const params = useLocalSearchParams<{
     destLat?: string;
     destLng?: string;
@@ -222,6 +225,27 @@ export default function NavigacaoOutdoorScreen() {
   const [isMapMovedByUser, setIsMapMovedByUser] = useState<boolean>(false);
 
   const indoorId = useMemo(() => getIndoorIdByName(destination.name), [destination.name]);
+
+  // Regista a navegação no histórico (uma vez por destino, se autenticado).
+  // Falha silenciosamente — não bloqueia a navegação.
+  const historyLoggedRef = useRef<string>('');
+  useEffect(() => {
+    if (!token) return;
+    const key = `${destination.coordinate.latitude},${destination.coordinate.longitude}|${destination.name}`;
+    if (historyLoggedRef.current === key) return;
+    historyLoggedRef.current = key;
+    api
+      .addHistory({
+        destino_nome: destination.name,
+        destino_categoria: 'edificio',
+        navegacao_tipo: 'outdoor',
+        lat: destination.coordinate.latitude,
+        lon: destination.coordinate.longitude,
+      })
+      .catch(() => {
+        // ignora — histórico não é crítico
+      });
+  }, [token, destination.coordinate.latitude, destination.coordinate.longitude, destination.name]);
 
   const recenterOnUser = () => {
     if (!userLocation || !mapRef.current) return;
