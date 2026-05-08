@@ -36,10 +36,13 @@ async function fetchOsrmRoute(
   start: Coord,
   end: Coord,
   mode: RouteMode,
+  timeoutMs = 15000,
 ): Promise<{ coords: Coord[]; distance: number; duration: number; steps: Step[] } | null> {
   const url = `${OSRM_BASES[mode]}/${mode}/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson&steps=true`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.routes || data.routes.length === 0) return null;
@@ -64,8 +67,14 @@ async function fetchOsrmRoute(
     return { coords, distance: route.distance, duration: route.duration, steps };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
+
+// Limite acima do qual nem tentamos chamar o OSRM — o servidor público é muito
+// lento para rotas longas e faz mais sentido informar o utilizador.
+const MAX_ROUTE_DISTANCE_M = 30000; // 30 km
 
 function formatDistance(m: number): string {
   if (m < 50) return `${Math.round(m / 5) * 5} m`;
@@ -290,6 +299,24 @@ export default function NavigacaoOutdoorScreen() {
     const key = `${destination.coordinate.latitude},${destination.coordinate.longitude},${mode}`;
     if (routeFetchedRef.current === key) return;
     routeFetchedRef.current = key;
+
+    // Verifica primeiro se o utilizador está demasiado longe — evita timeout do OSRM
+    const distLinhaReta = haversine(userLocation, destination.coordinate);
+    if (distLinhaReta > MAX_ROUTE_DISTANCE_M) {
+      setRouteCoords([userLocation, destination.coordinate]);
+      setDistanceM(distLinhaReta);
+      setDurationS(null);
+      setSteps([]);
+      setError(
+        tr(
+          `Estás a ${formatDistance(distLinhaReta)} do destino. Aproxima-te do campus para ver a rota detalhada.`,
+          `You are ${formatDistance(distLinhaReta)} from the destination. Get closer to the campus to see the detailed route.`,
+        ),
+      );
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -304,10 +331,15 @@ export default function NavigacaoOutdoorScreen() {
         setStepIdx(0);
       } else {
         setRouteCoords([userLocation, destination.coordinate]);
-        setDistanceM(null);
+        setDistanceM(distLinhaReta);
         setDurationS(null);
         setSteps([]);
-        setError(tr('Sem rota disponível — a mostrar linha directa', 'No route available — showing straight line'));
+        setError(
+          tr(
+            'Servidor de rotas não respondeu — a mostrar linha directa',
+            'Routing server did not respond — showing straight line',
+          ),
+        );
       }
       setLoading(false);
     })();
