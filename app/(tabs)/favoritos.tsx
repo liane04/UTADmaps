@@ -6,6 +6,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore, FavoriteItem } from '../../store/useAppStore';
 import { getEntradaByName } from '../../constants/polo1Data';
+import { rotaIndoorParaSala } from '../../lib/navigation';
 
 function avatarCor(categoria: string): string {
   if (categoria === 'edificio') return '#C8E6C9';
@@ -26,14 +27,8 @@ export default function FavoritosScreen() {
   const { favorites, removeFavorite } = useAppStore();
 
   const navegar = (item: FavoriteItem) => {
-    if (item.categoria === 'sala') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          destino: item.codigo ?? item.id,
-          destinoNome: item.nome,
-        },
-      });
+    if (item.categoria === 'sala' || item.categoria === 'servico') {
+      router.push(rotaIndoorParaSala(item.codigo, item.nome));
       return;
     }
     if (item.lat != null && item.lon != null) {

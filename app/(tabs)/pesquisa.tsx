@@ -19,6 +19,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
 import { haversine, formatDistance, type Coord } from '../../lib/geo';
 import { getEntradaByName } from '../../constants/polo1Data';
+import { rotaIndoorParaSala } from '../../lib/navigation';
 
 type FiltroCategoria = 'todos' | SearchCategoria;
 
@@ -122,14 +123,9 @@ export default function PesquisaScreen() {
   }, [query, categoria, tr]);
 
   const aoSelecionar = (local: SearchResult) => {
-    if (local.categoria === 'sala') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          destino: local.codigo ?? local.id,
-          destinoNome: local.nome,
-        },
-      });
+    if (local.categoria === 'sala' || local.categoria === 'servico') {
+      // Tenta indoor 3D para salas/serviços do ECT-Polo I; senão fallback legacy
+      router.push(rotaIndoorParaSala(local.codigo, local.nome));
       return;
     }
     if (local.lat != null && local.lon != null) {

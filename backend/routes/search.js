@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../supabase');
 
+/**
+ * Normaliza string para pesquisa: remove acentos e converte para forma "limpa".
+ * "Ciências" → "Ciencias", "Saúde" → "Saude". Mantém case-insensitive ao ilike.
+ */
+function semAcentos(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 // GET /api/search?q=&type=
 // Pesquisa unificada: edifícios + salas + serviços
 // Resposta uniforme:
@@ -12,6 +20,7 @@ router.get('/', async (req, res) => {
   try {
     const { q = '', type = 'todos' } = req.query;
     const qTrim = String(q || '').trim();
+    const qNorm = semAcentos(qTrim);
     const results = [];
 
     // ---- Edifícios ----
@@ -20,10 +29,11 @@ router.get('/', async (req, res) => {
         .from('buildings')
         .select('id, nome, nome_completo, codigo, lat, lon');
       if (qTrim) {
-        // Procura em nome (sigla, ex: "ECT") + nome_completo (descrição,
-        // ex: "Escola de Ciências e Tecnologias") + codigo.
+        // Procura em nome (sigla, ex: "ECT") + nome_completo ASCII (ex:
+        // "Escola de Ciencias e Tecnologias") + codigo. nome_completo
+        // está sem acentos na DB para que "ciencia" bata em "Ciências".
         bq = bq.or(
-          `nome.ilike.%${qTrim}%,nome_completo.ilike.%${qTrim}%,codigo.ilike.%${qTrim}%`,
+          `nome.ilike.%${qTrim}%,nome_completo.ilike.%${qNorm}%,codigo.ilike.%${qTrim}%`,
         );
       }
       const { data: buildings, error: bErr } = await bq.order('nome');

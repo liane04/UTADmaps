@@ -12,62 +12,66 @@
 --   - floors    → delete dos 4 setores principais + insert
 --   - rooms     → delete dos 4 setores principais + insert
 
--- 1. EDIFÍCIOS — upsert por código (com nome_completo das escolas)
+-- 1. EDIFICIOS — upsert por código (com nome_completo em ASCII para pesquisa)
+-- Nota: usamos hífen simples '-' em vez de en-dash '–' para evitar problemas
+-- de encoding no Supabase SQL Editor. nome_completo é ASCII puro para que
+-- a pesquisa funcione independentemente de acentos.
 alter table buildings add column if not exists nome_completo text;
 
 insert into buildings (nome, codigo, lat, lon)
 values
   -- Polo I — núcleo académico
-  ('ECAV – Polo I',                               'ECAV1',  41.288144, -7.741173),
-  ('ECT – Polo I',                                'ECT1',   41.286934, -7.740588),
+  ('ECAV - Polo I',                               'ECAV1',  41.288144, -7.741173),
+  ('ECT - Polo I',                                'ECT1',   41.286934, -7.740588),
   ('Biblioteca Central',                          'BIB',    41.285822, -7.740542),
   ('Reitoria',                                    'REI',    41.286264, -7.738626),
 
   -- Polo I — outros edifícios
-  ('ECVA – Polo I',                               'ECVA1',  41.286109, -7.739345),
-  ('ECHS – Polo I',                               'ECHS1',  41.281620, -7.745260),
-  ('Edifício de Enologia',                        'ENO',    41.286113, -7.738237),
+  ('ECVA - Polo I',                               'ECVA1',  41.286109, -7.739345),
+  ('ECHS - Polo I',                               'ECHS1',  41.281620, -7.745260),
+  ('Edificio de Enologia',                        'ENO',    41.286113, -7.738237),
   ('Complexo Laboratorial',                       'LAB',    41.287550, -7.738097),
-  ('Hangar ECT – Polo I',                         'HECT1',  41.286942, -7.741533),
+  ('Hangar ECT - Polo I',                         'HECT1',  41.286942, -7.741533),
   ('University Center (AAUTAD)',                  'UC',     41.288435, -7.739048),
-  ('Edifício de Apoio aos Alunos',                'EAA',    41.288100, -7.739450),
-  ('Edifício de Serviços Comuns',                 'ESC',    41.287868, -7.739188),
+  ('Edificio de Apoio aos Alunos',                'EAA',    41.288100, -7.739450),
+  ('Edificio de Servicos Comuns',                 'ESC',    41.287868, -7.739188),
   ('Kitchen Lab',                                 'KIT',    41.287400, -7.739700),
-  ('Herbário / Jardim Botânico',                  'JB',     41.287200, -7.741400),
-  ('Hospital Veterinário',                        'HV',     41.289576, -7.739880),
+  ('Herbario / Jardim Botanico',                  'JB',     41.287200, -7.741400),
+  ('Hospital Veterinario',                        'HV',     41.289576, -7.739880),
   ('Portaria',                                    'PORT',   41.289683, -7.737329),
-  ('Cantina de Prados / Restaurante Panorâmico',  'CAN',    41.289699, -7.736478),
+  ('Cantina de Prados / Restaurante Panoramico',  'CAN',    41.289699, -7.736478),
 
   -- Polo II
-  ('ECT – Polo II',                               'ECT2',   41.285771, -7.743627),
-  ('ECAV – Polo II',                              'ECAV2',  41.285382, -7.743822),
-  ('ECHS – Polo II',                              'ECHS2',  41.285204, -7.744535),
-  ('Hangar ECAV – Polo II',                       'HECAV2', 41.284575, -7.744239),
+  ('ECT - Polo II',                               'ECT2',   41.285771, -7.743627),
+  ('ECAV - Polo II',                              'ECAV2',  41.285382, -7.743822),
+  ('ECHS - Polo II',                              'ECHS2',  41.285204, -7.744535),
+  ('Hangar ECAV - Polo II',                       'HECAV2', 41.284575, -7.744239),
   ('Nave de Desportos',                           'NAV',    41.283125, -7.744929),
-  ('ECVA – Polo II / Complexo Desportivo',        'ECVA2',  41.282700, -7.743800),
-  ('Escola Superior de Saúde',                    'ESS',    41.282500, -7.743400)
+  ('ECVA - Polo II / Complexo Desportivo',        'ECVA2',  41.282700, -7.743800),
+  ('Escola Superior de Saude',                    'ESS',    41.282500, -7.743400)
 on conflict (codigo) do update set
   nome = excluded.nome,
   lat  = excluded.lat,
   lon  = excluded.lon;
 
--- Popular nomes completos das escolas (para pesquisa por "Escola de Ciências e Tecnologias")
-update buildings set nome_completo = 'Escola de Ciências e Tecnologias – Polo I'           where codigo = 'ECT1';
-update buildings set nome_completo = 'Escola de Ciências e Tecnologias – Polo II'          where codigo = 'ECT2';
-update buildings set nome_completo = 'Escola de Ciências Agrárias e Veterinárias – Polo I'  where codigo = 'ECAV1';
-update buildings set nome_completo = 'Escola de Ciências Agrárias e Veterinárias – Polo II' where codigo = 'ECAV2';
-update buildings set nome_completo = 'Escola de Ciências da Vida e do Ambiente – Polo I'    where codigo = 'ECVA1';
-update buildings set nome_completo = 'Escola de Ciências da Vida e do Ambiente – Polo II'   where codigo = 'ECVA2';
-update buildings set nome_completo = 'Escola de Ciências Humanas e Sociais – Polo I'        where codigo = 'ECHS1';
-update buildings set nome_completo = 'Escola de Ciências Humanas e Sociais – Polo II'       where codigo = 'ECHS2';
-update buildings set nome_completo = 'Escola Superior de Saúde'                              where codigo = 'ESS';
-update buildings set nome_completo = 'Hangar da ECT – Polo I'                                where codigo = 'HECT1';
-update buildings set nome_completo = 'Hangar da ECAV – Polo II'                              where codigo = 'HECAV2';
-update buildings set nome_completo = 'Edifício de Enologia (ECAV)'                           where codigo = 'ENO';
-update buildings set nome_completo = 'Herbário e Jardim Botânico'                            where codigo = 'JB';
-update buildings set nome_completo = 'Associação Académica da UTAD'                          where codigo = 'UC';
-update buildings set nome_completo = 'Centro de Serviços Comuns Académicos'                  where codigo = 'ESC';
-update buildings set nome_completo = 'SASUTAD — Apoio Social ao Aluno'                       where codigo = 'EAA';
+-- nome_completo em ASCII (sem acentos) para pesquisa robusta:
+-- "Escola de Ciencias" bate em "Ciências", "Ciencia", etc.
+update buildings set nome_completo = 'Escola de Ciencias e Tecnologias - Polo I'            where codigo = 'ECT1';
+update buildings set nome_completo = 'Escola de Ciencias e Tecnologias - Polo II'           where codigo = 'ECT2';
+update buildings set nome_completo = 'Escola de Ciencias Agrarias e Veterinarias - Polo I'  where codigo = 'ECAV1';
+update buildings set nome_completo = 'Escola de Ciencias Agrarias e Veterinarias - Polo II' where codigo = 'ECAV2';
+update buildings set nome_completo = 'Escola de Ciencias da Vida e do Ambiente - Polo I'    where codigo = 'ECVA1';
+update buildings set nome_completo = 'Escola de Ciencias da Vida e do Ambiente - Polo II'   where codigo = 'ECVA2';
+update buildings set nome_completo = 'Escola de Ciencias Humanas e Sociais - Polo I'        where codigo = 'ECHS1';
+update buildings set nome_completo = 'Escola de Ciencias Humanas e Sociais - Polo II'       where codigo = 'ECHS2';
+update buildings set nome_completo = 'Escola Superior de Saude'                              where codigo = 'ESS';
+update buildings set nome_completo = 'Hangar da ECT - Polo I'                                where codigo = 'HECT1';
+update buildings set nome_completo = 'Hangar da ECAV - Polo II'                              where codigo = 'HECAV2';
+update buildings set nome_completo = 'Edificio de Enologia (ECAV)'                           where codigo = 'ENO';
+update buildings set nome_completo = 'Herbario e Jardim Botanico'                            where codigo = 'JB';
+update buildings set nome_completo = 'Associacao Academica da UTAD'                          where codigo = 'UC';
+update buildings set nome_completo = 'Centro de Servicos Comuns Academicos'                  where codigo = 'ESC';
+update buildings set nome_completo = 'SASUTAD - Apoio Social ao Aluno'                       where codigo = 'EAA';
 
 -- 2. PISOS — limpar e recriar para o ECT-Polo I
 delete from floors

@@ -18,6 +18,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAppStore } from '../store/useAppStore';
 import { getEntradaByName } from '../constants/polo1Data';
+import { rotaIndoorParaSala } from '../lib/navigation';
 
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -117,13 +118,7 @@ export default function HistoricoScreen() {
 
   const navegarPara = (entry: NavigationHistoryEntry) => {
     if (entry.navegacao_tipo === 'indoor') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          ...(entry.destino_id ? { destino: entry.destino_id } : {}),
-          destinoNome: entry.destino_nome,
-        },
-      });
+      router.push(rotaIndoorParaSala(entry.destino_id ?? entry.destino_nome, entry.destino_nome));
       return;
     }
     if (entry.lat != null && entry.lon != null) {

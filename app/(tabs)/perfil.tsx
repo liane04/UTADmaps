@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { rotaIndoorParaSala } from '../../lib/navigation';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 
@@ -211,7 +212,7 @@ export default function PerfilScreen() {
                     borderColor: aulaInfo.urgente ? '#FF9500' : colors.border,
                   },
                 ]}
-                onPress={() => router.push({ pathname: '/navigacao-indoor', params: { destino: proximaAula.sala, destinoNome: proximaAula.sala } })}
+                onPress={() => router.push(rotaIndoorParaSala(proximaAula.sala, proximaAula.disciplina))}
                 accessibilityRole="button"
                 accessibilityLabel={tr('Navegar para próxima aula', 'Navigate to next class')}>
                 <View style={styles.nextClassHeader}>

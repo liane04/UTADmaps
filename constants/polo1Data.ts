@@ -90,8 +90,10 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
     tipo: 'escola',
     coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
-    // Entrada principal — face ao passadiço central (lado sul).
-    entrada: { latitude: 41.286830, longitude: -7.740580 },
+    // Entrada principal (piso 1, entre Secretaria e F1.17) — confirmada no campus.
+    // Há outra entrada por baixo (piso 0, entre F0.12 e F0.14) em
+    // 41.2866804, -7.7407563 — não usada por defeito.
+    entrada: { latitude: 41.2866469, longitude: -7.7408100 },
     hasIndoor: true,
     floors: [
       {
@@ -319,6 +321,24 @@ export function getIndoorIdByName(name: string): string | null {
       return b.id;
     }
   }
+  return null;
+}
+
+/**
+ * Para uma sala (ex: "F0.01", "E2.10A", "G0.04B"), devolve o id do edifício
+ * com indoor 3D que contém essa sala. Por agora apenas o ECT-Polo I tem
+ * indoor 3D, e contém todas as salas com prefixo E, F, G ou I.
+ *
+ * Devolve null para salas sem indoor 3D disponível (ex: "Anfiteatro",
+ * "Sala 2.1") — caem no fallback (planta 2D legacy).
+ */
+export function getIndoorIdForSala(salaCode: string | null | undefined): string | null {
+  if (!salaCode) return null;
+  // Salas E*, F*, G*, I* (com dígito a seguir) pertencem ao ECT-Polo I
+  if (/^[EFGI]\d/i.test(salaCode.trim())) return 'sectorE';
+  // Salas/serviços do ECT-Polo I que não seguem o padrão alfanumérico
+  const upper = salaCode.trim().toUpperCase();
+  if (upper === 'BAR' || upper === 'SECRETARIA') return 'sectorE';
   return null;
 }
 

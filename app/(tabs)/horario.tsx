@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { rotaIndoorParaSala } from '../../lib/navigation';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
@@ -355,7 +356,7 @@ export default function HorarioScreen() {
                 <TouchableOpacity
                   key={`aula-${i}`}
                   style={styles.timelineRow}
-                  onPress={() => router.push('/navigacao-indoor')}
+                  onPress={() => router.push(rotaIndoorParaSala(aula.sala || parsed.sala, aula.disciplina))}
                   accessibilityRole="button"
                   accessibilityLabel={tr(
                     `Navegar para ${titulo} em ${local}`,
