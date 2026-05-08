@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  Platform,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,6 +21,7 @@ import { useAppStore } from '../store/useAppStore';
 import { api } from '../services/api';
 import {
   POLO1_CENTER,
+  POLO1_BUILDINGS,
   OUTDOOR_ROUTE_END,
   getIndoorIdByName,
 } from '../constants/polo1Data';
@@ -186,7 +197,7 @@ export default function NavigacaoOutdoorScreen() {
       </SafeAreaView>
     );
   }
-  const { colors } = useSettings();
+  const { colors, fs } = useSettings();
   const { tr } = useLanguage();
   const { token } = useAppStore();
   const params = useLocalSearchParams<{
@@ -215,6 +226,9 @@ export default function NavigacaoOutdoorScreen() {
 
   const [mode, setMode] = useState<RouteMode>('foot');
   const [userLocation, setUserLocation] = useState<Coord | null>(null);
+  // Origem da rota: 'gps' = posição atual; ou id de um building em POLO1_BUILDINGS
+  const [origemId, setOrigemId] = useState<string>('gps');
+  const [origemPickerOpen, setOrigemPickerOpen] = useState(false);
   const [routeCoords, setRouteCoords] = useState<Coord[] | null>(null);
   const [distanceM, setDistanceM] = useState<number | null>(null);
   const [durationS, setDurationS] = useState<number | null>(null);
@@ -225,6 +239,21 @@ export default function NavigacaoOutdoorScreen() {
   const [isMapMovedByUser, setIsMapMovedByUser] = useState<boolean>(false);
 
   const indoorId = useMemo(() => getIndoorIdByName(destination.name), [destination.name]);
+
+  // Coord efectiva de origem da rota: GPS quando origemId === 'gps', senão o
+  // edifício selecionado. Usado para o request OSRM e marker no mapa.
+  const origemCoord = useMemo<Coord | null>(() => {
+    if (origemId === 'gps') return userLocation;
+    const b = POLO1_BUILDINGS.find((x) => x.id === origemId);
+    if (!b) return userLocation;
+    return b.entrada ?? b.coordinate;
+  }, [origemId, userLocation]);
+
+  const origemNome = useMemo(() => {
+    if (origemId === 'gps') return tr('A minha localização', 'My location');
+    const b = POLO1_BUILDINGS.find((x) => x.id === origemId);
+    return b ? (tr(b.name.pt, b.name.en)) : tr('A minha localização', 'My location');
+  }, [origemId, tr]);
 
   // Regista a navegação no histórico (uma vez por destino, se autenticado).
   // Falha silenciosamente — não bloqueia a navegação.
@@ -261,17 +290,31 @@ export default function NavigacaoOutdoorScreen() {
     setIsMapMovedByUser(false);
   };
 
-  const destinationMarker = useMemo(
-    () => [
+  const mapMarkers = useMemo(() => {
+    const arr = [
       {
         id: 'destination',
         coordinate: destination.coordinate,
         title: destination.name,
-        color: '#007AFF',
+        color: '#FF3B30',
+        symbol: 'D',
       },
-    ],
-    [destination.coordinate, destination.name],
-  );
+    ];
+    // Se a origem é um edifício (não GPS), mostra marker verde aí
+    if (origemId !== 'gps') {
+      const b = POLO1_BUILDINGS.find((x) => x.id === origemId);
+      if (b) {
+        arr.push({
+          id: 'origin',
+          coordinate: b.entrada ?? b.coordinate,
+          title: tr(b.name.pt, b.name.en),
+          color: '#34C759',
+          symbol: 'O',
+        });
+      }
+    }
+    return arr;
+  }, [destination.coordinate, destination.name, origemId, tr]);
 
   // Request GPS permission + watch position
   useEffect(() => {
@@ -315,19 +358,18 @@ export default function NavigacaoOutdoorScreen() {
     };
   }, [tr]);
 
-  // Fetch route from OSRM apenas quando o destino/modo muda (ou GPS inicial chega)
-  // — não a cada movimento do utilizador
+  // Fetch route from OSRM quando origem/destino/modo muda
   const routeFetchedRef = useRef<string>('');
   useEffect(() => {
-    if (!userLocation) return;
-    const key = `${destination.coordinate.latitude},${destination.coordinate.longitude},${mode}`;
+    if (!origemCoord) return;
+    const key = `${origemCoord.latitude},${origemCoord.longitude}|${destination.coordinate.latitude},${destination.coordinate.longitude},${mode}`;
     if (routeFetchedRef.current === key) return;
     routeFetchedRef.current = key;
 
-    // Verifica primeiro se o utilizador está demasiado longe — evita timeout do OSRM
-    const distLinhaReta = haversine(userLocation, destination.coordinate);
+    // Verifica primeiro se a origem está demasiado longe — evita timeout do OSRM
+    const distLinhaReta = haversine(origemCoord, destination.coordinate);
     if (distLinhaReta > MAX_ROUTE_DISTANCE_M) {
-      setRouteCoords([userLocation, destination.coordinate]);
+      setRouteCoords([origemCoord, destination.coordinate]);
       setDistanceM(distLinhaReta);
       setDurationS(null);
       setSteps([]);
@@ -345,7 +387,7 @@ export default function NavigacaoOutdoorScreen() {
     setLoading(true);
     setError(null);
     (async () => {
-      const result = await fetchOsrmRoute(userLocation, destination.coordinate, mode);
+      const result = await fetchOsrmRoute(origemCoord, destination.coordinate, mode);
       if (cancelled) return;
       if (result) {
         setRouteCoords(result.coords);
@@ -354,7 +396,7 @@ export default function NavigacaoOutdoorScreen() {
         setSteps(result.steps);
         setStepIdx(0);
       } else {
-        setRouteCoords([userLocation, destination.coordinate]);
+        setRouteCoords([origemCoord, destination.coordinate]);
         setDistanceM(distLinhaReta);
         setDurationS(null);
         setSteps([]);
@@ -370,7 +412,7 @@ export default function NavigacaoOutdoorScreen() {
     return () => {
       cancelled = true;
     };
-  }, [userLocation, destination.coordinate, mode, tr]);
+  }, [origemCoord, destination.coordinate, mode, tr]);
 
   // Auto-avançar passo quando o utilizador passa próximo do waypoint da manobra
   useEffect(() => {
@@ -391,26 +433,26 @@ export default function NavigacaoOutdoorScreen() {
 
   const stepActual = steps[stepIdx];
 
-  // Fit map to user + destination once route is ready
+  // Fit map à rota assim que estiver pronta
   useEffect(() => {
-    if (!mapRef.current || !userLocation) return;
+    if (!mapRef.current || !origemCoord) return;
     mapRef.current.fitToCoordinates(
       routeCoords && routeCoords.length > 1
         ? routeCoords
-        : [userLocation, destination.coordinate],
+        : [origemCoord, destination.coordinate],
       {
-        padding: { top: 120, right: 60, bottom: 260, left: 60 },
+        padding: { top: 200, right: 60, bottom: 280, left: 60 },
         animated: true,
       },
     );
-  }, [routeCoords, userLocation, destination.coordinate]);
+  }, [routeCoords, origemCoord, destination.coordinate]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <CampusMap
         ref={mapRef}
         initialRegion={POLO1_CENTER}
-        markers={destinationMarker}
+        markers={mapMarkers}
         route={
           routeCoords
             ? { coordinates: routeCoords, color: '#007AFF', width: 4, dashed: true }
@@ -432,18 +474,99 @@ export default function NavigacaoOutdoorScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Header Overlay */}
+      {/* Header Overlay com selector De → Para */}
       <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-            {destination.name}
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+            style={styles.backIconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Voltar', 'Back')}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
+            {tr('Navegação', 'Navigation')}
           </Text>
-        </TouchableOpacity>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Linhas De / Para */}
+        <View style={styles.routeFromTo}>
+          <TouchableOpacity
+            style={styles.routeRow}
+            onPress={() => setOrigemPickerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={tr(`De: ${origemNome}. Tocar para mudar.`, `From: ${origemNome}. Tap to change.`)}>
+            <View style={[styles.routeBullet, { backgroundColor: '#34C759' }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
+                {tr('De', 'From')}
+              </Text>
+              <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
+                {origemNome}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={18} color={colors.subtext} />
+          </TouchableOpacity>
+          <View style={[styles.routeDivider, { backgroundColor: colors.divider }]} />
+          <View style={styles.routeRow}>
+            <View style={[styles.routeBullet, { backgroundColor: '#FF3B30' }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
+                {tr('Para', 'To')}
+              </Text>
+              <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
+                {destination.name}
+              </Text>
+            </View>
+          </View>
+        </View>
       </SafeAreaView>
+
+      {/* Modal selector de origem */}
+      <Modal visible={origemPickerOpen} transparent animationType="slide" onRequestClose={() => setOrigemPickerOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setOrigemPickerOpen(false)} />
+        <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(18) }]}>
+            {tr('Ponto de partida', 'Starting point')}
+          </Text>
+          <ScrollView style={{ maxHeight: 360 }}>
+            <TouchableOpacity
+              style={styles.modalRow}
+              onPress={() => {
+                setOrigemId('gps');
+                setOrigemPickerOpen(false);
+              }}
+              accessibilityRole="button">
+              <Ionicons name="locate" size={20} color={colors.text} />
+              <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]}>
+                {tr('A minha localização', 'My location')}
+              </Text>
+              {origemId === 'gps' && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+            </TouchableOpacity>
+            <View style={[styles.modalDivider, { backgroundColor: colors.divider }]} />
+            {POLO1_BUILDINGS.map((b) => (
+              <View key={b.id}>
+                <TouchableOpacity
+                  style={styles.modalRow}
+                  onPress={() => {
+                    setOrigemId(b.id);
+                    setOrigemPickerOpen(false);
+                  }}
+                  accessibilityRole="button">
+                  <Ionicons name="business-outline" size={20} color={colors.text} />
+                  <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]} numberOfLines={1}>
+                    {tr(b.name.pt, b.name.en)}
+                  </Text>
+                  {origemId === b.id && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+                <View style={[styles.modalDivider, { backgroundColor: colors.divider }]} />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* Bottom Panel */}
       <View style={[styles.bottomPanel, { backgroundColor: colors.card }]}>
@@ -610,11 +733,91 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginLeft: 8,
+    fontWeight: '700',
     flex: 1,
+    textAlign: 'center',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 8,
+    minHeight: 44,
+  },
+  backIconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  routeFromTo: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 4,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 12,
+    minHeight: 44,
+  },
+  routeBullet: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  routeLabel: {
+    fontWeight: '500',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  routeValue: {
+    fontWeight: '600',
+  },
+  routeDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 24,
+  },
+  // Modal selector de origem
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontWeight: '700',
+    marginVertical: 12,
+    marginLeft: 8,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    gap: 12,
+    minHeight: 48,
+  },
+  modalRowText: {
+    flex: 1,
+    fontWeight: '500',
+  },
+  modalDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 40,
   },
   bottomPanel: {
     position: 'absolute',

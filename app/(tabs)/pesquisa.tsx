@@ -18,6 +18,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
 import { haversine, formatDistance, type Coord } from '../../lib/geo';
+import { getEntradaByName } from '../../constants/polo1Data';
 
 type FiltroCategoria = 'todos' | SearchCategoria;
 
@@ -132,11 +133,15 @@ export default function PesquisaScreen() {
       return;
     }
     if (local.lat != null && local.lon != null) {
+      // Usa a entrada principal do edifício se conhecida, senão a coord do API (centro)
+      const entrada = getEntradaByName(local.edificio || local.nome);
+      const lat = entrada?.latitude ?? local.lat;
+      const lon = entrada?.longitude ?? local.lon;
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(local.lat),
-          destLng: String(local.lon),
+          destLat: String(lat),
+          destLng: String(lon),
           destName: local.nome,
         },
       });

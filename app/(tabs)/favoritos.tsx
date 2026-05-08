@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore, FavoriteItem } from '../../store/useAppStore';
+import { getEntradaByName } from '../../constants/polo1Data';
 
 function avatarCor(categoria: string): string {
   if (categoria === 'edificio') return '#C8E6C9';
@@ -36,11 +37,12 @@ export default function FavoritosScreen() {
       return;
     }
     if (item.lat != null && item.lon != null) {
+      const entrada = getEntradaByName(item.nome);
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(item.lat),
-          destLng: String(item.lon),
+          destLat: String(entrada?.latitude ?? item.lat),
+          destLng: String(entrada?.longitude ?? item.lon),
           destName: item.nome,
         },
       });

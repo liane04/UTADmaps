@@ -41,9 +41,11 @@ export default function MapaScreen() {
 
   const handleGo = () => {
     if (!selectedBuilding) return;
+    // Usa a entrada principal se conhecida, senão o centro do edifício
+    const target = selectedBuilding.entrada ?? selectedBuilding.coordinate;
     const dest = {
-      destLat: selectedBuilding.coordinate.latitude.toString(),
-      destLng: selectedBuilding.coordinate.longitude.toString(),
+      destLat: target.latitude.toString(),
+      destLng: target.longitude.toString(),
       destName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
     };
     setSelectedBuilding(null);

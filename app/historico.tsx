@@ -17,6 +17,7 @@ import { api, NavigationHistoryEntry } from '../services/api';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAppStore } from '../store/useAppStore';
+import { getEntradaByName } from '../constants/polo1Data';
 
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -126,11 +127,12 @@ export default function HistoricoScreen() {
       return;
     }
     if (entry.lat != null && entry.lon != null) {
+      const entrada = getEntradaByName(entry.destino_nome);
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(entry.lat),
-          destLng: String(entry.lon),
+          destLat: String(entrada?.latitude ?? entry.lat),
+          destLng: String(entrada?.longitude ?? entry.lon),
           destName: entry.destino_nome,
         },
       });

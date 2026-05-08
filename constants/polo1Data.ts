@@ -9,11 +9,20 @@ export type Floor = {
 
 export type BuildingTipo = 'escola' | 'servico' | 'lab' | 'desporto' | 'outro';
 
+export type Coord = { latitude: number; longitude: number };
+
 export type Building = {
   id: string;
   name: { pt: string; en: string };
   tipo: BuildingTipo;
-  coordinate: { latitude: number; longitude: number };
+  /** Centro geométrico do edifício (do OSM). Usado para o marker do mapa. */
+  coordinate: Coord;
+  /**
+   * Coordenadas da porta principal de entrada. Quando definido, a navegação
+   * outdoor termina aqui em vez do centro do edifício — mais preciso para
+   * o utilizador chegar realmente a uma porta. Se omitido, usa-se `coordinate`.
+   */
+  entrada?: Coord;
   floors: Floor[];
   hasIndoor?: boolean;
 };
@@ -68,6 +77,8 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'ECAV – Polo I', en: 'ECAV – Campus I' },
     tipo: 'escola',
     coordinate: { latitude: 41.288144, longitude: -7.741173 },
+    // Entrada principal estimada — face ao caminho central (lado sul-este).
+    entrada: { latitude: 41.288050, longitude: -7.741080 },
     floors: [
       {
         level: 0,
@@ -104,6 +115,8 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
     tipo: 'escola',
     coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
+    // Entrada principal — face ao passadiço central (lado sul).
+    entrada: { latitude: 41.286830, longitude: -7.740580 },
     hasIndoor: true,
     floors: [
       {
@@ -135,6 +148,8 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'Biblioteca Central', en: 'Central Library' },
     tipo: 'servico',
     coordinate: { latitude: 41.285822, longitude: -7.740542 },
+    // Entrada principal — face ao caminho pedonal a leste.
+    entrada: { latitude: 41.285822, longitude: -7.740440 },
     floors: [
       {
         level: 0,
@@ -150,6 +165,8 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'Reitoria', en: 'Rectory' },
     tipo: 'outro',
     coordinate: { latitude: 41.286264, longitude: -7.738626 },
+    // Entrada principal — Largo das Pedrinhas, lado sul.
+    entrada: { latitude: 41.286170, longitude: -7.738626 },
     floors: [
       {
         level: 0,
@@ -327,6 +344,29 @@ export function getIndoorIdByName(name: string): string | null {
     if (!b.hasIndoor) continue;
     if (norm.includes(b.name.pt.toLowerCase()) || norm.includes(b.name.en.toLowerCase())) {
       return b.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Procura coordenadas da entrada principal de um edifício pelo nome.
+ * Útil para a pesquisa (que vem da API com `lat/lon` do centro do edifício)
+ * usar a porta como destino real em vez do centro.
+ * Devolve null se o edifício não tiver entrada definida.
+ */
+export function getEntradaByName(name: string): Coord | null {
+  if (!name) return null;
+  const norm = name.trim().toLowerCase();
+  for (const b of POLO1_BUILDINGS) {
+    if (!b.entrada) continue;
+    if (
+      b.name.pt.toLowerCase() === norm ||
+      b.name.en.toLowerCase() === norm ||
+      norm.includes(b.name.pt.toLowerCase()) ||
+      norm.includes(b.name.en.toLowerCase())
+    ) {
+      return b.entrada;
     }
   }
   return null;
