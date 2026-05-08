@@ -40,26 +40,39 @@ export default function DefinicoesScreen() {
         {/* ACESSIBILIDADE Section */}
         <Text style={[styles.sectionTitle, { color: colors.subtext, fontSize: fs(14) }]}>{t.acessibilidade}</Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
-          <View style={styles.cardRow}>
+          <View style={[styles.cardRow, { flexDirection: 'column', alignItems: 'stretch', gap: 12 }]}>
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tamanhoTexto}</Text>
-            {/* 3 Pills: Pequeno / Normal / Grande */}
+            {/* 5 Pills: Pequeno / Normal / Grande / Extra / Máximo (até 200% — WCAG 1.4.4) */}
             <View style={[styles.pillsGroup, { backgroundColor: altoContraste ? colors.card : colors.inputBg }]}>
-              {(['pequeno', 'normal', 'grande'] as const).map((op) => {
+              {(['pequeno', 'normal', 'grande', 'extra', 'maximo'] as const).map((op) => {
                 const ativo = tamanhoTexto === op;
-                const label = op === 'pequeno' ? 'A' : op === 'normal' ? 'A' : 'A';
-                const pillFontSize = op === 'pequeno' ? 12 : op === 'normal' ? 16 : 20;
+                // Tamanho real do "A" para refletir a escala
+                const pillFontSize =
+                  op === 'pequeno' ? 11 :
+                  op === 'normal'  ? 14 :
+                  op === 'grande'  ? 17 :
+                  op === 'extra'   ? 20 :
+                  24;
                 return (
                   <TouchableOpacity
                     key={op}
                     style={[
-                      styles.pill, 
+                      styles.pill,
                       { backgroundColor: ativo ? colors.primary : 'transparent',
                         borderWidth: altoContraste ? 2 : 0,
                         borderColor: colors.text }
                     ]}
                     onPress={() => setTamanhoTexto(op)}
-                  >
-                    <Text style={[styles.pillText, { color: ativo ? colors.bg : colors.text, fontSize: pillFontSize, fontWeight: ativo ? '700' : '400' }]}>{label}</Text>
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: ativo }}
+                    accessibilityLabel={
+                      op === 'pequeno' ? tr('Pequeno (85%)', 'Small (85%)') :
+                      op === 'normal'  ? tr('Normal (100%)', 'Normal (100%)') :
+                      op === 'grande'  ? tr('Grande (125%)', 'Large (125%)') :
+                      op === 'extra'   ? tr('Extra grande (150%)', 'Extra large (150%)') :
+                      tr('Máximo (200%)', 'Maximum (200%)')
+                    }>
+                    <Text style={[styles.pillText, { color: ativo ? colors.bg : colors.text, fontSize: pillFontSize, fontWeight: ativo ? '700' : '500' }]}>A</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -248,16 +261,17 @@ const styles = StyleSheet.create({
     marginTop: 32,
     marginBottom: 32,
   },
-  // Pills "A" — 44×44 cumpre WCAG 2.5.5 (Target Size Enhanced AAA)
+  // Pills "A" — 5 níveis de texto (até 200%, WCAG 1.4.4)
   pillsGroup: {
     flexDirection: 'row',
     borderRadius: 22,
     padding: 4,
     gap: 4,
+    justifyContent: 'space-between',
   },
   pill: {
-    width: 44,
-    height: 44,
+    flex: 1,
+    minHeight: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',

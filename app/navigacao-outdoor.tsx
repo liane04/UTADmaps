@@ -198,7 +198,7 @@ export default function NavigacaoOutdoorScreen() {
     );
   }
   const { colors, fs } = useSettings();
-  const { tr } = useLanguage();
+  const { tr, language } = useLanguage();
   const { token } = useAppStore();
   const params = useLocalSearchParams<{
     destLat?: string;
