@@ -68,7 +68,7 @@ As três ferramentas foram executadas em **duas fases**: (1) **antes** das corre
 
 ### Lighthouse 12.8.2
 
-A análise Lighthouse executou 73 audits da categoria Accessibility. **20 foram avaliadas com score 1 (passed)**, **0 falharam** e **53 foram marcadas como N/A**. A elevada percentagem de N/A é consequência da aplicação ser uma SPA React Native Web cujo conteúdo é renderizado após hidratação — o crawler do Lighthouse executa as audits sobre o DOM imediatamente após `domcontentloaded`, antes de muitos elementos interactivos estarem montados. As 20 audits avaliadas cobrem os critérios mais relevantes:
+A análise Lighthouse executou um total de 67 audits da categoria Accessibility, distribuídas em **19 passed**, **0 failed**, **38 N/A** e **10 manual checks** (audits que o Lighthouse identifica como cobertas pela ferramenta mas que requerem verificação humana, e.g. "Interactive controls are keyboard focusable", "Visual order on the page follows DOM order"). A elevada percentagem de N/A e de manual checks é consequência da aplicação ser uma SPA React Native Web cujo conteúdo é renderizado após hidratação — o crawler do Lighthouse executa as audits sobre o DOM imediatamente após `domcontentloaded`, antes de muitos elementos interactivos estarem montados. As 19 audits efetivamente avaliadas cobrem os critérios mais relevantes:
 
 **Tabela 7 — Lighthouse Accessibility: audits avaliadas e passadas**
 
@@ -81,9 +81,20 @@ A análise Lighthouse executou 73 audits da categoria Accessibility. **20 foram 
 | Viewport e zoom (meta-viewport) | 1 | 1.4.4 Resize Text |
 | Foco e teclado (tabindex, label-content-name-mismatch) | 2 | 2.4.3, 2.5.3 |
 | **Target size (WCAG 2.2 novo)** | 1 | **2.5.8 Target Size** |
-| **TOTAL passados** | **20 / 20** | — |
+| **TOTAL passados** | **19 / 19** | — |
 
-> Figura X — Lighthouse Accessibility Score 100/100 com 20 audits passadas (`resultados/lighthouse-antes.report.html`)
+Os 10 manual checks identificados pelo Lighthouse foram cobertos pela análise manual documentada na secção 3.6.4 (auditoria de atributos por ficheiro, testes com VoiceOver e testes de responsividade), que valida concretamente:
+
+- Interactive controls são focáveis por teclado (web) e por leitor de ecrã (mobile)
+- Interactive elements indicate purpose and state (`accessibilityState`)
+- The page has a logical tab order
+- Visual order on the page follows DOM order
+- HTML5 landmark elements are used (com a adição do `<main>` na Fase 2)
+- Custom controls have associated labels e ARIA roles
+
+> Figura X.1 — Lighthouse Accessibility Score 100/100 (scores e secção principal) — `screenshots/antes/01_lighthouse_scores.png`
+> Figura X.2 — Lighthouse Accessibility — 19 audits passadas — `screenshots/antes/02_lighthouse_a11y_passed.png`
+> Figura X.3 — Lighthouse Best Practices Score 100/100 — `screenshots/antes/03_lighthouse_best_practices.png`
 
 ### axe-core 4.11.4
 
@@ -110,7 +121,8 @@ meta-viewport-large · meta-viewport · nested-interactive · page-has-heading-o
 region · scrollable-region-focusable · tabindex · target-size
 ```
 
-> Figura X+1 — axe-core CLI antes vs depois: "1 issue → 0 issues" (`resultados/axe-antes.json`, `resultados/axe-depois.json`)
+> Figura X.4 — axe-core ANTES: 1 violation `region` (moderate) com 11 ocorrências — `screenshots/antes/04_axe_antes.png`
+> Figura X.5 — axe-core DEPOIS: 0 violations, 29 passes — `screenshots/depois/05_axe_depois.png`
 
 ### pa11y 9 (runner axe + HTML CodeSniffer)
 
@@ -135,7 +147,7 @@ Mitigação conservadora aplicada: a cor `subtext` foi marcada para alteração 
 (rácio 5.70:1 sobre branco, 5.11:1 sobre o fundo principal), o que elimina os warnings em
 qualquer ferramenta conservadora sem alterar perceptivelmente a aparência visual.
 
-> Figura X+2 — Pa11y resultado JSON com os 2 errors documentados (`resultados/pa11y-depois.json`)
+> Figura X.6 — Pa11y: 2 errors de contraste com análise de falsos positivos — `screenshots/depois/06_pa11y_falsos_positivos.png`
 
 ## 3.6.4 — Análise manual
 

@@ -39,9 +39,9 @@ Foram executadas **três ferramentas automáticas** em duas fases — uma **ante
 | **Best Practices** | **100/100** |
 | **SEO** | 82/100 |
 
-#### Accessibility — 20 audits passados
+#### Accessibility — 19 audits passados (Chrome desktop)
 
-A app cumpre integralmente as 20 audits automáticas que o Lighthouse executa contra a aplicação. As restantes 53 são marcadas como **Not Applicable** (N/A) porque a aplicação é uma SPA React Native Web cujo conteúdo é renderizado após hidratação, e o crawler do Lighthouse executa as audits sobre o DOM imediatamente após o `domcontentloaded` — antes da hidratação completa.
+A app cumpre integralmente as 19 audits automáticas que o Lighthouse executa contra a aplicação. Há ainda **38 N/A** e **10 manual checks** sugeridos. (Nota: o Lighthouse CLI em modo headless reporta 20 passed / 53 N/A — a diferença para o Chrome interactivo, 19/38/10, decorre de o crawler interactivo conseguir hidratar mais DOM e detectar mais audits relevantes mas com manual review). As 38 são marcadas como **Not Applicable** (N/A) porque a aplicação é uma SPA React Native Web cujo conteúdo é renderizado após hidratação, e o crawler do Lighthouse executa as audits sobre o DOM imediatamente após o `domcontentloaded` — antes da hidratação completa.
 
 | ID da audit | Peso | Critério WCAG |
 |---|---:|---|

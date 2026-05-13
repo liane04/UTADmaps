@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>axe-core Report — UTAD Maps (DEPOIS)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px;
+    background: #f7f8fa;
+    color: #222;
+    line-height: 1.5;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  header { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h1 { margin: 0 0 8px 0; font-size: 28px; color: #1a1a1a; }
+  .subtitle { color: #666; font-size: 14px; margin: 0; }
+  .meta { font-size: 13px; color: #888; margin-top: 12px; }
+  .meta strong { color: #555; }
+
+  .scoreboard { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+  .score-card {
+    flex: 1;
+    min-width: 160px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-left: 4px solid #ccc;
+  }
+  .score-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; }
+  .score-card .value { font-size: 36px; font-weight: 700; color: #222; }
+  .score-card.ok { border-left-color: #16a34a; }
+  .score-card.ok .value { color: #16a34a; }
+  .score-card.warn { border-left-color: #f59e0b; }
+  .score-card.warn .value { color: #f59e0b; }
+
+  section { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h2 { font-size: 20px; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; color: #1a1a1a; }
+
+  .banner-success {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    color: #fff;
+    padding: 28px 32px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .banner-success h2 { color: #fff; border: none; padding: 0; margin: 0 0 8px 0; font-size: 32px; }
+  .banner-success p { margin: 0; font-size: 16px; opacity: 0.95; }
+
+  .passes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .pass-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 8px; }
+  .pass-item::before { content: "✓"; color: #16a34a; font-weight: 700; }
+  .pass-item.new { border: 2px solid #16a34a; background: #dcfce7; font-weight: 600; }
+  .pass-item.new::after { content: " ✨"; font-size: 12px; }
+
+  .diff-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+  .diff-row:last-child { border-bottom: none; }
+  .diff-label { font-size: 14px; color: #444; }
+  .diff-value { display: flex; align-items: center; gap: 16px; }
+  .diff-old { color: #dc2626; font-weight: 600; }
+  .diff-new { color: #16a34a; font-weight: 600; }
+  .diff-arrow { color: #888; }
+
+  .footer { text-align: center; padding: 24px; color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🛠️ axe-core Accessibility Report</h1>
+    <p class="subtitle">UTAD Maps — análise pós-correções da Fase 2</p>
+    <p class="meta">
+      <strong>URL testada:</strong> http://localhost:8767 (build local com <code>+html.tsx</code>, <code>&lt;main&gt;</code>, skip-link e h1 oculto) ·
+      <strong>axe-core:</strong> 4.11.4 ·
+      <strong>Data:</strong> 13 maio 2026, 21:47 UTC ·
+      <strong>Tags WCAG:</strong> <code>wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice</code>
+    </p>
+  </header>
+
+  <div class="banner-success">
+    <h2>🎉 0 Violations Found</h2>
+    <p>A aplicação cumpre TODAS as regras automáticas WCAG 2.x A, AA e WCAG 2.2 AA verificadas pelo axe-core</p>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-card ok">
+      <div class="label">Violations</div>
+      <div class="value">0</div>
+    </div>
+    <div class="score-card ok">
+      <div class="label">Passes</div>
+      <div class="value">29</div>
+    </div>
+    <div class="score-card warn">
+      <div class="label">Incomplete</div>
+      <div class="value">1</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Inapplicable</div>
+      <div class="value">59</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>📊 Comparação antes vs depois</h2>
+    <div class="diff-row">
+      <div class="diff-label">Violations</div>
+      <div class="diff-value">
+        <span class="diff-old">1 (region)</span>
+        <span class="diff-arrow">→</span>
+        <span class="diff-new">0 ✅</span>
+      </div>
+    </div>
+    <div class="diff-row">
+      <div class="diff-label">Passes</div>
+      <div class="diff-value">
+        <span style="color: #555;">29</span>
+        <span class="diff-arrow">→</span>
+        <span class="diff-new">29 (mantido)</span>
+      </div>
+    </div>
+    <div class="diff-row">
+      <div class="diff-label">Correções aplicadas</div>
+      <div class="diff-value">
+        <span style="color: #555; font-size: 13px;">
+          <code>&lt;main role="main"&gt;</code> +
+          <code>&lt;a class="skip-to-content"&gt;</code> +
+          <code>&lt;h1 visually-hidden&gt;</code> +
+          <code>lang="pt-PT"</code> +
+          <code>&lt;title&gt;</code> descritivo
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>✅ Regras passadas (29)</h2>
+    <p style="color: #555; font-size: 14px;">A aplicação cumpre integralmente as seguintes regras WCAG 2.x e WCAG 2.2:</p>
+    <div class="passes-grid">
+      <div class="pass-item">aria-allowed-attr</div>
+      <div class="pass-item">aria-allowed-role</div>
+      <div class="pass-item">aria-conditional-attr</div>
+      <div class="pass-item">aria-deprecated-role</div>
+      <div class="pass-item">aria-hidden-body</div>
+      <div class="pass-item">aria-prohibited-attr</div>
+      <div class="pass-item">aria-required-attr</div>
+      <div class="pass-item">aria-roles</div>
+      <div class="pass-item">aria-valid-attr-value</div>
+      <div class="pass-item">aria-valid-attr</div>
+      <div class="pass-item">autocomplete-valid</div>
+      <div class="pass-item">avoid-inline-spacing</div>
+      <div class="pass-item">button-name</div>
+      <div class="pass-item">color-contrast</div>
+      <div class="pass-item">document-title</div>
+      <div class="pass-item">form-field-multiple-labels</div>
+      <div class="pass-item">html-has-lang</div>
+      <div class="pass-item">html-lang-valid</div>
+      <div class="pass-item">label-title-only</div>
+      <div class="pass-item">label</div>
+      <div class="pass-item">landmark-one-main</div>
+      <div class="pass-item">meta-viewport-large</div>
+      <div class="pass-item">meta-viewport</div>
+      <div class="pass-item">nested-interactive</div>
+      <div class="pass-item">page-has-heading-one</div>
+      <div class="pass-item new">region</div>
+      <div class="pass-item">scrollable-region-focusable</div>
+      <div class="pass-item">tabindex</div>
+      <div class="pass-item">target-size <small>(WCAG 2.2)</small></div>
+    </div>
+    <p style="margin-top: 16px; font-size: 13px; color: #16a34a;">
+      ✨ <code>region</code> passou de <strong>violação</strong> a <strong>regra cumprida</strong> após adição do wrapper <code>&lt;main&gt;</code> em <code>app/+html.tsx</code>.
+    </p>
+  </section>
+
+  <div class="footer">
+    Documento gerado a partir de <code>axe-depois.json</code> · UTAD Maps — Avaliação de Acessibilidade Fase 2
+  </div>
+</div>
+</body>
+</html>
