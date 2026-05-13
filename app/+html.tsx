@@ -42,10 +42,12 @@ export default function Root({ children }: PropsWithChildren) {
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
       </head>
       <body>
-        <a href="#root" className="skip-to-content">
+        <a href="#main" className="skip-to-content">
           Saltar para o conteúdo principal
         </a>
-        {children}
+        <main id="main" role="main">
+          {children}
+        </main>
       </body>
     </html>
   );
