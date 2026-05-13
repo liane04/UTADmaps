@@ -1,0 +1,43 @@
+=== Lighthouse ANTES — URL: https://utadmaps.b-host.me/
+Data: 2026-05-13T20:32:34.813Z
+User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36
+
+accessibility       : 100/100
+best-practices      : 100/100
+seo                 : 82/100
+
+--- Accessibility Audits Passed (Score 1) ---
+Total: 20 passed
+  [w=10] aria-allowed-attr - `[aria-*]` attributes match their roles
+  [w=1] aria-allowed-role - Uses ARIA roles only on compatible elements
+  [w=7] aria-conditional-attr - ARIA attributes are used as specified for the element's role
+  [w=1] aria-deprecated-role - Deprecated ARIA roles were not used
+  [w=10] aria-hidden-body - `[aria-hidden="true"]` is not present on the document `<body>`
+  [w=7] aria-prohibited-attr - Elements use only permitted ARIA attributes
+  [w=10] aria-required-attr - `[role]`s have all required `[aria-*]` attributes
+  [w=7] aria-roles - `[role]` values are valid
+  [w=10] aria-valid-attr-value - `[aria-*]` attributes have valid values
+  [w=10] aria-valid-attr - `[aria-*]` attributes are valid and not misspelled
+  [w=10] button-name - Buttons have an accessible name
+  [w=7] color-contrast - Background and foreground colors have a sufficient contrast ratio
+  [w=7] document-title - Document has a `<title>` element
+  [w=7] html-has-lang - `<html>` element has a `[lang]` attribute
+  [w=7] html-lang-valid - `<html>` element has a valid value for its `[lang]` attribute
+  [w=7] label - Form elements have associated labels
+  [w=10] meta-viewport - `[user-scalable="no"]` is not used in the `<meta name="viewport">` element and the `[maximum-scale]` attribute is not less than 5.
+  [w=7] tabindex - No element has a `[tabindex]` value greater than 0
+  [w=7] target-size - Touch targets have sufficient size and spacing.
+  [w=0] label-content-name-mismatch - Elements with visible text labels have matching accessible names.
+
+--- Failed: 0 ---
+
+--- Not Applicable: 53 ---
+
+=== BEST PRACTICES ===
+Passed: 20, Failed: 1, N/A: 1
+  FAIL: valid-source-maps - Missing source maps for large first-party JavaScript
+
+=== SEO ===
+Passed: 6, Failed: 2, N/A: 3
+  FAIL: meta-description - Document does not have a meta description | Meta descriptions may be included in search results to concisely summarize page content. [Learn more about the meta description](https://developer.chr
+  FAIL: robots-txt - robots.txt is not valid | If your robots.txt file is malformed, crawlers may not be able to understand how you want your website to be crawled or indexed. [Learn more about rob

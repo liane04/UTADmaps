@@ -33,7 +33,6 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="UTAD Maps" />
         <meta name="format-detection" content="telephone=no" />
-        <title>UTAD Maps — Navegação inteligente no campus</title>
 
         {/* Disable body scrolling on web (managed by RN ScrollView) */}
         <ScrollViewStyleReset />
@@ -46,6 +45,7 @@ export default function Root({ children }: PropsWithChildren) {
           Saltar para o conteúdo principal
         </a>
         <main id="main" role="main">
+          <h1 className="visually-hidden">UTAD Maps — Navegação inteligente no campus da UTAD</h1>
           {children}
         </main>
       </body>
@@ -82,5 +82,17 @@ body {
 .skip-to-content:focus {
   left: 8px;
   top: 8px;
+}
+/* WCAG 2.4.6 Headings: h1 invisível para leitores de ecrã e SEO */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 `;
