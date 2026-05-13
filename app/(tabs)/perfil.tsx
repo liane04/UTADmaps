@@ -8,6 +8,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
 import { rotaIndoorParaSala } from '../../lib/navigation';
+import { useUserLocation } from '../../lib/useUserLocation';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 
@@ -109,6 +110,7 @@ export default function PerfilScreen() {
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { user, favorites, logout } = useAppStore();
+  const userLocation = useUserLocation();
 
   const [proximaAula, setProximaAula] = useState<Aula | null>(null);
   const [loadingAula, setLoadingAula] = useState(true);
@@ -212,7 +214,15 @@ export default function PerfilScreen() {
                     borderColor: aulaInfo.urgente ? '#FF9500' : colors.border,
                   },
                 ]}
-                onPress={() => router.push(rotaIndoorParaSala(proximaAula.sala, proximaAula.disciplina))}
+                onPress={() =>
+                  router.push(
+                    rotaIndoorParaSala(
+                      proximaAula.locationRaw || proximaAula.sala,
+                      proximaAula.disciplina,
+                      { userLocation },
+                    ),
+                  )
+                }
                 accessibilityRole="button"
                 accessibilityLabel={tr('Navegar para próxima aula', 'Navigate to next class')}>
                 <View style={styles.nextClassHeader}>
@@ -302,11 +312,21 @@ export default function PerfilScreen() {
 
         {/* Sair / Entrar */}
         {isAnonimo ? (
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.replace('/')}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Iniciar sessão', 'Sign in')}
+            accessibilityHint={tr('Abre o ecrã de início de sessão com a conta institucional', 'Opens the institutional sign-in screen')}>
             <Text style={[styles.actionButtonText, { fontSize: fs(16), color: colors.bg }]}>{tr('Iniciar sessão', 'Sign in')}</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.logoutButton]}
+            onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Terminar sessão', 'Sign out')}
+            accessibilityHint={tr('Encerra a tua sessão e remove o horário sincronizado', 'Ends your session and clears the synced schedule')}>
             <Ionicons name="log-out-outline" size={20} color="#FF3B30" style={{ marginRight: 8 }} />
             <Text style={[styles.actionButtonText, { color: '#FF3B30', fontSize: fs(16) }]}>
               {tr('Terminar sessão', 'Sign out')}

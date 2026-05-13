@@ -2,6 +2,7 @@
   "expo": {
     "name": "UTADmaps",
     "slug": "utadmaps-6t4jvuxrupspkf0ed5zhv",
+    "description": "Aplicação de navegação inteligente para o campus da UTAD. Navegação indoor e outdoor, integração com horário académico, design inclusivo (WCAG 2.2).",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

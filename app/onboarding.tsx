@@ -137,7 +137,12 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={finalizar}
-          accessibilityRole="button">
+          accessibilityRole="button"
+          accessibilityLabel={ultimo ? tr('Começar', 'Get started') : tr('Saltar tutorial', 'Skip tutorial')}
+          accessibilityHint={tr(
+            'Encerra o tutorial e abre o mapa principal',
+            'Closes the tutorial and opens the main map',
+          )}>
           <Text style={[styles.buttonText, { color: colors.bg, fontSize: fs(16) }]}>
             {ultimo ? tr('Começar', 'Get started') : tr('Saltar tutorial', 'Skip tutorial')}
           </Text>

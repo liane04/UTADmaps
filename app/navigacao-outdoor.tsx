@@ -204,6 +204,8 @@ export default function NavigacaoOutdoorScreen() {
     destLat?: string;
     destLng?: string;
     destName?: string;
+    /** Sala alvo dentro do indoor (ex: 'F0.01'). Propagada ao botão "Entrar no edifício". */
+    indoorDestino?: string;
   }>();
 
   const mapRef = useRef<CampusMapHandle | null>(null);
@@ -469,7 +471,9 @@ export default function NavigacaoOutdoorScreen() {
           style={[styles.recenterButton, { backgroundColor: colors.card }]}
           onPress={recenterOnUser}
           activeOpacity={0.8}
-        >
+          accessibilityRole="button"
+          accessibilityLabel={tr('Recentrar mapa na minha localização', 'Re-center map on my location')}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
           <Ionicons name="locate" size={24} color={colors.primary} />
         </TouchableOpacity>
       )}
@@ -525,7 +529,11 @@ export default function NavigacaoOutdoorScreen() {
 
       {/* Modal selector de origem */}
       <Modal visible={origemPickerOpen} transparent animationType="slide" onRequestClose={() => setOrigemPickerOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOrigemPickerOpen(false)} />
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setOrigemPickerOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Fechar seletor de ponto de partida', 'Close starting point picker')} />
         <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
           <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
           <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(18) }]}>
@@ -538,7 +546,9 @@ export default function NavigacaoOutdoorScreen() {
                 setOrigemId('gps');
                 setOrigemPickerOpen(false);
               }}
-              accessibilityRole="button">
+              accessibilityRole="button"
+              accessibilityLabel={tr('Usar a minha localização como ponto de partida', 'Use my location as starting point')}
+              accessibilityState={{ selected: origemId === 'gps' }}>
               <Ionicons name="locate" size={20} color={colors.text} />
               <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]}>
                 {tr('A minha localização', 'My location')}
@@ -554,7 +564,9 @@ export default function NavigacaoOutdoorScreen() {
                     setOrigemId(b.id);
                     setOrigemPickerOpen(false);
                   }}
-                  accessibilityRole="button">
+                  accessibilityRole="button"
+                  accessibilityLabel={tr(`Usar ${b.name.pt} como ponto de partida`, `Use ${b.name.en} as starting point`)}
+                  accessibilityState={{ selected: origemId === b.id }}>
                   <Ionicons name="business-outline" size={20} color={colors.text} />
                   <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]} numberOfLines={1}>
                     {tr(b.name.pt, b.name.en)}
@@ -682,6 +694,9 @@ export default function NavigacaoOutdoorScreen() {
                   buildingId: indoorId,
                   buildingName: destination.name,
                   floors: JSON.stringify([0, 1, 2]),
+                  // Se viemos de uma navegação iniciada por uma sala (horário,
+                  // pesquisa…), abrir o indoor já com essa sala como destino.
+                  ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
                 },
               })
             }

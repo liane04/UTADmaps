@@ -151,6 +151,9 @@ export default function WelcomeScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoCorrect={false}
+            accessibilityLabel={t.emailLabel}
+            textContentType="emailAddress"
+            autoComplete="email"
           />
         </View>
 
@@ -165,8 +168,17 @@ export default function WelcomeScreen() {
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Password"
+            textContentType="password"
+            autoComplete="current-password"
           />
-          <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+          <TouchableOpacity
+            onPress={() => setShowPassword((v) => !v)}
+            style={styles.eyeBtn}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? tr('Esconder password', 'Hide password') : tr('Mostrar password', 'Show password')}
+            accessibilityState={{ checked: showPassword }}
+            hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
             <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.subtext} />
           </TouchableOpacity>
         </View>

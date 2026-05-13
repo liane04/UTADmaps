@@ -27,7 +27,12 @@ export default function DefinicoesScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')}
+          accessibilityRole="button"
+          accessibilityLabel={t.voltar}
+          hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
           <Text style={[styles.backText, { color: colors.text, fontSize: fs(16) }]}>{t.voltar}</Text>
         </TouchableOpacity>
@@ -144,7 +149,12 @@ export default function DefinicoesScreen() {
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
-          >
+            accessibilityRole="button"
+            accessibilityLabel={`${t.idioma}: ${language === 'pt' ? 'Português' : 'English'}`}
+            accessibilityHint={tr(
+              `Toca para alterar o idioma para ${language === 'pt' ? 'Inglês' : 'Português'}`,
+              `Tap to change language to ${language === 'pt' ? 'English' : 'Portuguese'}`,
+            )}>
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.idioma}</Text>
             <View style={styles.rowValueContainer}>
               <Text style={[styles.rowValue, { color: colors.subtext }]}>{language === 'pt' ? 'Português' : 'English'}</Text>
@@ -156,7 +166,12 @@ export default function DefinicoesScreen() {
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => setTema(tema === 'claro' ? 'escuro' : 'claro')}
-          >
+            accessibilityRole="button"
+            accessibilityLabel={`${t.tema}: ${tema === 'claro' ? t.claro : t.escuro}`}
+            accessibilityHint={tr(
+              `Toca para alterar para o tema ${tema === 'claro' ? 'escuro' : 'claro'}`,
+              `Tap to change to ${tema === 'claro' ? 'dark' : 'light'} theme`,
+            )}>
             <Text style={[styles.rowText, { color: colors.text, fontSize: fs(16) }]}>{t.tema}</Text>
             <View style={styles.rowValueContainer}>
               <Text style={[styles.rowValue, { color: colors.subtext }]}>{tema === 'claro' ? t.claro : t.escuro}</Text>

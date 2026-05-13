@@ -124,8 +124,8 @@ export default function PesquisaScreen() {
 
   const aoSelecionar = (local: SearchResult) => {
     if (local.categoria === 'sala' || local.categoria === 'servico') {
-      // Tenta indoor 3D para salas/serviços do ECT-Polo I; senão fallback legacy
-      router.push(rotaIndoorParaSala(local.codigo, local.nome));
+      // Indoor 3D directo se estás perto, senão outdoor primeiro até à porta
+      router.push(rotaIndoorParaSala(local.codigo, local.nome, { userLocation }));
       return;
     }
     if (local.lat != null && local.lon != null) {
@@ -180,9 +180,18 @@ export default function PesquisaScreen() {
           placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
           placeholderTextColor={colors.subtext}
           returnKeyType="search"
+          accessibilityLabel={tr('Campo de pesquisa', 'Search field')}
+          accessibilityHint={tr(
+            'Escreve o nome de um edifício, sala ou serviço para encontrar localizações no campus',
+            'Type the name of a building, room or service to find locations on campus',
+          )}
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')}>
+          <TouchableOpacity
+            onPress={() => setQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Limpar pesquisa', 'Clear search')}
+            hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
             <Ionicons name="close" size={20} color={colors.subtext} />
           </TouchableOpacity>
         )}

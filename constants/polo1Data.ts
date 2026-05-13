@@ -325,19 +325,50 @@ export function getIndoorIdByName(name: string): string | null {
 }
 
 /**
+ * Extrai o código da sala de uma string, procurando primeiro entre parênteses.
+ *
+ * @example
+ *   extrairCodigoSala('ECT-P.I (G0.08)')  // → 'G0.08'
+ *   extrairCodigoSala('F2.01')            // → 'F2.01'
+ *   extrairCodigoSala('Sala 2.1')         // → 'Sala 2.1' (sem mudança)
+ */
+export function extrairCodigoSala(s: string | null | undefined): string {
+  if (!s) return '';
+  const str = s.trim();
+  // 1) Tenta extrair conteúdo entre parênteses (formato Inforestudante)
+  const paren = str.match(/\(([^)]+)\)/);
+  if (paren) {
+    const inner = paren[1].trim();
+    // Se o conteúdo entre parênteses parece um código de sala (E0.01, G0.04B, BAR…)
+    if (/^[A-Z]{1,3}[\d.]+/i.test(inner) || /^[A-Z]{2,}$/i.test(inner)) {
+      return inner;
+    }
+  }
+  // 2) Procura padrão "letra+dígito" em qualquer sítio (ex: "Aula F0.01 piso 0" → "F0.01")
+  const inline = str.match(/\b([A-Z]\d[A-Z0-9.]*)\b/i);
+  if (inline) return inline[1];
+  // 3) Fallback: devolve o original
+  return str;
+}
+
+/**
  * Para uma sala (ex: "F0.01", "E2.10A", "G0.04B"), devolve o id do edifício
  * com indoor 3D que contém essa sala. Por agora apenas o ECT-Polo I tem
  * indoor 3D, e contém todas as salas com prefixo E, F, G ou I.
+ *
+ * Aceita também strings completas tipo "ECT-P.I (G0.08)" — extrai o código
+ * entre parênteses primeiro.
  *
  * Devolve null para salas sem indoor 3D disponível (ex: "Anfiteatro",
  * "Sala 2.1") — caem no fallback (planta 2D legacy).
  */
 export function getIndoorIdForSala(salaCode: string | null | undefined): string | null {
   if (!salaCode) return null;
+  const codigo = extrairCodigoSala(salaCode);
   // Salas E*, F*, G*, I* (com dígito a seguir) pertencem ao ECT-Polo I
-  if (/^[EFGI]\d/i.test(salaCode.trim())) return 'sectorE';
+  if (/^[EFGI]\d/i.test(codigo)) return 'sectorE';
   // Salas/serviços do ECT-Polo I que não seguem o padrão alfanumérico
-  const upper = salaCode.trim().toUpperCase();
+  const upper = codigo.toUpperCase();
   if (upper === 'BAR' || upper === 'SECRETARIA') return 'sectorE';
   return null;
 }

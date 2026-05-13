@@ -19,6 +19,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAppStore } from '../store/useAppStore';
 import { getEntradaByName } from '../constants/polo1Data';
 import { rotaIndoorParaSala } from '../lib/navigation';
+import { useUserLocation } from '../lib/useUserLocation';
 
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -58,6 +59,7 @@ export default function HistoricoScreen() {
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { token } = useAppStore();
+  const userLocation = useUserLocation();
 
   const [entries, setEntries] = useState<NavigationHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,11 @@ export default function HistoricoScreen() {
 
   const navegarPara = (entry: NavigationHistoryEntry) => {
     if (entry.navegacao_tipo === 'indoor') {
-      router.push(rotaIndoorParaSala(entry.destino_id ?? entry.destino_nome, entry.destino_nome));
+      router.push(
+        rotaIndoorParaSala(entry.destino_id ?? entry.destino_nome, entry.destino_nome, {
+          userLocation,
+        }),
+      );
       return;
     }
     if (entry.lat != null && entry.lon != null) {
@@ -191,7 +197,12 @@ export default function HistoricoScreen() {
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={() => router.replace('/')}
-            accessibilityRole="button">
+            accessibilityRole="button"
+            accessibilityLabel={tr('Iniciar sessão', 'Sign in')}
+            accessibilityHint={tr(
+              'Necessária para guardar e consultar o histórico de navegação',
+              'Required to save and view your navigation history',
+            )}>
             <Text style={[styles.primaryButtonText, { color: colors.bg, fontSize: fs(16) }]}>
               {tr('Iniciar sessão', 'Sign in')}
             </Text>
