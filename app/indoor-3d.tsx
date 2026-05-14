@@ -235,7 +235,14 @@ const THREE_HTML = `<!DOCTYPE html>
       initMarkerTextures();
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf2f2f7);
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+      // OrthographicCamera → projeção paralela ao plano. Sem perspetiva, paredes
+      // verticais colapsam em linhas quando vistas de cima, garantindo aspeto
+      // de planta 2D. spherical.radius passa a ser metade da altura visível.
+      {
+        const aspect0 = window.innerWidth / window.innerHeight;
+        const r0 = 30;
+        camera = new THREE.OrthographicCamera(-r0 * aspect0, r0 * aspect0, r0, -r0, 0.1, 2000);
+      }
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -266,16 +273,22 @@ const THREE_HTML = `<!DOCTYPE html>
     let panLast   = null;
     const DRAG_THRESHOLD = 8;
 
-    // Pixels-to-world scale at the current camera distance (top-down approximation)
+    // Pixels-to-world scale — para OrthographicCamera a altura visível é 2*radius
     function pixelToWorld() {
-      return (2 * spherical.radius * Math.tan(camera.fov * Math.PI / 360)) / window.innerHeight;
+      return (2 * spherical.radius) / window.innerHeight;
     }
 
-    // Translate target only along the X axis (left/right).
-    // Vertical (Z) movement is intentionally disabled — the camera only scrolls left/right.
-    function panTargetBy(dx, _dy) {
+    // Pan livre nos dois eixos. Em vista top-down ortográfica, o eixo X do ecrã
+    // corresponde ao "direita" da câmara e o eixo Y ao "cima" (camera.up).
+    // Como camera.up depende de theta (rotação por piso), calculamos os dois
+    // vetores em mundo a partir dele para o pan ficar correto em qualquer piso.
+    function panTargetBy(dx, dy) {
       const s = pixelToWorld();
-      target.x -= dx * s;
+      const right = new THREE.Vector3()
+        .crossVectors(camera.up, new THREE.Vector3(0, 1, 0))
+        .normalize();
+      target.addScaledVector(right, -dx * s);
+      target.addScaledVector(camera.up, dy * s);
       updateCamera();
     }
 
@@ -382,17 +395,35 @@ const THREE_HTML = `<!DOCTYPE html>
     }
 
     function updateCamera() {
+      // Atualiza frustum ortográfico em função do "zoom" (spherical.radius)
+      const aspect = window.innerWidth / window.innerHeight;
+      const r = spherical.radius;
+      camera.left   = -r * aspect;
+      camera.right  =  r * aspect;
+      camera.top    =  r;
+      camera.bottom = -r;
+      camera.updateProjectionMatrix();
+
+      // Posição da câmera continua a usar coordenadas esféricas — em vista
+      // top-down (phi=0) fica diretamente acima do target. theta roda a vista
+      // através de camera.up (no ortho a posição não muda quando sinPhi=0).
       const sinPhi = Math.sin(spherical.phi);
       camera.position.set(
         target.x + spherical.radius * sinPhi * Math.sin(spherical.theta),
         target.y + spherical.radius * Math.cos(spherical.phi),
         target.z + spherical.radius * sinPhi * Math.cos(spherical.theta)
       );
+      camera.up.set(Math.sin(spherical.theta), 0, -Math.cos(spherical.theta));
       camera.lookAt(target);
     }
 
     function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const aspect = window.innerWidth / window.innerHeight;
+      const r = spherical.radius;
+      camera.left   = -r * aspect;
+      camera.right  =  r * aspect;
+      camera.top    =  r;
+      camera.bottom = -r;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
@@ -1010,6 +1041,24 @@ const THREE_HTML = `<!DOCTYPE html>
             wallBBoxes.push(wb);
           });
         }
+
+        // ─── BLUEPRINT (vista de planta 2D) ─────────────────────────────
+        // Em vista ortográfica top-down, cada parede é uma caixa 3D que se
+        // projeta como um rectângulo. Para parecer planta de arquiteto:
+        //   • paredes/estruturas → material PRETO unlit (rectângulos sólidos)
+        //   • chão/laje → cinzento claro (fundo)
+        //   • marcadores sala_*/bar/wc_ → escondidos (apenas para pathfinding)
+        const wallMat  = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const floorMat = new THREE.MeshBasicMaterial({ color: 0xf2f2f7 });
+        model.traverse(obj => {
+          if (!obj.isMesh || !obj.geometry) return;
+          if (isCollider(obj.name)) return; // já invisível
+          if (isNavNode(obj.name)) { obj.visible = false; return; }
+          const wb = new THREE.Box3().setFromObject(obj);
+          const sz = wb.getSize(new THREE.Vector3());
+          const isFlatSlab = sz.y < 0.3 || (sz.y < sz.x * 0.2 && sz.y < sz.z * 0.2);
+          obj.material = isFlatSlab ? floorMat : wallMat;
+        });
 
         // Build navigation grid (1ª passagem — popula roomBBoxes)
         buildGrid();
