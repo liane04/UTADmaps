@@ -21,6 +21,17 @@ import { useAppStore } from '../store/useAppStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
 const STORAGE_KEY = 'utadmaps_schedule_v2';
+const ONBOARDING_KEY = 'utadmaps_onboarding_seen';
+
+/** Devolve para onde ir após login/skip — onboarding se for primeiro acesso. */
+async function rotaInicial(): Promise<'/onboarding' | '/(tabs)'> {
+  try {
+    const seen = await AsyncStorage.getItem(ONBOARDING_KEY);
+    return seen ? '/(tabs)' : '/onboarding';
+  } catch {
+    return '/(tabs)';
+  }
+}
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -73,7 +84,7 @@ export default function WelcomeScreen() {
         } catch {}
       }
 
-      router.replace('/(tabs)');
+      router.replace(await rotaInicial());
     } catch (e: any) {
       Alert.alert(tr('Erro ao entrar', 'Sign in error'), e.message);
     } finally {
@@ -81,8 +92,8 @@ export default function WelcomeScreen() {
     }
   };
 
-  const handleSkip = () => {
-    router.replace('/(tabs)');
+  const handleSkip = async () => {
+    router.replace(await rotaInicial());
   };
 
   return (
@@ -140,6 +151,9 @@ export default function WelcomeScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoCorrect={false}
+            accessibilityLabel={t.emailLabel}
+            textContentType="emailAddress"
+            autoComplete="email"
           />
         </View>
 
@@ -154,8 +168,17 @@ export default function WelcomeScreen() {
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Password"
+            textContentType="password"
+            autoComplete="current-password"
           />
-          <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+          <TouchableOpacity
+            onPress={() => setShowPassword((v) => !v)}
+            style={styles.eyeBtn}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? tr('Esconder password', 'Hide password') : tr('Mostrar password', 'Show password')}
+            accessibilityState={{ checked: showPassword }}
+            hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
             <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.subtext} />
           </TouchableOpacity>
         </View>

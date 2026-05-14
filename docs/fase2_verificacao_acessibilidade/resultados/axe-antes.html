@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>axe-core Report — UTAD Maps (ANTES)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px;
+    background: #f7f8fa;
+    color: #222;
+    line-height: 1.5;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  header { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h1 { margin: 0 0 8px 0; font-size: 28px; color: #1a1a1a; }
+  .subtitle { color: #666; font-size: 14px; margin: 0; }
+  .meta { font-size: 13px; color: #888; margin-top: 12px; }
+  .meta strong { color: #555; }
+
+  .scoreboard { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+  .score-card {
+    flex: 1;
+    min-width: 160px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-left: 4px solid #ccc;
+  }
+  .score-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; }
+  .score-card .value { font-size: 36px; font-weight: 700; color: #222; }
+  .score-card.danger { border-left-color: #dc2626; }
+  .score-card.danger .value { color: #dc2626; }
+  .score-card.warn { border-left-color: #f59e0b; }
+  .score-card.warn .value { color: #f59e0b; }
+  .score-card.ok { border-left-color: #16a34a; }
+  .score-card.ok .value { color: #16a34a; }
+
+  section { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h2 { font-size: 20px; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; color: #1a1a1a; }
+
+  .violation { border-left: 4px solid #dc2626; background: #fef2f2; padding: 16px 20px; border-radius: 8px; margin-bottom: 12px; }
+  .violation h3 { margin: 0 0 8px 0; font-size: 16px; color: #991b1b; }
+  .violation .impact { display: inline-block; background: #fde68a; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .violation .impact.moderate { background: #fde68a; color: #92400e; }
+  .violation .impact.serious { background: #fecaca; color: #991b1b; }
+  .violation .impact.critical { background: #ef4444; color: #fff; }
+  .violation .impact.minor { background: #e5e7eb; color: #4b5563; }
+  .violation .tags { font-size: 11px; color: #666; margin: 8px 0; }
+  .violation .tags code { background: #fff; padding: 1px 6px; border-radius: 3px; border: 1px solid #e5e7eb; font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; }
+  .violation .help { margin-top: 8px; }
+  .violation .nodes { font-size: 12px; color: #555; margin-top: 8px; }
+  .violation .nodes summary { cursor: pointer; font-weight: 600; }
+  .violation .nodes code { display: block; padding: 4px 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; margin: 4px 0; font-family: ui-monospace, monospace; font-size: 11px; overflow-x: auto; }
+
+  .passes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .pass-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 8px; }
+  .pass-item::before { content: "✓"; color: #16a34a; font-weight: 700; }
+
+  .footer { text-align: center; padding: 24px; color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🛠️ axe-core Accessibility Report</h1>
+    <p class="subtitle">UTAD Maps — análise pré-correções da Fase 2</p>
+    <p class="meta">
+      <strong>URL testada:</strong> https://utadmaps.b-host.me/ ·
+      <strong>axe-core:</strong> 4.11.4 ·
+      <strong>Data:</strong> 13 maio 2026, 20:34 UTC ·
+      <strong>Tags WCAG:</strong> <code>wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice</code>
+    </p>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-card danger">
+      <div class="label">Violations</div>
+      <div class="value">1</div>
+    </div>
+    <div class="score-card ok">
+      <div class="label">Passes</div>
+      <div class="value">29</div>
+    </div>
+    <div class="score-card warn">
+      <div class="label">Incomplete</div>
+      <div class="value">1</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Inapplicable</div>
+      <div class="value">59</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>❌ Violações (1)</h2>
+    <div class="violation">
+      <h3>region</h3>
+      <span class="impact moderate">moderate</span>
+      <p style="margin: 8px 0;">Ensure all page content is contained by landmarks (e.g. <code>&lt;main&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;aside&gt;</code>).</p>
+      <div class="tags">
+        <strong>Tags:</strong>
+        <code>cat.keyboard</code>
+        <code>best-practice</code>
+        <code>RGAAv4</code>
+        <code>RGAA-9.2.1</code>
+      </div>
+      <div class="help">
+        <strong>Ocorrências:</strong> 11 elementos da árvore React Native Web renderizados fora de qualquer landmark HTML5.
+      </div>
+      <details class="nodes">
+        <summary>Ver selectors dos 11 elementos afetados</summary>
+        <code>.r-8d26hk</code>
+        <code>.r-1ui5ee8</code>
+        <code>.r-zd98yo</code>
+        <code>.r-1b43r93.r-6gpygo.r-1kfrs79:nth-child(3)</code>
+        <code>.r-1ssbvtb</code>
+        <code>.r-1b43r93.r-6gpygo.r-1kfrs79:nth-child(5)</code>
+        <code>.r-117bsoe</code>
+        <code>.r-1b43r93.r-6gpygo.r-1kfrs79:nth-child(7)</code>
+        <code>.r-p1pxzi</code>
+        <code>.r-1q9bdsx.r-w7s2jr.r-1i6wzkk</code>
+        <code>.r-1v1z2uz</code>
+      </details>
+      <p style="margin-top: 12px; font-size: 13px; color: #555;">
+        <strong>Mais info:</strong> <a href="https://dequeuniversity.com/rules/axe/4.11/region" target="_blank">dequeuniversity.com/rules/axe/4.11/region</a>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>✅ Regras passadas (29)</h2>
+    <p style="color: #555; font-size: 14px;">A aplicação cumpre integralmente as seguintes regras WCAG 2.x A/AA e WCAG 2.2 AA:</p>
+    <div class="passes-grid">
+      <div class="pass-item">aria-allowed-attr</div>
+      <div class="pass-item">aria-allowed-role</div>
+      <div class="pass-item">aria-conditional-attr</div>
+      <div class="pass-item">aria-deprecated-role</div>
+      <div class="pass-item">aria-hidden-body</div>
+      <div class="pass-item">aria-prohibited-attr</div>
+      <div class="pass-item">aria-required-attr</div>
+      <div class="pass-item">aria-roles</div>
+      <div class="pass-item">aria-valid-attr-value</div>
+      <div class="pass-item">aria-valid-attr</div>
+      <div class="pass-item">autocomplete-valid</div>
+      <div class="pass-item">avoid-inline-spacing</div>
+      <div class="pass-item">button-name</div>
+      <div class="pass-item">color-contrast</div>
+      <div class="pass-item">document-title</div>
+      <div class="pass-item">form-field-multiple-labels</div>
+      <div class="pass-item">html-has-lang</div>
+      <div class="pass-item">html-lang-valid</div>
+      <div class="pass-item">label-title-only</div>
+      <div class="pass-item">label</div>
+      <div class="pass-item">landmark-one-main</div>
+      <div class="pass-item">meta-viewport-large</div>
+      <div class="pass-item">meta-viewport</div>
+      <div class="pass-item">nested-interactive</div>
+      <div class="pass-item">page-has-heading-one</div>
+      <div class="pass-item">region</div>
+      <div class="pass-item">scrollable-region-focusable</div>
+      <div class="pass-item">tabindex</div>
+      <div class="pass-item">target-size <small>(WCAG 2.2)</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>⚠️ Incomplete — necessita revisão manual (1)</h2>
+    <div class="violation" style="border-left-color: #f59e0b; background: #fffbeb;">
+      <h3>color-contrast</h3>
+      <span class="impact" style="background: #fde68a; color: #92400e;">manual review</span>
+      <p style="margin: 8px 0;">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds.</p>
+      <p style="font-size: 13px; color: #555;">Nodes: 3 — elementos onde axe-core não consegue determinar automaticamente o background efetivo. Cobertos pela análise manual em <code>CONTRASTE.md</code>.</p>
+    </div>
+  </section>
+
+  <div class="footer">
+    Documento gerado a partir de <code>axe-antes.json</code> · UTAD Maps — Avaliação de Acessibilidade Fase 2
+  </div>
+</div>
+</body>
+</html>

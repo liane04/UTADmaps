@@ -2,12 +2,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Tema = 'claro' | 'escuro';
-export type TamanhoTexto = 'pequeno' | 'normal' | 'grande';
+export type TamanhoTexto = 'pequeno' | 'normal' | 'grande' | 'extra' | 'maximo';
 
+// Escalas alinhadas com WCAG 2.1 (1.4.4 Resize Text — até 200%).
 const FONT_SCALES: Record<TamanhoTexto, number> = {
   pequeno: 0.85,
   normal: 1.0,
-  grande: 1.2,
+  grande: 1.25,
+  extra: 1.5,
+  maximo: 2.0,
 };
 
 export interface Colors {

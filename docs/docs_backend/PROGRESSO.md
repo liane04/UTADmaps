@@ -275,22 +275,241 @@ Os SQLs são **idempotentes** — pode-se correr múltiplas vezes sem efeitos co
 
 ---
 
+## Sessão 5 — 8 Maio 2026
+
+Sessão grande pós-merge da branch `indoor` (3D do Pedro/Diogo). Foco em UX,
+acessibilidade, navegação real e correcção de dados. Resumo por tema:
+
+### Mapa real ligado à API
+
+- **24 edifícios oficiais** com coordenadas reais OSM (Overpass API), nomenclatura
+  do mapa oficial UTAD `mapa-campus-simplificado-3D.pdf`. Substituídos os 21
+  placeholders iniciais. Cleanup em [`backend/cleanup-buildings-antigos.sql`](../../backend/cleanup-buildings-antigos.sql)
+  apaga `BLA/BLB/BLC/CP/ENG1/GEO/PAV` (duplicates ou nomes informais).
+- **Tipo do edifício** (`escola | servico | lab | desporto | outro`) com cores
+  WCAG-friendly + letra dentro do marker (não depende só de cor).
+- **Cluster Leaflet** no web (junta markers próximos com badge "12").
+
+### Pesquisa unificada
+
+- Nova rota `GET /api/search?q=&type=` em [`backend/routes/search.js`](../../backend/routes/search.js)
+  unifica buildings + rooms num formato único. Filtros: `todos | edificio | sala | servico`.
+- Frontend [`pesquisa.tsx`](../../app/(tabs)/pesquisa.tsx) ligado à API real (era hardcoded).
+  Debounce 300ms, ordem por proximidade GPS quando disponível, mostra distância
+  no card.
+- **Pesquisa por nome completo da escola** — nova coluna `nome_completo` em
+  `buildings`; pesquisar "escola de ciências e tecnologias" devolve `ECT-Polo I`
+  e `ECT-Polo II`. Idem para outras escolas.
+- Bar de pesquisa do mapa principal **clicável** — abre o tab Pesquisa em vez
+  de tentar pesquisar inline (estilo Google Maps).
+
+### Salas reorganizadas conforme `docs/docs_backend/SALAS.txt`
+
+- Descoberta importante: o **ECT-Polo I é UM único edifício** com setores
+  internos (E, F, G, I) — não 4 edifícios separados como o seed inicial assumia.
+- [`backend/seed-polo1.sql`](../../backend/seed-polo1.sql) refeito: as **57 salas
+  reais** (de SALAS.txt) ficam todas no building `ECT1`. Pisos 0/1/2 com BAR,
+  Secretaria e salas E*/F*/G*/I*.
+- `polo1Data.ts` espelha a mesma estrutura — `sectorE` (id usado pelo indoor 3D)
+  contém todas as 57 salas.
+- Coordenadas de **entrada principal** (`entrada?: Coord`) para os 4 edifícios
+  principais (ECT1, ECAV1, BIB, REI) — navegação outdoor termina na porta, não
+  no centro do edifício. Estimativas de offset 10–15m face ao caminho central.
+
+### Navegação outdoor — tempo real
+
+- **OSRM com perfis separados**: `routing.openstreetmap.de/routed-foot` (a pé)
+  e `router.project-osrm.org` (carro). Antes ambos davam tempos de carro.
+- **Indicações turn-by-turn** em PT/EN, com:
+  - Card destacado no painel inferior (ícone direccional + instrução + "em 50m")
+  - Auto-avanço por GPS (`watchPositionAsync`, threshold 25m do waypoint)
+  - Botões `‹ ›` para avançar/recuar manualmente
+- **Selector "De → Para"** no header — escolher origem entre GPS ou qualquer
+  edifício de `POLO1_BUILDINGS`. Útil para simular trajetos sem estar no campus.
+  Marker verde `O` (origem) + vermelho `D` (destino).
+- **Timeout de 15s** no fetch OSRM via `AbortController` — não fica pendurado.
+- **Guard de distância**: se origem está a >30km do destino, não chama OSRM e
+  mostra "Aproxima-te do campus para ver a rota detalhada".
+- **Botão "Entrar no edifício"** (transição outdoor→indoor) aparece só quando
+  o destino tem indoor disponível (`getIndoorIdByName`). Navega para `/indoor-3d`.
+
+### Acessibilidade WCAG
+
+- **Alto Contraste real** — [`SettingsContext.tsx`](../../contexts/SettingsContext.tsx)
+  com paletas `highContrastLight`/`highContrastDark` (preto/branco puros, rácio
+  >21:1, cumpre WCAG AAA 1.4.6). Toggle ligado ao contexto, propaga para toda
+  a app.
+- **Tamanho de texto** com 5 níveis (até 200%, cumpre WCAG 1.4.4): pequeno
+  85%, normal 100%, grande 125%, extra 150%, máximo 200%. Pills com `flex: 1`
+  e tamanhos do "A" proporcionais.
+- **Subtext mais escuro** (`#6C6C72` claro / `#A8A8AE` escuro) — passa AA.
+- **Persistência das definições** via AsyncStorage (`settings_tema`,
+  `settings_altoContraste`, etc.).
+- **Target size 44×44** nas pills + outros botões.
+- **`accessibilityRole/Label/State`** em switches, botões e cards.
+- Helper `aStar(grafo, origem, destino, evitarEscadas?)` em [`pathfinding.ts`](../../app/lib/pathfinding.ts)
+  aceita flag `rotasAcessiveis` (filtra nós de tipo escada) — pronto para ligar
+  ao toggle quando o grafo indoor tiver alternativas (rampa/elevador).
+
+### Histórico de navegação
+
+- **Backend:**
+  - Tabela `navigation_history` em [`seed-navigation-history.sql`](../../backend/seed-navigation-history.sql)
+    com RLS por utilizador, índice `(user_id, created_at desc)`.
+  - Rotas em [`routes/history.js`](../../backend/routes/history.js): `GET /api/history`
+    (últimas 50), `POST` (nova entrada), `DELETE` (limpar).
+- **Frontend:**
+  - Ecrã standalone [`app/historico.tsx`](../../app/historico.tsx) com lista,
+    pull-to-refresh, formato relativo ("Há 5 min"), filtragem por tipo
+    (Indoor/Outdoor), navegação directa para repetir a viagem.
+  - **Logging automático** em `navigacao-outdoor.tsx` e `navigacao-indoor.tsx`
+    via `api.addHistory()` quando o destino é definido (1 vez por destino, com
+    `historyLoggedRef`).
+  - Botão "Histórico de Navegação" no perfil → `/historico`.
+
+### Favoritos por utilizador (sync com backend)
+
+- Tabela `user_favorites` ([`seed-user-favorites.sql`](../../backend/seed-user-favorites.sql))
+  flexível com `item_id text + lat/lon/codigo` — suporta edifícios, salas e
+  serviços (não só salas como a `favorites` legacy).
+- Rotas [`routes/userFavorites.js`](../../backend/routes/userFavorites.js):
+  `GET/POST/DELETE /api/user-favorites`.
+- `useAppStore` com optimistic updates + rollback. Auto-sync após login.
+- Cards de favoritos clicáveis: salas → indoor; resto → outdoor com coords reais.
+
+### Perfil dinâmico
+
+- [`perfil.tsx`](../../app/(tabs)/perfil.tsx) refeito: avatar com inicial do
+  email, próxima aula calculada do horário guardado em AsyncStorage.
+- **Banner urgente** quando faltam ≤30 min para a próxima aula — fundo
+  laranja `#FFF4E5`, ícone `alarm`, texto destaque ("Começa em 15 min").
+  Auto-update a cada 30s via `setInterval`.
+- Mensagens contextuais: "A decorrer agora" (durante aula), "Daqui a 2 h",
+  "Hoje, 14:00 – 16:00", "Sem aulas marcadas".
+
+### Tutorial onboarding
+
+- Novo ecrã [`app/onboarding.tsx`](../../app/onboarding.tsx) com 3 slides:
+  1. 🗺️ "Encontra qualquer sala" (pesquisa)
+  2. 🟠 "Horário sempre à mão" (Inforestudante)
+  3. 🟢 "Inclusivo por design" (acessibilidade)
+- Persistido em `AsyncStorage` (`utadmaps_onboarding_seen`) — aparece **só uma
+  vez**. Disparado após login E após "Saltar e explorar".
+- Scroll horizontal paginado, dots indicadores, botão "Saltar"/"Começar".
+
+### Suporte e Ajuda / FAQ
+
+- Ecrã [`app/suporte.tsx`](../../app/suporte.tsx) com 6 perguntas frequentes
+  expansíveis (Inforestudante, favoritos, GPS, alto contraste, modo anónimo).
+- Botão "Reportar erro" abre `mailto:utadmaps@alunos.utad.pt` com template
+  pré-preenchido.
+- Secção "Sobre" com versão, plataforma, disciplina.
+- Ligado a partir de Definições → "Suporte e Ajuda".
+
+### Serviços com horários (SASUTAD + biblioteca)
+
+- Schema estendido: `rooms` ganha colunas `horario text`, `descricao text`
+  ([`seed-services-horarios.sql`](../../backend/seed-services-horarios.sql)).
+- **17 serviços** populados com dados oficiais recolhidos online:
+  - Cantina de Prados (Almoço Seg-Sex 12:00–14:30)
+  - Restaurante Panorâmico (12:00–15:00)
+  - Snack-Bars Polo I ECT/ECAV, Polo II ECVA (08:00–18:00)
+  - Biblioteca Central (Seg-Sex 09:00–19:30 letivo)
+  - Serviços Académicos (09:15–12:30 / 14:00–16:30)
+  - 5 secretarias (ECT, ECAV, ECHS, ECVA, ESS)
+  - SASUTAD-Apoio Social, GAPsi-Apoio Psicológico
+  - AAUTAD, Hospital Veterinário, Portaria
+- API `/api/rooms/search` e `/api/search` devolvem automaticamente os campos
+  novos (não exigiu alterações nas rotas).
+
+### Outros fixes
+
+- **Botão "Saltar e explorar" não aparecia em mobile** — `app/index.tsx` agora
+  com `KeyboardAvoidingView` + `ScrollView` (`keyboardShouldPersistTaps="handled"`).
+- **Modal Importar Horário** com `KeyboardAvoidingView` (teclado já não tapa
+  o input).
+- **Header do horário centrado** + data por extenso ("Quinta-feira, 12 Mai")
+  + parsing dos títulos iCal (`"Aula - CG (PL1) - F2.01"` → "CG · PL1" + sala
+  separada) + blocos "Livre" entre aulas com gap ≥ 60 min.
+- **Selector de pontos de partida** na navegação outdoor — modal com lista
+  dos edifícios POLO1.
+
+### Ficheiros novos
+
+```
+app/
+  historico.tsx                 ← histórico de navegação
+  onboarding.tsx                ← tutorial 3 slides
+  suporte.tsx                   ← FAQ + reportar erro
+backend/
+  routes/history.js             ← /api/history
+  seed-services-horarios.sql    ← 17 serviços com horários
+  seed-navigation-history.sql   ← tabela history
+  cleanup-buildings-antigos.sql ← apagar 7 placeholders
+lib/
+  geo.ts                        ← haversine + formatDistance
+constants/
+  polo1Data.ts                  ← getEntradaByName, getIndoorIdByName, tipo
+```
+
+### Para retomar / aplicar
+
+Os SQLs são todos idempotentes — corre na ordem no Supabase SQL Editor
+("Run without RLS"):
+
+1. `backend/seed-polo1.sql` (24 edifícios + 57 salas no ECT-Polo I)
+2. `backend/seed-services-horarios.sql` (17 serviços)
+3. `backend/seed-user-favorites.sql` (tabela favorites)
+4. `backend/seed-navigation-history.sql` (tabela history)
+5. `backend/cleanup-buildings-antigos.sql` (apagar 7 placeholders)
+
+Depois `git push` para o backend ficar com as rotas novas (`/api/search`,
+`/api/user-favorites`, `/api/history`).
+
+Sobre o `@react-native-async-storage/async-storage` — usar versão **2.2.0**
+(SDK 54). A 3.x quebra Expo Go com "Native module is null". Reinstalar com:
+
+```powershell
+npm install --legacy-peer-deps @react-native-async-storage/async-storage@2.2.0
+```
+
+---
+
 ## O que falta fazer
 
 ### Prioritário
-- [ ] Levantar **salas reais no campus** (códigos F/E/G/I podem ter erros — vieram de levantamento por confirmar)
-- [ ] Validar coordenadas GPS dos edifícios estimados (alguns Polo II são aproximações)
-- [ ] Adicionar `horario` e `descricao` a `rooms` + popular com SASUTAD/Biblioteca
+- [ ] **Validar coordenadas reais das entradas** dos 4 edifícios principais
+  (estimativas actuais — alguém ir ao campus para refinar)
+- [ ] **Levantar plantas indoor** dos outros edifícios (só ECT-Polo I tem 3D
+  por agora)
+- [ ] **Confirmar nomes oficiais das salas** — `SALAS.txt` foi base para o seed
 
 ### Importante
+- [ ] Logging automático no histórico **também** em `indoor-3d.tsx` (3D do
+  colega ainda não chama `api.addHistory`)
 - [ ] Restringir CORS no backend a `utadmaps.b-host.me`
-- [ ] Histórico de navegação por utilizador (tabela `navigation_history`)
-- [ ] Recentes na pesquisa via API (atualmente strings hardcoded em `pesquisa.tsx`)
+- [ ] Migrar tabela `favorites` legacy → `user_favorites` (e remover rota
+  antiga)
+- [ ] Notificações push antes da próxima aula (Firebase / Expo Notifications)
 
 ### Nice to have
-- [ ] Distância real (cálculo Haversine entre user e local) na lista de pesquisa
-- [ ] Pop-up no mapa com horário e botão "Navegar"
-- [ ] Migrar `favorites` legado para `user_favorites` e remover rota antiga
+- [ ] Tabela `bug_reports` para receber reports do "Reportar erro" (hoje
+  abre `mailto:`)
+- [ ] Sugestões de favoritos baseadas no histórico
+- [ ] Swipe-to-remove favoritos (precisa `react-native-gesture-handler`)
+- [ ] Pesquisa por gabinete de professor / departamento (sem dados ainda)
+- [ ] Pontos de referência exteriores (entradas, paragens de bus) no mapa
+- [ ] Histórico de pesquisa (separado do histórico de navegação)
+
+### Acessibilidade — extras
+- [ ] Focus visible no web (react-native-web suprime outline do browser)
+- [ ] Auditoria com leitor de ecrã real (VoiceOver iOS / TalkBack Android)
+- [ ] Verificar contraste do tabbar em alto contraste
+
+### Para entrega
+- [ ] Vídeo curto da app (screen recording iPhone)
+- [ ] Atualizar `RelatórioIPC_desafio2_fase3.pdf` com screenshots reais
+  (substituir wireframes finais pela UI implementada)
 
 ---
 

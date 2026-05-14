@@ -11,6 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { rotaIndoorParaSala } from '../../lib/navigation';
+import { useUserLocation } from '../../lib/useUserLocation';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.utadmaps.b-host.me';
@@ -142,6 +144,7 @@ export default function HorarioScreen() {
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { token, user } = useAppStore();
+  const userLocation = useUserLocation();
 
   const [diaAtivo, setDiaAtivo] = useState(diaHoje);
   const [semanaOffset, setSemanaOffset] = useState(0);
@@ -355,7 +358,13 @@ export default function HorarioScreen() {
                 <TouchableOpacity
                   key={`aula-${i}`}
                   style={styles.timelineRow}
-                  onPress={() => router.push('/navigacao-indoor')}
+                  onPress={() =>
+                    router.push(
+                      rotaIndoorParaSala(aula.locationRaw || aula.sala || parsed.sala, aula.disciplina, {
+                        userLocation,
+                      }),
+                    )
+                  }
                   accessibilityRole="button"
                   accessibilityLabel={tr(
                     `Navegar para ${titulo} em ${local}`,
@@ -468,6 +477,11 @@ export default function HorarioScreen() {
                 returnKeyType="done"
                 blurOnSubmit
                 onSubmitEditing={Keyboard.dismiss}
+                accessibilityLabel={tr('Link ou chave do Infraestudante', 'Infraestudante link or key')}
+                accessibilityHint={tr(
+                  'Cola aqui o link privado de sincronização do teu horário, ou apenas a chave alfanumérica',
+                  'Paste your private schedule sync link, or just the alphanumeric key',
+                )}
               />
               <View style={styles.modalButtons}>
                 <TouchableOpacity

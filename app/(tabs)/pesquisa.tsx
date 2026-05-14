@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { api } from '../../services/api';
 import { SearchResult, SearchCategoria } from '../../types';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { haversine, formatDistance, type Coord } from '../../lib/geo';
+import { getEntradaByName } from '../../constants/polo1Data';
+import { rotaIndoorParaSala } from '../../lib/navigation';
 
 type FiltroCategoria = 'todos' | SearchCategoria;
 
@@ -55,6 +59,37 @@ export default function PesquisaScreen() {
   const [resultados, setResultados] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<Coord | null>(null);
+
+  // Pede GPS uma vez ao montar (silencioso — sem alertar se falhar)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Lowest,
+        });
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } catch {
+        // silencioso — distância apenas não aparece
+      }
+    })();
+  }, []);
+
+  // Resultados ordenados por distância (se GPS disponível)
+  const resultadosOrdenados = useMemo(() => {
+    if (!userLocation) return resultados;
+    return [...resultados].sort((a, b) => {
+      const da = a.lat != null && a.lon != null
+        ? haversine(userLocation, { latitude: a.lat, longitude: a.lon })
+        : Number.POSITIVE_INFINITY;
+      const db = b.lat != null && b.lon != null
+        ? haversine(userLocation, { latitude: b.lat, longitude: b.lon })
+        : Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+  }, [resultados, userLocation]);
 
   const FILTROS: { key: FiltroCategoria; label: string }[] = [
     { key: 'todos', label: tr('Todos', 'All') },
@@ -88,22 +123,21 @@ export default function PesquisaScreen() {
   }, [query, categoria, tr]);
 
   const aoSelecionar = (local: SearchResult) => {
-    if (local.categoria === 'sala') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          destino: local.codigo ?? local.id,
-          destinoNome: local.nome,
-        },
-      });
+    if (local.categoria === 'sala' || local.categoria === 'servico') {
+      // Indoor 3D directo se estás perto, senão outdoor primeiro até à porta
+      router.push(rotaIndoorParaSala(local.codigo, local.nome, { userLocation }));
       return;
     }
     if (local.lat != null && local.lon != null) {
+      // Usa a entrada principal do edifício se conhecida, senão a coord do API (centro)
+      const entrada = getEntradaByName(local.edificio || local.nome);
+      const lat = entrada?.latitude ?? local.lat;
+      const lon = entrada?.longitude ?? local.lon;
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(local.lat),
-          destLng: String(local.lon),
+          destLat: String(lat),
+          destLng: String(lon),
           destName: local.nome,
         },
       });
@@ -146,9 +180,18 @@ export default function PesquisaScreen() {
           placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
           placeholderTextColor={colors.subtext}
           returnKeyType="search"
+          accessibilityLabel={tr('Campo de pesquisa', 'Search field')}
+          accessibilityHint={tr(
+            'Escreve o nome de um edifício, sala ou serviço para encontrar localizações no campus',
+            'Type the name of a building, room or service to find locations on campus',
+          )}
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')}>
+          <TouchableOpacity
+            onPress={() => setQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Limpar pesquisa', 'Clear search')}
+            hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
             <Ionicons name="close" size={20} color={colors.subtext} />
           </TouchableOpacity>
         )}
@@ -199,9 +242,13 @@ export default function PesquisaScreen() {
             </Text>
           </View>
         ) : (
-          resultados.map((local) => {
+          resultadosOrdenados.map((local) => {
             const fav = isFavorite(local.id);
             const subtitulo = subtituloDe(local, language);
+            const dist =
+              userLocation && local.lat != null && local.lon != null
+                ? haversine(userLocation, { latitude: local.lat, longitude: local.lon })
+                : null;
             return (
               <TouchableOpacity
                 key={local.id}
@@ -218,6 +265,11 @@ export default function PesquisaScreen() {
                     {subtitulo}
                   </Text>
                 </View>
+                {dist != null && (
+                  <Text style={[styles.distance, { color: colors.subtext, fontSize: fs(12) }]}>
+                    {formatDistance(dist)}
+                  </Text>
+                )}
                 <TouchableOpacity
                   onPress={() => toggleFavorito(local)}
                   style={styles.favBtn}
@@ -339,9 +391,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
   },
+  distance: {
+    fontWeight: '500',
+    marginLeft: 8,
+    marginRight: 4,
+  },
   favBtn: {
     padding: 4,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   recentTitle: {
     fontSize: 18,

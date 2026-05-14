@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -41,9 +41,11 @@ export default function MapaScreen() {
 
   const handleGo = () => {
     if (!selectedBuilding) return;
+    // Usa a entrada principal se conhecida, senão o centro do edifício
+    const target = selectedBuilding.entrada ?? selectedBuilding.coordinate;
     const dest = {
-      destLat: selectedBuilding.coordinate.latitude.toString(),
-      destLng: selectedBuilding.coordinate.longitude.toString(),
+      destLat: target.latitude.toString(),
+      destLng: target.longitude.toString(),
       destName: language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en,
     };
     setSelectedBuilding(null);
@@ -72,29 +74,43 @@ export default function MapaScreen() {
 
       {/* Floating UI Elements */}
       <SafeAreaView style={styles.uiContainer} pointerEvents="box-none">
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
-          <Ionicons name="search" size={20} color={colors.text} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text, fontSize: fs(16) }]}
-            placeholder={tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
-            placeholderTextColor="#8E8E93"
-            editable={false} // static prototype
-          />
-        </View>
+        {/* Search Bar — abre o tab Pesquisa ao tocar */}
+        <TouchableOpacity
+          style={[styles.searchContainer, { backgroundColor: colors.card }]}
+          activeOpacity={0.7}
+          onPress={() => router.push('/(tabs)/pesquisa')}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Abrir pesquisa', 'Open search')}>
+          <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
+          <Text style={[styles.searchPlaceholder, { color: colors.subtext, fontSize: fs(16) }]} numberOfLines={1}>
+            {tr('Pesquisar edifício, sala, serviço...', 'Search building, room, service...')}
+          </Text>
+        </TouchableOpacity>
 
         {/* Bottom Right Controls — hidden when card is open */}
         {!selectedBuilding && (
           <View style={styles.controlsContainer}>
-            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.card }]}>
+            <TouchableOpacity
+              style={[styles.controlButton, { backgroundColor: colors.card }]}
+              accessibilityRole="button"
+              accessibilityLabel={tr('Centrar mapa na minha localização', 'Center map on my location')}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
               <Ionicons name="locate" size={24} color={colors.text} />
             </TouchableOpacity>
             <View style={[styles.zoomControls, { backgroundColor: colors.card }]}>
-              <TouchableOpacity style={styles.zoomButton}>
+              <TouchableOpacity
+                style={styles.zoomButton}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Aumentar zoom', 'Zoom in')}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                 <Ionicons name="add" size={24} color={colors.text} />
               </TouchableOpacity>
               <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
-              <TouchableOpacity style={styles.zoomButton}>
+              <TouchableOpacity
+                style={styles.zoomButton}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Diminuir zoom', 'Zoom out')}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                 <Ionicons name="remove" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -124,8 +140,9 @@ export default function MapaScreen() {
               <TouchableOpacity
                 onPress={() => setSelectedBuilding(null)}
                 style={styles.closeBtn}
-                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              >
+                hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Fechar detalhes do edifício', 'Close building details')}>
                 <Ionicons name="close" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -135,7 +152,12 @@ export default function MapaScreen() {
                   style={[styles.indoorButton, { borderColor: colors.border }]}
                   onPress={handleIndoor}
                   activeOpacity={0.85}
-                >
+                  accessibilityRole="button"
+                  accessibilityLabel={tr('Explorar Indoor', 'Explore Indoor')}
+                  accessibilityHint={tr(
+                    `Abre a planta interior de ${language === 'pt' ? selectedBuilding.name.pt : selectedBuilding.name.en}`,
+                    `Opens the indoor floor plan of ${selectedBuilding.name.en}`,
+                  )}>
                   <Ionicons name="layers-outline" size={18} color={colors.text} />
                   <Text style={[styles.indoorButtonText, { color: colors.text, fontSize: fs(14) }]}>
                     {tr('Explorar Indoor', 'Explore Indoor')}
@@ -146,7 +168,12 @@ export default function MapaScreen() {
                 style={[styles.goButton, { flex: selectedBuilding.hasIndoor ? 1 : undefined }]}
                 onPress={handleGo}
                 activeOpacity={0.85}
-              >
+                accessibilityRole="button"
+                accessibilityLabel={tr(`Ir para ${selectedBuilding.name.pt}`, `Go to ${selectedBuilding.name.en}`)}
+                accessibilityHint={tr(
+                  'Inicia a navegação outdoor com indicações passo a passo',
+                  'Starts outdoor navigation with turn-by-turn directions',
+                )}>
                 <Ionicons name="navigate" size={18} color="#FFFFFF" />
                 <Text style={[styles.goButtonText, { fontSize: fs(16) }]}>{tr('Ir', 'Go')}</Text>
               </TouchableOpacity>
@@ -185,10 +212,9 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 12,
   },
-  searchInput: {
+  searchPlaceholder: {
     flex: 1,
     fontSize: 16,
-    color: '#000000',
   },
   controlsContainer: {
     alignItems: 'flex-end',

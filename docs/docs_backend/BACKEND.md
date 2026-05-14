@@ -32,6 +32,9 @@ Backend:   https://api.utadmaps.b-host.me
 | GET | `/api/user-favorites` | JWT | **Favoritos do utilizador** (suporta edifícios + salas + serviços) |
 | POST | `/api/user-favorites` | JWT | Adicionar/atualizar favorito (upsert por `item_id`) |
 | DELETE | `/api/user-favorites/:itemId` | JWT | Remover favorito pelo `item_id` |
+| GET | `/api/history` | JWT | **Histórico de navegação** do utilizador (últimas 50) |
+| POST | `/api/history` | JWT | Registar navegação (`destino_nome`, `navegacao_tipo`, lat/lon...) |
+| DELETE | `/api/history` | JWT | Limpar todo o histórico do utilizador |
 
 > \* `/api/schedule/ical/import-url` não requer auth, mas se enviares `Authorization: Bearer <token>` guarda a chave no `user_metadata` do Supabase para sincronização entre dispositivos.
 
@@ -53,6 +56,7 @@ Backend:   https://api.utadmaps.b-host.me
 - `id` tem prefixo `b-` para edifícios, `r-` para rooms (salas/serviços)
 - `lat`/`lon` para `room` vêm do edifício pai (JOIN automático)
 - Filtro `type` ∈ `{ todos, edificio, sala, servico }`
+- Procura também em `nome_completo` da tabela `buildings` (ex: "Escola de Ciências e Tecnologias" → ECT-Polo I/II)
 
 ### Contas de demonstração (Supabase Auth)
 | Email | Password |
@@ -66,34 +70,39 @@ Backend:   https://api.utadmaps.b-host.me
 ## Estrutura de Pastas
 ```
 backend/
-├── index.js                  ← servidor Express
-├── supabase.js               ← cliente Supabase
+├── index.js                          ← servidor Express
+├── supabase.js                       ← cliente Supabase
 ├── Dockerfile
 ├── docker-compose.yml
-├── supabase-schema.sql       ← schema base
-├── seed-polo1.sql            ← seed dos 24 edifícios + pisos + salas reais
-├── seed-user-favorites.sql   ← tabela user_favorites + RLS
+├── supabase-schema.sql               ← schema base
+├── seed-polo1.sql                    ← 24 edifícios + 57 salas no ECT-Polo I
+├── seed-services-horarios.sql        ← 17 serviços com horários
+├── seed-user-favorites.sql           ← tabela user_favorites + RLS
+├── seed-navigation-history.sql       ← tabela navigation_history + RLS
+├── cleanup-buildings-antigos.sql     ← apagar 7 placeholders
 ├── .env.example
 ├── routes/
 │   ├── buildings.js
 │   ├── rooms.js
 │   ├── schedule.js
-│   ├── favorites.js          ← legacy (só salas)
+│   ├── favorites.js                  ← legacy (só salas)
 │   ├── auth.js
-│   ├── search.js             ← pesquisa unificada
-│   └── userFavorites.js      ← favoritos por utilizador (suporta edifícios)
+│   ├── search.js                     ← pesquisa unificada (nome + nome_completo)
+│   ├── userFavorites.js              ← favoritos por utilizador (suporta edifícios)
+│   └── history.js                    ← histórico de navegação
 ├── middleware/
-│   └── auth.js               ← verificação JWT Supabase
+│   └── auth.js                       ← verificação JWT Supabase
 └── services/
-    └── icalParser.js         ← parser .ics do Infraestudante
+    └── icalParser.js                 ← parser .ics do Infraestudante
 ```
 
 ## Tabelas no Supabase
-- `buildings` — 24 edifícios com coordenadas reais (OSM)
-- `floors` — pisos por edifício (8 pisos para os 4 principais)
-- `rooms` — 57 salas/serviços (códigos F/E/G/I do Inforestudante)
-- `favorites` — legacy, só `room_id` (FK rígida)
+- `buildings` — 24 edifícios com coordenadas reais (OSM). Coluna extra `nome_completo` (ex: "Escola de Ciências e Tecnologias – Polo I") para pesquisa.
+- `floors` — 3 pisos do ECT-Polo I (único edifício com mapeamento interno)
+- `rooms` — 57 salas + 17 serviços. Colunas `tipo` ('sala'|'servico'|'laboratorio'|'outro'), `horario`, `descricao`. Todas as salas E/F/G/I do `SALAS.txt` pertencem ao mesmo edifício ECT-Polo I.
+- `favorites` — legacy, só `room_id` (FK rígida) — **a remover**
 - `user_favorites` — **flexível**: `item_id text` + lat/lon/codigo, suporta edifícios e salas. RLS por utilizador.
+- `navigation_history` — histórico por utilizador (`destino_nome`, `navegacao_tipo`, lat/lon, created_at). RLS própria. Auto-populada por logging em outdoor/indoor.
 - `schedules` — horário importado via iCal
 
 ---

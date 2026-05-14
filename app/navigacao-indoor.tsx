@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAppStore } from '../store/useAppStore';
+import { api } from '../services/api';
 import blocoA from '../assets/data/pavilhoes/bloco-a.json';
 import { aStar, comprimentoCaminho, type Grafo, type No } from './lib/pathfinding';
 
@@ -47,7 +49,28 @@ export default function NavigacaoIndoorScreen() {
   const router = useRouter();
   const { colors } = useSettings();
   const { tr } = useLanguage();
+  const { token } = useAppStore();
   const { destino, destinoNome } = useLocalSearchParams<{ destino?: string; destinoNome?: string }>();
+
+  // Regista a navegação no histórico (uma vez por destino, se autenticado).
+  const historyLoggedRef = useRef<string>('');
+  useEffect(() => {
+    if (!token) return;
+    const nome = destinoNome || destino;
+    if (!nome) return;
+    if (historyLoggedRef.current === nome) return;
+    historyLoggedRef.current = nome;
+    api
+      .addHistory({
+        destino_id: destino ?? null,
+        destino_nome: String(nome),
+        destino_categoria: 'sala',
+        navegacao_tipo: 'indoor',
+      })
+      .catch(() => {
+        // ignora — histórico não é crítico
+      });
+  }, [token, destino, destinoNome]);
 
   const piso = blocoA.pisos[0] as Piso;
   const PLANTA_W = piso.largura;
@@ -128,7 +151,12 @@ export default function NavigacaoIndoorScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+          accessibilityRole="button"
+          accessibilityLabel={tr('Voltar', 'Back')}
+          hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
           <Text style={[styles.backText, { color: colors.text }]}>{tr('Voltar', 'Back')}</Text>
         </TouchableOpacity>

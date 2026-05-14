@@ -5,6 +5,9 @@ import { useRouter } from 'expo-router';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore, FavoriteItem } from '../../store/useAppStore';
+import { getEntradaByName } from '../../constants/polo1Data';
+import { rotaIndoorParaSala } from '../../lib/navigation';
+import { useUserLocation } from '../../lib/useUserLocation';
 
 function avatarCor(categoria: string): string {
   if (categoria === 'edificio') return '#C8E6C9';
@@ -23,24 +26,20 @@ export default function FavoritosScreen() {
   const { colors, fs, altoContraste } = useSettings();
   const { tr } = useLanguage();
   const { favorites, removeFavorite } = useAppStore();
+  const userLocation = useUserLocation();
 
   const navegar = (item: FavoriteItem) => {
-    if (item.categoria === 'sala') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          destino: item.codigo ?? item.id,
-          destinoNome: item.nome,
-        },
-      });
+    if (item.categoria === 'sala' || item.categoria === 'servico') {
+      router.push(rotaIndoorParaSala(item.codigo, item.nome, { userLocation }));
       return;
     }
     if (item.lat != null && item.lon != null) {
+      const entrada = getEntradaByName(item.nome);
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(item.lat),
-          destLng: String(item.lon),
+          destLat: String(entrada?.latitude ?? item.lat),
+          destLng: String(entrada?.longitude ?? item.lon),
           destName: item.nome,
         },
       });

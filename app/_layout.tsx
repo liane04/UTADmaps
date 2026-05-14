@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
@@ -8,6 +9,9 @@ export default function RootLayout() {
     <SettingsProvider>
     <LanguageProvider>
     <SafeAreaProvider>
+      <Head>
+        <title>UTAD Maps — Navegação inteligente no campus</title>
+      </Head>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />

@@ -17,6 +17,9 @@ import { api, NavigationHistoryEntry } from '../services/api';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAppStore } from '../store/useAppStore';
+import { getEntradaByName } from '../constants/polo1Data';
+import { rotaIndoorParaSala } from '../lib/navigation';
+import { useUserLocation } from '../lib/useUserLocation';
 
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -56,6 +59,7 @@ export default function HistoricoScreen() {
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { token } = useAppStore();
+  const userLocation = useUserLocation();
 
   const [entries, setEntries] = useState<NavigationHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,21 +120,20 @@ export default function HistoricoScreen() {
 
   const navegarPara = (entry: NavigationHistoryEntry) => {
     if (entry.navegacao_tipo === 'indoor') {
-      router.push({
-        pathname: '/navigacao-indoor',
-        params: {
-          ...(entry.destino_id ? { destino: entry.destino_id } : {}),
-          destinoNome: entry.destino_nome,
-        },
-      });
+      router.push(
+        rotaIndoorParaSala(entry.destino_id ?? entry.destino_nome, entry.destino_nome, {
+          userLocation,
+        }),
+      );
       return;
     }
     if (entry.lat != null && entry.lon != null) {
+      const entrada = getEntradaByName(entry.destino_nome);
       router.push({
         pathname: '/navigacao-outdoor',
         params: {
-          destLat: String(entry.lat),
-          destLng: String(entry.lon),
+          destLat: String(entrada?.latitude ?? entry.lat),
+          destLng: String(entrada?.longitude ?? entry.lon),
           destName: entry.destino_nome,
         },
       });
@@ -194,7 +197,12 @@ export default function HistoricoScreen() {
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={() => router.replace('/')}
-            accessibilityRole="button">
+            accessibilityRole="button"
+            accessibilityLabel={tr('Iniciar sessão', 'Sign in')}
+            accessibilityHint={tr(
+              'Necessária para guardar e consultar o histórico de navegação',
+              'Required to save and view your navigation history',
+            )}>
             <Text style={[styles.primaryButtonText, { color: colors.bg, fontSize: fs(16) }]}>
               {tr('Iniciar sessão', 'Sign in')}
             </Text>

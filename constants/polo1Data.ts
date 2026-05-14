@@ -9,11 +9,20 @@ export type Floor = {
 
 export type BuildingTipo = 'escola' | 'servico' | 'lab' | 'desporto' | 'outro';
 
+export type Coord = { latitude: number; longitude: number };
+
 export type Building = {
   id: string;
   name: { pt: string; en: string };
   tipo: BuildingTipo;
-  coordinate: { latitude: number; longitude: number };
+  /** Centro geométrico do edifício (do OSM). Usado para o marker do mapa. */
+  coordinate: Coord;
+  /**
+   * Coordenadas da porta principal de entrada. Quando definido, a navegação
+   * outdoor termina aqui em vez do centro do edifício — mais preciso para
+   * o utilizador chegar realmente a uma porta. Se omitido, usa-se `coordinate`.
+   */
+  entrada?: Coord;
   floors: Floor[];
   hasIndoor?: boolean;
 };
@@ -68,6 +77,24 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'ECAV – Polo I', en: 'ECAV – Campus I' },
     tipo: 'escola',
     coordinate: { latitude: 41.288144, longitude: -7.741173 },
+    // Entrada principal estimada — face ao caminho central (lado sul-este).
+    entrada: { latitude: 41.288050, longitude: -7.741080 },
+    floors: [],
+  },
+  {
+    // ECT – Polo I (Escola de Ciências e Tecnologias).
+    // É UM único edifício com setores internos E, F, G, I — todas as salas
+    // (ver docs/docs_backend/SALAS.txt) pertencem-lhe.
+    // id 'sectorE' mantido por compat. com o indoor 3D (assets/models/sectorE/floor_0.glb).
+    id: 'sectorE',
+    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
+    tipo: 'escola',
+    coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
+    // Entrada principal (piso 1, entre Secretaria e F1.17) — confirmada no campus.
+    // Há outra entrada por baixo (piso 0, entre F0.12 e F0.14) em
+    // 41.2866804, -7.7407563 — não usada por defeito.
+    entrada: { latitude: 41.2866469, longitude: -7.7408100 },
+    hasIndoor: true,
     floors: [
       {
         level: 0,
@@ -76,11 +103,16 @@ export const POLO1_BUILDINGS: Building[] = [
           { code: 'F0.01' }, { code: 'F0.02' }, { code: 'F0.05' }, { code: 'F0.06' },
           { code: 'F0.07' }, { code: 'F0.08' }, { code: 'F0.10' }, { code: 'F0.12' },
           { code: 'F0.14' }, { code: 'F0.16' }, { code: 'F0.18' }, { code: 'F0.19' },
+          { code: 'G0.01' }, { code: 'G0.03' }, { code: 'G0.04B' },
+          { code: 'G0.08' }, { code: 'G0.12' }, { code: 'G0.14' },
+          { code: 'I0.06' },
         ],
       },
       {
         level: 1,
         rooms: [
+          { code: 'E1.01' }, { code: 'E1.02' }, { code: 'E1.06' }, { code: 'E1.08' },
+          { code: 'E1.11' }, { code: 'E1.12' }, { code: 'E1.15' }, { code: 'E1.16' },
           { code: 'SECRETARIA' },
           { code: 'F1.17' }, { code: 'F1.18' }, { code: 'F1.19' }, { code: 'F1.20' },
           { code: 'F1.21' }, { code: 'F1.22' }, { code: 'F1.24' },
@@ -93,37 +125,6 @@ export const POLO1_BUILDINGS: Building[] = [
           { code: 'F2.12' }, { code: 'F2.13' }, { code: 'F2.15' }, { code: 'F2.16' },
           { code: 'F2.17' }, { code: 'F2.18' }, { code: 'F2.19' }, { code: 'F2.20A' },
           { code: 'F2.22' },
-        ],
-      },
-    ],
-  },
-  {
-    // ECT – Polo I (Escola de Ciências e Tecnologias). id 'sectorE' mantido
-    // por compatibilidade com o indoor 3D (assets/models/sectorE/floor_0.glb).
-    id: 'sectorE',
-    name: { pt: 'ECT – Polo I', en: 'ECT – Campus I' },
-    tipo: 'escola',
-    coordinate: { latitude: 41.2869343, longitude: -7.7405878 },
-    hasIndoor: true,
-    floors: [
-      {
-        level: 0,
-        rooms: [
-          { code: 'E0.01' },
-          { code: 'E0.02' },
-          { code: 'E0.03' },
-        ],
-      },
-      {
-        level: 1,
-        rooms: [
-          { code: 'E1.01' }, { code: 'E1.02' }, { code: 'E1.06' }, { code: 'E1.08' },
-          { code: 'E1.11' }, { code: 'E1.12' }, { code: 'E1.15' }, { code: 'E1.16' },
-        ],
-      },
-      {
-        level: 2,
-        rooms: [
           { code: 'E2.01' }, { code: 'E2.02' }, { code: 'E2.04' }, { code: 'E2.10' },
           { code: 'E2.11' }, { code: 'E2.13' }, { code: 'E2.14' }, { code: 'E2.15' },
         ],
@@ -135,27 +136,18 @@ export const POLO1_BUILDINGS: Building[] = [
     name: { pt: 'Biblioteca Central', en: 'Central Library' },
     tipo: 'servico',
     coordinate: { latitude: 41.285822, longitude: -7.740542 },
-    floors: [
-      {
-        level: 0,
-        rooms: [
-          { code: 'G0.01' }, { code: 'G0.03' }, { code: 'G0.04B' },
-          { code: 'G0.08' }, { code: 'G0.12' }, { code: 'G0.14' },
-        ],
-      },
-    ],
+    // Entrada principal — face ao caminho pedonal a leste.
+    entrada: { latitude: 41.285822, longitude: -7.740440 },
+    floors: [],
   },
   {
     id: 'rei',
     name: { pt: 'Reitoria', en: 'Rectory' },
     tipo: 'outro',
     coordinate: { latitude: 41.286264, longitude: -7.738626 },
-    floors: [
-      {
-        level: 0,
-        rooms: [{ code: 'I0.06' }],
-      },
-    ],
+    // Entrada principal — Largo das Pedrinhas, lado sul.
+    entrada: { latitude: 41.286170, longitude: -7.738626 },
+    floors: [],
   },
 
   // === Polo I — outros edifícios académicos ===
@@ -327,6 +319,78 @@ export function getIndoorIdByName(name: string): string | null {
     if (!b.hasIndoor) continue;
     if (norm.includes(b.name.pt.toLowerCase()) || norm.includes(b.name.en.toLowerCase())) {
       return b.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extrai o código da sala de uma string, procurando primeiro entre parênteses.
+ *
+ * @example
+ *   extrairCodigoSala('ECT-P.I (G0.08)')  // → 'G0.08'
+ *   extrairCodigoSala('F2.01')            // → 'F2.01'
+ *   extrairCodigoSala('Sala 2.1')         // → 'Sala 2.1' (sem mudança)
+ */
+export function extrairCodigoSala(s: string | null | undefined): string {
+  if (!s) return '';
+  const str = s.trim();
+  // 1) Tenta extrair conteúdo entre parênteses (formato Inforestudante)
+  const paren = str.match(/\(([^)]+)\)/);
+  if (paren) {
+    const inner = paren[1].trim();
+    // Se o conteúdo entre parênteses parece um código de sala (E0.01, G0.04B, BAR…)
+    if (/^[A-Z]{1,3}[\d.]+/i.test(inner) || /^[A-Z]{2,}$/i.test(inner)) {
+      return inner;
+    }
+  }
+  // 2) Procura padrão "letra+dígito" em qualquer sítio (ex: "Aula F0.01 piso 0" → "F0.01")
+  const inline = str.match(/\b([A-Z]\d[A-Z0-9.]*)\b/i);
+  if (inline) return inline[1];
+  // 3) Fallback: devolve o original
+  return str;
+}
+
+/**
+ * Para uma sala (ex: "F0.01", "E2.10A", "G0.04B"), devolve o id do edifício
+ * com indoor 3D que contém essa sala. Por agora apenas o ECT-Polo I tem
+ * indoor 3D, e contém todas as salas com prefixo E, F, G ou I.
+ *
+ * Aceita também strings completas tipo "ECT-P.I (G0.08)" — extrai o código
+ * entre parênteses primeiro.
+ *
+ * Devolve null para salas sem indoor 3D disponível (ex: "Anfiteatro",
+ * "Sala 2.1") — caem no fallback (planta 2D legacy).
+ */
+export function getIndoorIdForSala(salaCode: string | null | undefined): string | null {
+  if (!salaCode) return null;
+  const codigo = extrairCodigoSala(salaCode);
+  // Salas E*, F*, G*, I* (com dígito a seguir) pertencem ao ECT-Polo I
+  if (/^[EFGI]\d/i.test(codigo)) return 'sectorE';
+  // Salas/serviços do ECT-Polo I que não seguem o padrão alfanumérico
+  const upper = codigo.toUpperCase();
+  if (upper === 'BAR' || upper === 'SECRETARIA') return 'sectorE';
+  return null;
+}
+
+/**
+ * Procura coordenadas da entrada principal de um edifício pelo nome.
+ * Útil para a pesquisa (que vem da API com `lat/lon` do centro do edifício)
+ * usar a porta como destino real em vez do centro.
+ * Devolve null se o edifício não tiver entrada definida.
+ */
+export function getEntradaByName(name: string): Coord | null {
+  if (!name) return null;
+  const norm = name.trim().toLowerCase();
+  for (const b of POLO1_BUILDINGS) {
+    if (!b.entrada) continue;
+    if (
+      b.name.pt.toLowerCase() === norm ||
+      b.name.en.toLowerCase() === norm ||
+      norm.includes(b.name.pt.toLowerCase()) ||
+      norm.includes(b.name.en.toLowerCase())
+    ) {
+      return b.entrada;
     }
   }
   return null;

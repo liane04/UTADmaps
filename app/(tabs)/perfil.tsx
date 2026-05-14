@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppStore } from '../../store/useAppStore';
+import { rotaIndoorParaSala } from '../../lib/navigation';
+import { useUserLocation } from '../../lib/useUserLocation';
 
 const STORAGE_KEY = 'utadmaps_schedule_v2';
 
@@ -61,14 +63,64 @@ function formatarData(dataISO: string, language: 'pt' | 'en'): string {
   return `${d} ${meses[m - 1]}`;
 }
 
+/** Devolve minutos até ao início da aula (negativo se já começou). */
+function minutosAteAula(aula: Aula, agora: Date): number {
+  const [y, m, d] = aula.data.split('-').map(Number);
+  const [h, min] = aula.horaInicio.split(':').map(Number);
+  const inicio = new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0);
+  return Math.round((inicio.getTime() - agora.getTime()) / 60000);
+}
+
+function emCurso(aula: Aula, agora: Date): boolean {
+  const inicioMin = minutosAteAula(aula, agora);
+  if (inicioMin > 0) return false;
+  // calcular fim
+  const [y, m, d] = aula.data.split('-').map(Number);
+  const [h, min] = aula.horaFim.split(':').map(Number);
+  const fim = new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0);
+  return fim.getTime() > agora.getTime();
+}
+
+/** Texto humano do tempo até à aula. */
+function textoTempoAula(aula: Aula, language: 'pt' | 'en', agora: Date): string {
+  if (emCurso(aula, agora)) {
+    return language === 'pt' ? 'A decorrer agora' : 'Happening now';
+  }
+  const min = minutosAteAula(aula, agora);
+  if (min < 0) return ''; // já passou
+  if (min < 1) {
+    return language === 'pt' ? 'Começa agora' : 'Starting now';
+  }
+  if (min < 60) {
+    return language === 'pt' ? `Começa em ${min} min` : `Starts in ${min} min`;
+  }
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 24) {
+    if (m === 0) {
+      return language === 'pt' ? `Daqui a ${h} h` : `In ${h} h`;
+    }
+    return language === 'pt' ? `Daqui a ${h} h ${m} min` : `In ${h} h ${m} min`;
+  }
+  return ''; // > 24h: usa formatarData
+}
+
 export default function PerfilScreen() {
   const router = useRouter();
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { user, favorites, logout } = useAppStore();
+  const userLocation = useUserLocation();
 
   const [proximaAula, setProximaAula] = useState<Aula | null>(null);
   const [loadingAula, setLoadingAula] = useState(true);
+  // Tick a cada 30s para atualizar "Começa em X min" sem refazer a query toda
+  const [agora, setAgora] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setAgora(new Date()), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -79,12 +131,17 @@ export default function PerfilScreen() {
           return;
         }
         const aulas: Aula[] = JSON.parse(raw);
-        const agora = new Date();
-        const agoraKey = `${agora.toISOString().slice(0, 10)} ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
-        const futuras = aulas
-          .filter(a => chaveAula(a) >= agoraKey)
+        const ahora = new Date();
+        // Aceita aula que está em curso ou ainda no futuro próximo
+        const candidatas = aulas
+          .filter((a) => {
+            const [h, min] = a.horaFim.split(':').map(Number);
+            const [y, m, d] = a.data.split('-').map(Number);
+            const fim = new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0);
+            return fim.getTime() > ahora.getTime();
+          })
           .sort((a, b) => chaveAula(a).localeCompare(chaveAula(b)));
-        setProximaAula(futuras[0] ?? null);
+        setProximaAula(candidatas[0] ?? null);
       } catch {
         setProximaAula(null);
       } finally {
@@ -92,6 +149,18 @@ export default function PerfilScreen() {
       }
     })();
   }, []);
+
+  // Calcula estado da próxima aula a partir do tick
+  const aulaInfo = useMemo(() => {
+    if (!proximaAula) return { tempoTexto: '', urgente: false, emCurso: false };
+    const min = minutosAteAula(proximaAula, agora);
+    const curso = emCurso(proximaAula, agora);
+    return {
+      tempoTexto: textoTempoAula(proximaAula, language, agora),
+      urgente: min > 0 && min <= 30, // < 30 min destaca
+      emCurso: curso,
+    };
+  }, [proximaAula, agora, language]);
 
   const handleLogout = () => {
     const confirmar = () => {
@@ -137,14 +206,48 @@ export default function PerfilScreen() {
           <View style={styles.nextClassContainer}>
             {loadingAula ? null : proximaAula ? (
               <TouchableOpacity
-                style={[styles.nextClassCard, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}
-                onPress={() => router.push({ pathname: '/navigacao-indoor', params: { destino: proximaAula.sala, destinoNome: proximaAula.sala } })}
+                style={[
+                  styles.nextClassCard,
+                  {
+                    backgroundColor: aulaInfo.urgente ? '#FFF4E5' : colors.card,
+                    borderWidth: aulaInfo.urgente ? 2 : altoContraste ? 2 : 0,
+                    borderColor: aulaInfo.urgente ? '#FF9500' : colors.border,
+                  },
+                ]}
+                onPress={() =>
+                  router.push(
+                    rotaIndoorParaSala(
+                      proximaAula.locationRaw || proximaAula.sala,
+                      proximaAula.disciplina,
+                      { userLocation },
+                    ),
+                  )
+                }
+                accessibilityRole="button"
                 accessibilityLabel={tr('Navegar para próxima aula', 'Navigate to next class')}>
                 <View style={styles.nextClassHeader}>
-                  <Text style={[styles.nextClassLabel, { color: colors.text, fontSize: fs(14) }]}>
-                    {tr('Próxima Aula', 'Next Class')}
-                  </Text>
-                  <Ionicons name="navigate" size={20} color={colors.text} />
+                  <View style={styles.nextClassLabelWrap}>
+                    {aulaInfo.urgente && (
+                      <Ionicons
+                        name={aulaInfo.emCurso ? 'radio' : 'alarm'}
+                        size={16}
+                        color="#FF9500"
+                        style={{ marginRight: 6 }}
+                      />
+                    )}
+                    <Text
+                      style={[
+                        styles.nextClassLabel,
+                        {
+                          color: aulaInfo.urgente ? '#C76900' : colors.text,
+                          fontSize: fs(14),
+                          fontWeight: '700',
+                        },
+                      ]}>
+                      {aulaInfo.tempoTexto || tr('Próxima Aula', 'Next Class')}
+                    </Text>
+                  </View>
+                  <Ionicons name="navigate" size={20} color={aulaInfo.urgente ? '#FF9500' : colors.text} />
                 </View>
                 <Text style={[styles.nextClassTitle, { color: colors.text, fontSize: fs(20) }]} numberOfLines={1}>
                   {proximaAula.disciplina}
@@ -209,11 +312,21 @@ export default function PerfilScreen() {
 
         {/* Sair / Entrar */}
         {isAnonimo ? (
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.replace('/')}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Iniciar sessão', 'Sign in')}
+            accessibilityHint={tr('Abre o ecrã de início de sessão com a conta institucional', 'Opens the institutional sign-in screen')}>
             <Text style={[styles.actionButtonText, { fontSize: fs(16), color: colors.bg }]}>{tr('Iniciar sessão', 'Sign in')}</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.logoutButton]}
+            onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel={tr('Terminar sessão', 'Sign out')}
+            accessibilityHint={tr('Encerra a tua sessão e remove o horário sincronizado', 'Ends your session and clears the synced schedule')}>
             <Ionicons name="log-out-outline" size={20} color="#FF3B30" style={{ marginRight: 8 }} />
             <Text style={[styles.actionButtonText, { color: '#FF3B30', fontSize: fs(16) }]}>
               {tr('Terminar sessão', 'Sign out')}
@@ -273,6 +386,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  nextClassLabelWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   nextClassHeader: {
     flexDirection: 'row',
