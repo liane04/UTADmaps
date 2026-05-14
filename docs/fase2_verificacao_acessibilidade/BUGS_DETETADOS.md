@@ -8,7 +8,13 @@
 **Descoberto em**: Preparação do teste T1
 **Onde**: `app/(tabs)/perfil.tsx`, ramo `isAnonimo === true`
 
-**Sintoma**: quando o utilizador está em modo convidado (sem sessão iniciada) e abre a tab Perfil, vê um botão "Iniciar sessão" que **não responde ao toque**.
+**Sintoma**: ocorre **após o utilizador ter feito logout uma vez**. Sequência reproduzível:
+1. Utilizador inicia sessão (botão "Entrar" do ecrã de login — funciona ✓)
+2. Utilizador navega para Perfil → "Terminar sessão" (funciona ✓)
+3. Utilizador permanece em modo convidado na tab Perfil
+4. Utilizador toca em "Iniciar sessão" no Perfil → **NÃO RESPONDE**
+
+O botão "Entrar" no ecrã de login original funciona corretamente. O bug é específico do botão "Iniciar sessão" do ecrã de Perfil quando aparece após um logout.
 
 **Impacto a11y**: indireto — o utilizador com leitor de ecrã ouve "Iniciar sessão, botão" e dois toques não desencadeiam ação, gerando confusão. Falha potencial do critério **WCAG 2.1 SC 3.2.1 (On Focus)** e **3.2.2 (On Input)** que exigem comportamento previsível em controles.
 
