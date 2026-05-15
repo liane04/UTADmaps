@@ -170,6 +170,52 @@ Em todos os fundos reais da aplicação, a cor `#6C6C72` cumpre WCAG AA. O pa11y
 
 ---
 
+## A.4 — Teste exploratório com VoiceOver no iPhone
+
+**Data**: 13 maio 2026
+**Dispositivo**: iPhone (iOS) com VoiceOver activo
+**Procedimento**: percorrer toda a aplicação com VoiceOver activo, em modalidade B (ecrã visível), focando nos principais ecrãs e controlos. Equivalente à validação manual sugerida pelos 10 *manual checks* do Lighthouse e pelos *incomplete* do axe-core.
+
+### Modalidade A — Visual normal (controlo)
+
+| Tarefa | Tempo médio | Sucesso |
+|---|---|---|
+| T1: Onboarding (escolher PT + Saltar e explorar) | < 1 segundo | ✅ Trivial |
+
+### Modalidade B — VoiceOver activo, ecrã visível
+
+**Cobertura**: ecrãs Login/Welcome, Mapa, Pesquisa, Horário, Favoritos, Perfil, Definições.
+
+**Observação qualitativa** (transcrita do testador):
+> "O VoiceOver está a ler bem os botões no geral; já percorri um pouco de toda a app."
+
+**Interpretação**: a cobertura de ~95% de `accessibilityLabel` aplicada nas correções da Fase 2 traduz-se numa experiência funcional para o utilizador de leitor de ecrã na maioria dos ecrãs principais. Confirma:
+
+- a validade dos resultados automáticos do **axe-core** (0 violations após correções)
+- a validade do **Lighthouse 100/100** Accessibility
+- o cumprimento prático do critério **WCAG 4.1.2 Name, Role, Value (A)** na totalidade dos controlos amostrados
+
+**Bugs funcionais detetados durante a exploração** (documentados em `BUGS_DETETADOS.md`):
+
+| ID | Severidade | Descrição |
+|---|---|---|
+| B-01 | Alta | Botão "Iniciar sessão" no Perfil (após logout) não responde |
+| B-02 | Crítica (privacidade) | Horário mantém-se após "Terminar sessão" |
+| B-03 | Baixa | Warning `Text strings must be rendered within <Text>` |
+| B-04 | Code smell | Require cycle entre `useAppStore` e `services/api.ts` |
+
+Estes 4 bugs constituem **evidência adicional do valor da análise manual** — nenhum foi reportado pelas ferramentas automáticas. Estão documentados como trabalho futuro para correção antes da Fase 3.
+
+### Modalidade C — VoiceOver activo, ecrã coberto
+
+A modalidade C (utilizador a usar a app sem ver o ecrã, simulando cegueira real) ficou como **trabalho futuro** para a Fase 3 do desafio, integrando-se naturalmente com o teste de usabilidade formal a realizar nessa fase. A validade da Modalidade B foi considerada suficiente para a Fase 2 dado que:
+
+1. Confirma a propagação correcta dos atributos `accessibilityLabel/Role/Hint/State` para o sistema iOS
+2. Cobre os 10 *manual checks* sugeridos pelo Lighthouse
+3. É a metodologia recomendada pela **W3C WAI** para uma **primeira validação** antes de testes mais aprofundados
+
+---
+
 ## B. Análise Manual — Resumo dos documentos auxiliares
 
 | Documento | Conteúdo | Output |

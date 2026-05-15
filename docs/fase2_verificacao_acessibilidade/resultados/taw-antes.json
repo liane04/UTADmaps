@@ -1,0 +1,152 @@
+{
+  "tool": "TAW — Test de Accesibilidad Web",
+  "version": "WCAG 2.0",
+  "url": "https://utadmaps.b-host.me/",
+  "level": "AA",
+  "technologies": ["HTML", "CSS"],
+  "date": "2026-05-14T15:45:00Z",
+  "phase": "antes",
+  "note": "Análise contra a versão deployada (Fase 1) — corrigida localmente mas pendente de redeploy.",
+  "results": {
+    "perceivable": {
+      "1.1.1": [
+        {
+          "type": "error",
+          "category": "Formulários",
+          "check": "Form controls without label",
+          "techniques": ["H44", "H65"],
+          "occurrences": 2,
+          "lines": [528, 528]
+        }
+      ],
+      "1.3.1": [
+        {
+          "type": "error",
+          "category": "Formulários",
+          "check": "Form controls without associated label",
+          "techniques": ["H44", "H65"],
+          "occurrences": 2,
+          "lines": [528, 528]
+        }
+      ],
+      "1.3.2": [
+        {
+          "type": "warning",
+          "category": "Apresentação",
+          "check": "Absolute positioning of elements",
+          "techniques": ["C27"],
+          "occurrences": 1,
+          "lines": [527]
+        }
+      ],
+      "1.3.3": [{ "type": "manual", "check": "Sensory Characteristics" }],
+      "1.4.1": [{ "type": "manual", "check": "Information using color" }],
+      "1.4.3": [
+        { "type": "manual", "check": "Contrast" },
+        { "type": "manual", "check": "Contrast for large fonts" }
+      ],
+      "1.4.4": [
+        {
+          "type": "warning",
+          "category": "Apresentação",
+          "check": "Use of absolute font sizes",
+          "techniques": ["C12", "C13", "C14"],
+          "occurrences": 4,
+          "lines": [527, 528, 528, 528]
+        },
+        {
+          "type": "warning",
+          "category": "Apresentação",
+          "check": "Use of absolute units in block elements",
+          "techniques": ["C28", "G146"],
+          "occurrences": 2,
+          "lines": [529, 529]
+        }
+      ],
+      "1.4.5": [{ "type": "manual", "check": "Images that can be replaced by markup language" }]
+    },
+    "operable": {
+      "2.1.1": [{ "type": "manual", "check": "Automatic movement of the focus" }],
+      "2.1.2": [{ "type": "manual", "check": "Changing focus with the keyboard" }],
+      "2.2.1": [
+        { "type": "manual", "check": "Session time limit" },
+        { "type": "manual", "check": "Limit of time controlled by a script" },
+        { "type": "manual", "check": "Reading texts on the move" }
+      ],
+      "2.2.2": [{ "type": "manual", "check": "Moving or blinking content" }],
+      "2.3.1": [{ "type": "manual", "check": "Flashes below threshold" }],
+      "2.4.1": [
+        { "type": "manual", "check": "Skip repeated blocks of content" },
+        { "type": "manual", "check": "Blocks of content" }
+      ],
+      "2.4.2": [
+        {
+          "type": "warning",
+          "category": "Página web",
+          "check": "Descriptive title",
+          "techniques": ["G88"],
+          "occurrences": 1,
+          "lines": [1]
+        }
+      ],
+      "2.4.3": [{ "type": "manual", "check": "Logical sequence of navigation" }],
+      "2.4.5": [{ "type": "manual", "check": "Multiple ways of localization" }],
+      "2.4.6": [
+        {
+          "type": "warning",
+          "category": "Estrutura e semântica",
+          "check": "Appropriate content of headers and labels",
+          "techniques": ["G130", "G131"],
+          "occurrences": 1,
+          "lines": [527]
+        }
+      ],
+      "2.4.7": [{ "type": "manual", "check": "Changing focus with the event 'onFocus'" }]
+    },
+    "understandable": {
+      "3.1.2": [{ "type": "manual", "check": "Changes in language" }],
+      "3.2.1": [
+        { "type": "manual", "check": "Changing content with the event onfocus" },
+        { "type": "manual", "check": "Changing focus with the event onfocus" },
+        { "type": "manual", "check": "Opening a new window with the event onfocus" },
+        { "type": "manual", "check": "Opening a new window with the event onload" },
+        { "type": "manual", "check": "Changing content" }
+      ],
+      "3.2.2": [{ "type": "manual", "check": "Changes caused by the event onchange in a selector" }],
+      "3.2.3": [{ "type": "manual", "check": "Consistent navigation" }],
+      "3.2.4": [{ "type": "manual", "check": "Consistent denomination" }],
+      "3.3.2": [
+        {
+          "type": "error",
+          "category": "Formulários",
+          "check": "Labeling of form controls",
+          "techniques": ["H44", "H65"],
+          "occurrences": 2,
+          "lines": [528, 528]
+        }
+      ]
+    },
+    "robust": {
+      "4.1.2": [
+        {
+          "type": "error",
+          "category": "Formulários",
+          "check": "Form controls without label",
+          "techniques": ["H44", "H65"],
+          "occurrences": 2,
+          "lines": [528, 528]
+        },
+        { "type": "manual", "check": "Name, role and value" }
+      ]
+    }
+  },
+  "summary": {
+    "errors_total": 4,
+    "errors_unique_root": 1,
+    "errors_root_cause": "2 form controls (TextInput login email/password) sem <label> HTML clássico — corrigido com accessibilityLabel em React Native que vira aria-label, mas TAW só procura <label for=...>",
+    "warnings_total": 5,
+    "warnings_root_cause": "Limitações estruturais do React Native Web (px absolutos, position absolute) + título <UTADmaps> em vez de <UTAD Maps — Navegação inteligente> (já corrigido localmente)",
+    "manual_checks_total": 25,
+    "manual_cover": "Cobertos pelos documentos B.1 (INVENTARIO_ATRIBUTOS_A11Y.md), B.2 (CONTRASTE.md), B.3 (EVIDENCIAS.md - VoiceOver), B.4 (TESTE_RESPONSIVO.md)"
+  }
+}

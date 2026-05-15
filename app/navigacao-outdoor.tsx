@@ -9,6 +9,7 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -231,6 +232,8 @@ export default function NavigacaoOutdoorScreen() {
   // Origem da rota: 'gps' = posição atual; ou id de um building em POLO1_BUILDINGS
   const [origemId, setOrigemId] = useState<string>('gps');
   const [origemPickerOpen, setOrigemPickerOpen] = useState(false);
+  // Pesquisa de origem dentro do modal
+  const [origemSearch, setOrigemSearch] = useState('');
   const [routeCoords, setRouteCoords] = useState<Coord[] | null>(null);
   const [distanceM, setDistanceM] = useState<number | null>(null);
   const [durationS, setDurationS] = useState<number | null>(null);
@@ -239,6 +242,8 @@ export default function NavigacaoOutdoorScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isMapMovedByUser, setIsMapMovedByUser] = useState<boolean>(false);
+  // Fase da navegação: 'planning' = configurar rota; 'navigating' = a seguir indicações
+  const [navStarted, setNavStarted] = useState<boolean>(false);
 
   const indoorId = useMemo(() => getIndoorIdByName(destination.name), [destination.name]);
 
@@ -435,8 +440,33 @@ export default function NavigacaoOutdoorScreen() {
 
   const stepActual = steps[stepIdx];
 
-  // Fit map à rota assim que estiver pronta
+  // Filtra POLO1_BUILDINGS pela pesquisa do utilizador (case + accent insensitive).
+  const buildingsFiltrados = useMemo(() => {
+    const q = origemSearch
+      .toLocaleLowerCase('pt-PT')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .trim();
+    if (!q) return POLO1_BUILDINGS;
+    return POLO1_BUILDINGS.filter((b) => {
+      const haystack = `${b.name.pt} ${b.name.en}`
+        .toLocaleLowerCase('pt-PT')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '');
+      return haystack.includes(q);
+    });
+  }, [origemSearch]);
+
+  // Quando muda o destino (params), reinicia a fase para PLANNING.
+  // Garante que voltar a navegar para uma nova sala não fica preso em modo navigating.
   useEffect(() => {
+    setNavStarted(false);
+  }, [destination.coordinate.latitude, destination.coordinate.longitude]);
+
+  // Fit map à rota assim que estiver pronta (apenas em PLANNING).
+  // Em NAVIGATING o mapa segue o utilizador (recenterOnUser) e não deve dar fit total.
+  useEffect(() => {
+    if (navStarted) return;
     if (!mapRef.current || !origemCoord) return;
     mapRef.current.fitToCoordinates(
       routeCoords && routeCoords.length > 1
@@ -447,7 +477,7 @@ export default function NavigacaoOutdoorScreen() {
         animated: true,
       },
     );
-  }, [routeCoords, origemCoord, destination.coordinate]);
+  }, [routeCoords, origemCoord, destination.coordinate, navStarted]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -465,10 +495,13 @@ export default function NavigacaoOutdoorScreen() {
         onPanDrag={() => setIsMapMovedByUser(true)}
       />
 
-      {/* Recenter button — Google Maps style */}
+      {/* Recenter button — Google Maps style. Em NAVIGATING fica mais perto da rota. */}
       {userLocation && isMapMovedByUser && (
         <TouchableOpacity
-          style={[styles.recenterButton, { backgroundColor: colors.card }]}
+          style={[
+            styles.recenterButton,
+            { backgroundColor: colors.card, bottom: navStarted ? 140 : 240 },
+          ]}
           onPress={recenterOnUser}
           activeOpacity={0.8}
           accessibilityRole="button"
@@ -478,60 +511,119 @@ export default function NavigacaoOutdoorScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Header Overlay com selector De → Para */}
-      <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.card }]}>
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-            style={styles.backIconBtn}
-            accessibilityRole="button"
-            accessibilityLabel={tr('Voltar', 'Back')}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
-            {tr('Navegação', 'Navigation')}
-          </Text>
-          <View style={{ width: 40 }} />
-        </View>
+      {/* ─────────────────────────────────────────────────────────────
+          HEADER — varia consoante a fase
+            • PLANNING (!navStarted): selector completo De → Para
+            • NAVIGATING: card grande estilo Google Maps com a manobra atual
+         ───────────────────────────────────────────────────────────── */}
+      {!navStarted ? (
+        <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.card }]}>
+          <View style={styles.headerTopRow}>
+            <TouchableOpacity
+              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+              style={styles.backIconBtn}
+              accessibilityRole="button"
+              accessibilityLabel={tr('Voltar', 'Back')}>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]} numberOfLines={1}>
+              {tr('Pré-visualização da rota', 'Route preview')}
+            </Text>
+            <View style={{ width: 40 }} />
+          </View>
 
-        {/* Linhas De / Para */}
-        <View style={styles.routeFromTo}>
-          <TouchableOpacity
-            style={styles.routeRow}
-            onPress={() => setOrigemPickerOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={tr(`De: ${origemNome}. Tocar para mudar.`, `From: ${origemNome}. Tap to change.`)}>
-            <View style={[styles.routeBullet, { backgroundColor: '#34C759' }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
-                {tr('De', 'From')}
-              </Text>
-              <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
-                {origemNome}
-              </Text>
+          {/* Linhas De / Para */}
+          <View style={styles.routeFromTo}>
+            <TouchableOpacity
+              style={styles.routeRow}
+              onPress={() => setOrigemPickerOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={tr(`De: ${origemNome}. Tocar para mudar.`, `From: ${origemNome}. Tap to change.`)}>
+              <View style={[styles.routeBullet, { backgroundColor: '#34C759' }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
+                  {tr('De', 'From')}
+                </Text>
+                <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
+                  {origemNome}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color={colors.subtext} />
+            </TouchableOpacity>
+            <View style={[styles.routeDivider, { backgroundColor: colors.divider }]} />
+            <View style={styles.routeRow}>
+              <View style={[styles.routeBullet, { backgroundColor: '#FF3B30' }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
+                  {tr('Para', 'To')}
+                </Text>
+                <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
+                  {destination.name}
+                </Text>
+              </View>
             </View>
-            <Ionicons name="chevron-down" size={18} color={colors.subtext} />
-          </TouchableOpacity>
-          <View style={[styles.routeDivider, { backgroundColor: colors.divider }]} />
-          <View style={styles.routeRow}>
-            <View style={[styles.routeBullet, { backgroundColor: '#FF3B30' }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.routeLabel, { color: colors.subtext, fontSize: fs(11) }]}>
-                {tr('Para', 'To')}
-              </Text>
-              <Text style={[styles.routeValue, { color: colors.text, fontSize: fs(14) }]} numberOfLines={1}>
-                {destination.name}
+          </View>
+        </SafeAreaView>
+      ) : (
+        // ─── NAVIGATING — card grande no topo com instrução actual ───
+        <SafeAreaView edges={['top']} style={[styles.navHeader, { backgroundColor: colors.primary }]}>
+          <View style={styles.navHeaderRow}>
+            <TouchableOpacity
+              onPress={() => setNavStarted(false)}
+              style={styles.navHeaderBack}
+              accessibilityRole="button"
+              accessibilityLabel={tr('Voltar à pré-visualização', 'Back to preview')}
+              hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
+              <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View style={styles.navHeaderIconWrap}>
+              <Ionicons
+                name={stepActual ? iconeStep(stepActual) : 'navigate'}
+                size={32}
+                color="#FFFFFF"
+              />
+            </View>
+            <View
+              style={styles.navHeaderTextWrap}
+              accessible
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={
+                stepActual
+                  ? `${distanciaProximaManobra != null && stepIdx < steps.length - 1
+                      ? `${tr('Em', 'In')} ${formatDistance(distanciaProximaManobra)}, `
+                      : ''}${instrucaoStep(stepActual, language)}`
+                  : tr('A calcular rota', 'Calculating route')
+              }>
+              {distanciaProximaManobra != null && stepIdx < steps.length - 1 && (
+                <Text style={[styles.navHeaderDistance, { fontSize: fs(13) }]}>
+                  {tr('Em', 'In')} {formatDistance(distanciaProximaManobra)}
+                </Text>
+              )}
+              <Text style={[styles.navHeaderInstruction, { fontSize: fs(18) }]} numberOfLines={2}>
+                {stepActual
+                  ? instrucaoStep(stepActual, language)
+                  : tr('A calcular rota...', 'Calculating route...')}
               </Text>
             </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      )}
 
-      {/* Modal selector de origem */}
-      <Modal visible={origemPickerOpen} transparent animationType="slide" onRequestClose={() => setOrigemPickerOpen(false)}>
+      {/* Modal selector de origem — com pesquisa */}
+      <Modal
+        visible={origemPickerOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setOrigemPickerOpen(false);
+          setOrigemSearch('');
+        }}>
         <Pressable
           style={styles.modalBackdrop}
-          onPress={() => setOrigemPickerOpen(false)}
+          onPress={() => {
+            setOrigemPickerOpen(false);
+            setOrigemSearch('');
+          }}
           accessibilityRole="button"
           accessibilityLabel={tr('Fechar seletor de ponto de partida', 'Close starting point picker')} />
         <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
@@ -539,186 +631,276 @@ export default function NavigacaoOutdoorScreen() {
           <Text style={[styles.modalTitle, { color: colors.text, fontSize: fs(18) }]}>
             {tr('Ponto de partida', 'Starting point')}
           </Text>
-          <ScrollView style={{ maxHeight: 360 }}>
-            <TouchableOpacity
-              style={styles.modalRow}
-              onPress={() => {
-                setOrigemId('gps');
-                setOrigemPickerOpen(false);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={tr('Usar a minha localização como ponto de partida', 'Use my location as starting point')}
-              accessibilityState={{ selected: origemId === 'gps' }}>
-              <Ionicons name="locate" size={20} color={colors.text} />
-              <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]}>
-                {tr('A minha localização', 'My location')}
-              </Text>
-              {origemId === 'gps' && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-            </TouchableOpacity>
-            <View style={[styles.modalDivider, { backgroundColor: colors.divider }]} />
-            {POLO1_BUILDINGS.map((b) => (
-              <View key={b.id}>
+
+          {/* Barra de pesquisa */}
+          <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderWidth: 1, borderColor: colors.border }]}>
+            <Ionicons name="search" size={18} color={colors.subtext} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text, fontSize: fs(15) }]}
+              value={origemSearch}
+              onChangeText={setOrigemSearch}
+              placeholder={tr('Pesquisar edifício...', 'Search building...')}
+              placeholderTextColor={colors.subtext}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel={tr('Pesquisar edifício de partida', 'Search starting building')}
+              accessibilityHint={tr(
+                'Escreve parte do nome de um edifício para filtrar a lista abaixo',
+                'Type part of a building name to filter the list below',
+              )}
+            />
+            {origemSearch.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setOrigemSearch('')}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Limpar pesquisa', 'Clear search')}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                <Ionicons name="close-circle" size={18} color={colors.subtext} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <ScrollView style={{ maxHeight: 360 }} keyboardShouldPersistTaps="handled">
+            {/* "A minha localização" — só se a pesquisa não filtrar */}
+            {origemSearch.trim() === '' && (
+              <>
                 <TouchableOpacity
                   style={styles.modalRow}
                   onPress={() => {
-                    setOrigemId(b.id);
+                    setOrigemId('gps');
                     setOrigemPickerOpen(false);
+                    setOrigemSearch('');
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel={tr(`Usar ${b.name.pt} como ponto de partida`, `Use ${b.name.en} as starting point`)}
-                  accessibilityState={{ selected: origemId === b.id }}>
-                  <Ionicons name="business-outline" size={20} color={colors.text} />
-                  <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]} numberOfLines={1}>
-                    {tr(b.name.pt, b.name.en)}
+                  accessibilityLabel={tr('Usar a minha localização como ponto de partida', 'Use my location as starting point')}
+                  accessibilityState={{ selected: origemId === 'gps' }}>
+                  <Ionicons name="locate" size={20} color={colors.text} />
+                  <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]}>
+                    {tr('A minha localização', 'My location')}
                   </Text>
-                  {origemId === b.id && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  {origemId === 'gps' && <Ionicons name="checkmark" size={20} color={colors.primary} />}
                 </TouchableOpacity>
                 <View style={[styles.modalDivider, { backgroundColor: colors.divider }]} />
+              </>
+            )}
+
+            {buildingsFiltrados.length === 0 ? (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text style={{ color: colors.subtext, fontSize: fs(14) }}>
+                  {tr('Sem resultados.', 'No results.')}
+                </Text>
               </View>
-            ))}
+            ) : (
+              buildingsFiltrados.map((b) => (
+                <View key={b.id}>
+                  <TouchableOpacity
+                    style={styles.modalRow}
+                    onPress={() => {
+                      setOrigemId(b.id);
+                      setOrigemPickerOpen(false);
+                      setOrigemSearch('');
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr(`Usar ${b.name.pt} como ponto de partida`, `Use ${b.name.en} as starting point`)}
+                    accessibilityState={{ selected: origemId === b.id }}>
+                    <Ionicons name="business-outline" size={20} color={colors.text} />
+                    <Text style={[styles.modalRowText, { color: colors.text, fontSize: fs(15) }]} numberOfLines={1}>
+                      {tr(b.name.pt, b.name.en)}
+                    </Text>
+                    {origemId === b.id && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  </TouchableOpacity>
+                  <View style={[styles.modalDivider, { backgroundColor: colors.divider }]} />
+                </View>
+              ))
+            )}
           </ScrollView>
         </View>
       </Modal>
 
-      {/* Bottom Panel */}
-      <View style={[styles.bottomPanel, { backgroundColor: colors.card }]}>
-        <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+      {/* ─────────────────────────────────────────────────────────────
+          BOTTOM PANEL — varia consoante a fase
+            • PLANNING: distância + tempo + a pé/carro + [Começar Navegação]
+            • NAVIGATING: card minimalista com tempo/distância restante + [Terminar]
+         ───────────────────────────────────────────────────────────── */}
+      {!navStarted ? (
+        // ─── PLANNING ─────────────────────────────────────────────
+        <View style={[styles.bottomPanel, { backgroundColor: colors.card }]}>
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
 
-        {/* Instrução turn-by-turn em destaque */}
-        {stepActual && !loading && (
-          <View style={[styles.stepCard, { backgroundColor: colors.inputBg }]}>
-            <View style={[styles.stepIconWrap, { backgroundColor: colors.card }]}>
-              <Ionicons name={iconeStep(stepActual)} size={24} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.stepInstruction, { color: colors.text }]} numberOfLines={2}>
-                {instrucaoStep(stepActual, language)}
-              </Text>
-              <View style={styles.stepMeta}>
-                {distanciaProximaManobra != null && stepIdx < steps.length - 1 && (
-                  <Text style={[styles.stepDistance, { color: colors.subtext }]}>
-                    {tr('em', 'in')} {formatDistance(distanciaProximaManobra)}
+          <View style={styles.infoRow}>
+            <View style={styles.infoTextWrap}>
+              {loading ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color={colors.text} />
+                  <Text style={[styles.timeDistance, { color: colors.text, marginLeft: 8 }]}>
+                    {tr('A calcular rota...', 'Calculating route...')}
                   </Text>
-                )}
-                <Text style={[styles.stepCount, { color: colors.subtext }]}>
-                  {tr('Passo', 'Step')} {stepIdx + 1}/{steps.length}
+                </View>
+              ) : distanceM != null && durationS != null ? (
+                <Text style={[styles.timeDistance, { color: colors.text }]} numberOfLines={1}>
+                  {formatDistance(distanceM)} · {formatDuration(durationS)}{' '}
+                  {mode === 'foot' ? tr('a pé', 'walking') : tr('de carro', 'driving')}
                 </Text>
-              </View>
+              ) : (
+                <Text style={[styles.timeDistance, { color: colors.text }]} numberOfLines={1}>
+                  {destination.name}
+                </Text>
+              )}
+              {error && (
+                <Text style={[styles.instruction, { color: '#FF3B30' }]} numberOfLines={2}>
+                  {error}
+                </Text>
+              )}
             </View>
-            {/* Botões prev/next manuais (fallback) */}
-            <View style={styles.stepNav}>
+
+            <View style={[styles.modeToggle, { backgroundColor: colors.inputBg }]}>
               <TouchableOpacity
-                onPress={() => setStepIdx((i) => Math.max(0, i - 1))}
-                disabled={stepIdx === 0}
-                style={[styles.stepNavBtn, { opacity: stepIdx === 0 ? 0.3 : 1 }]}
+                style={[
+                  styles.modePill,
+                  mode === 'foot' && [styles.modePillActive, { backgroundColor: colors.card }],
+                ]}
+                onPress={() => setMode('foot')}
                 accessibilityRole="button"
-                accessibilityLabel={tr('Passo anterior', 'Previous step')}>
-                <Ionicons name="chevron-back" size={18} color={colors.text} />
+                accessibilityState={{ selected: mode === 'foot' }}
+                accessibilityLabel={tr('A pé', 'Walking')}>
+                <Text style={[styles.modeText, mode === 'foot' && styles.modeTextActive]}>
+                  {tr('A pé', 'Walking')}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setStepIdx((i) => Math.min(steps.length - 1, i + 1))}
-                disabled={stepIdx >= steps.length - 1}
-                style={[styles.stepNavBtn, { opacity: stepIdx >= steps.length - 1 ? 0.3 : 1 }]}
+                style={[
+                  styles.modePill,
+                  mode === 'driving' && [styles.modePillActive, { backgroundColor: colors.card }],
+                ]}
+                onPress={() => setMode('driving')}
                 accessibilityRole="button"
-                accessibilityLabel={tr('Próximo passo', 'Next step')}>
-                <Ionicons name="chevron-forward" size={18} color={colors.text} />
+                accessibilityState={{ selected: mode === 'driving' }}
+                accessibilityLabel={tr('Carro', 'Car')}>
+                <Text style={[styles.modeText, mode === 'driving' && styles.modeTextActive]}>
+                  {tr('Carro', 'Car')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-        )}
 
-        <View style={styles.infoRow}>
-          <View style={styles.infoTextWrap}>
-            {loading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color={colors.text} />
-                <Text style={[styles.timeDistance, { color: colors.text, marginLeft: 8 }]}>
-                  {tr('A calcular rota...', 'Calculating route...')}
-                </Text>
-              </View>
-            ) : distanceM != null && durationS != null ? (
-              <Text style={[styles.timeDistance, { color: colors.text }]} numberOfLines={1}>
-                {formatDistance(distanceM)} · {formatDuration(durationS)}{' '}
-                {mode === 'foot' ? tr('a pé', 'walking') : tr('de carro', 'driving')}
-              </Text>
-            ) : (
-              <Text style={[styles.timeDistance, { color: colors.text }]} numberOfLines={1}>
-                {destination.name}
-              </Text>
-            )}
-            {error && (
-              <Text style={[styles.instruction, { color: '#FF3B30' }]} numberOfLines={2}>
-                {error}
-              </Text>
-            )}
-          </View>
-
-          <View style={[styles.modeToggle, { backgroundColor: colors.inputBg }]}>
-            <TouchableOpacity
-              style={[
-                styles.modePill,
-                mode === 'foot' && [styles.modePillActive, { backgroundColor: colors.card }],
-              ]}
-              onPress={() => setMode('foot')}
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === 'foot' }}
-              accessibilityLabel={tr('A pé', 'Walking')}>
-              <Text style={[styles.modeText, mode === 'foot' && styles.modeTextActive]}>
-                {tr('A pé', 'Walking')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.modePill,
-                mode === 'driving' && [styles.modePillActive, { backgroundColor: colors.card }],
-              ]}
-              onPress={() => setMode('driving')}
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === 'driving' }}
-              accessibilityLabel={tr('Carro', 'Car')}>
-              <Text style={[styles.modeText, mode === 'driving' && styles.modeTextActive]}>
-                {tr('Carro', 'Car')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Botão de transição outdoor → indoor (só se o destino tiver indoor) */}
-        {indoorId && (
+          {/* Botão Começar — só se tivermos rota com passos */}
           <TouchableOpacity
-            style={[styles.indoorButton, { backgroundColor: colors.primary }]}
-            onPress={() =>
-              router.replace({
-                pathname: '/indoor-3d',
-                params: {
-                  buildingId: indoorId,
-                  buildingName: destination.name,
-                  floors: JSON.stringify([0, 1, 2]),
-                  // Se viemos de uma navegação iniciada por uma sala (horário,
-                  // pesquisa…), abrir o indoor já com essa sala como destino.
-                  ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
-                },
-              })
-            }
+            style={[
+              styles.startButton,
+              {
+                backgroundColor: steps.length > 0 ? colors.primary : colors.inputBg,
+                opacity: steps.length > 0 ? 1 : 0.5,
+              },
+            ]}
+            onPress={() => {
+              if (steps.length > 0) {
+                setStepIdx(0);
+                setNavStarted(true);
+                // recentra no utilizador para começar a navegar
+                setTimeout(() => recenterOnUser(), 200);
+              }
+            }}
+            disabled={steps.length === 0}
             accessibilityRole="button"
-            accessibilityLabel={tr('Entrar no edifício', 'Enter the building')}>
-            <Ionicons name="enter-outline" size={20} color={colors.bg} />
-            <Text style={[styles.indoorButtonText, { color: colors.bg }]}>
-              {tr('Entrar no edifício', 'Enter the building')}
+            accessibilityLabel={tr('Começar Navegação', 'Start Navigation')}
+            accessibilityHint={tr(
+              'Inicia a navegação passo a passo com indicações de direção',
+              'Starts step-by-step navigation with turn-by-turn directions',
+            )}
+            accessibilityState={{ disabled: steps.length === 0 }}>
+            <Ionicons
+              name="navigate"
+              size={20}
+              color={steps.length > 0 ? '#FFFFFF' : colors.subtext}
+            />
+            <Text
+              style={[
+                styles.startButtonText,
+                { color: steps.length > 0 ? '#FFFFFF' : colors.subtext, fontSize: fs(16) },
+              ]}>
+              {tr('Começar Navegação', 'Start Navigation')}
             </Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: indoorId ? colors.inputBg : colors.primary }]}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-          accessibilityRole="button"
-          accessibilityLabel={tr('Terminar', 'Finish')}>
-          <Text style={[styles.buttonText, { color: indoorId ? colors.text : colors.bg }]}>
-            {tr('Terminar', 'Finish')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Botão de transição outdoor → indoor (só se o destino tiver indoor) */}
+          {indoorId && (
+            <TouchableOpacity
+              style={[styles.indoorButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border, marginTop: 8, marginBottom: 0 }]}
+              onPress={() =>
+                router.replace({
+                  pathname: '/indoor-3d',
+                  params: {
+                    buildingId: indoorId,
+                    buildingName: destination.name,
+                    floors: JSON.stringify([0, 1, 2]),
+                    ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
+                  },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={tr('Entrar no edifício', 'Enter the building')}
+              accessibilityHint={tr(
+                'Abre directamente o mapa interior do edifício de destino',
+                'Opens directly the indoor floor plan of the destination',
+              )}>
+              <Ionicons name="enter-outline" size={18} color={colors.text} />
+              <Text style={[styles.indoorButtonText, { color: colors.text, fontSize: fs(14) }]}>
+                {tr('Entrar no edifício', 'Enter the building')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        // ─── NAVIGATING — card minimalista ─────────────────────────
+        <View style={[styles.navBottomPanel, { backgroundColor: colors.card }]}>
+          <View style={styles.navBottomRow}>
+            <View style={styles.navBottomInfo}>
+              <Text style={[styles.navBottomTime, { color: colors.text, fontSize: fs(22) }]}>
+                {durationS != null ? formatDuration(durationS) : '—'}
+              </Text>
+              <Text style={[styles.navBottomMeta, { color: colors.subtext, fontSize: fs(13) }]}>
+                {distanceM != null ? formatDistance(distanceM) : ''}
+                {' · '}
+                {mode === 'foot' ? tr('a pé', 'walking') : tr('de carro', 'driving')}
+                {steps.length > 0 ? ` · ${tr('Passo', 'Step')} ${stepIdx + 1}/${steps.length}` : ''}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.terminateButton, { backgroundColor: '#FF3B30' }]}
+              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+              accessibilityRole="button"
+              accessibilityLabel={tr('Terminar navegação', 'End navigation')}>
+              <Ionicons name="close" size={18} color="#FFFFFF" />
+              <Text style={[styles.terminateButtonText, { fontSize: fs(15) }]}>
+                {tr('Terminar', 'End')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {indoorId && (
+            <TouchableOpacity
+              style={[styles.indoorButton, { backgroundColor: colors.primary, marginTop: 12, marginBottom: 0 }]}
+              onPress={() =>
+                router.replace({
+                  pathname: '/indoor-3d',
+                  params: {
+                    buildingId: indoorId,
+                    buildingName: destination.name,
+                    floors: JSON.stringify([0, 1, 2]),
+                    ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
+                  },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={tr('Entrar no edifício', 'Enter the building')}>
+              <Ionicons name="enter-outline" size={18} color="#FFFFFF" />
+              <Text style={[styles.indoorButtonText, { color: '#FFFFFF', fontSize: fs(14) }]}>
+                {tr('Entrar no edifício', 'Enter the building')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -997,5 +1179,142 @@ const styles = StyleSheet.create({
   indoorButtonText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+
+  // ───── Pesquisa de origem no modal ─────
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    marginHorizontal: 4,
+    gap: 8,
+    minHeight: 44,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 0,
+  },
+
+  // ───── Botão "Começar Navegação" (PLANNING) ─────
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 28,
+    paddingVertical: 16,
+    minHeight: 56,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  startButtonText: {
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  // ───── NAVIGATING — header card grande (estilo Google Maps) ─────
+  navHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#007AFF',
+    paddingBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    gap: 8,
+  },
+  navHeaderBack: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navHeaderIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navHeaderTextWrap: {
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  navHeaderDistance: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+    marginBottom: 2,
+    letterSpacing: 0.2,
+  },
+  navHeaderInstruction: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+
+  // ───── NAVIGATING — bottom panel minimalista ─────
+  navBottomPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  navBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  navBottomInfo: {
+    flex: 1,
+  },
+  navBottomTime: {
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  navBottomMeta: {
+    fontWeight: '500',
+  },
+  terminateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
+    minHeight: 44,
+  },
+  terminateButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
