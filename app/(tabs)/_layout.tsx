@@ -9,15 +9,13 @@ export default function TabLayout() {
   const { t } = useLanguage();
   const { colors, fs, altoContraste } = useSettings();
 
-  // Altura da TabBar: cresce com o tamanho do texto mas com saturação
-  // para evitar que o tab bar fique gigantesco com texto a 200%.
-  //   - Texto pequeno (0.85x) → 75px (mínimo)
-  //   - Texto normal (1.0x)   → 75px
-  //   - Texto grande (1.25x)  → ~80px
-  //   - Texto extra (1.6x)    → ~92px
-  //   - Texto máximo (2.0x)   → ~110px
-  const tabBarBaseHeight = Math.max(75, fs(48) + 28);
-  const bottomInset = Math.max(insets.bottom, 12);
+  // TabBar: tamanho do label limitado para não crescer demasiado com texto a 200%
+  // (cumpre WCAG 1.4.4 sem ocupar metade do ecrã).
+  // Não definimos `height` — deixamos o React Navigation calcular conforme o
+  // conteúdo, evitando o espaço branco que surgia quando a altura era forçada
+  // maior que o tamanho real dos itens.
+  const labelFontSize = Math.min(fs(11), 13);
+  const bottomInset = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
@@ -26,22 +24,20 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.subtext,
         tabBarLabelStyle: {
-          fontSize: fs(11),
+          fontSize: labelFontSize,
           fontWeight: '500',
+          marginTop: 2,
         },
         tabBarItemStyle: {
-          // Distribui icon + label uniformemente — evita "espaço em branco"
-          // quando a TabBar cresce com o tamanho do texto.
-          justifyContent: 'center',
           paddingVertical: 6,
         },
         tabBarStyle: {
           backgroundColor: colors.tabBar,
           borderTopWidth: altoContraste ? 2 : 1,
           borderTopColor: colors.tabBarBorder,
-          height: tabBarBaseHeight + bottomInset,
+          paddingTop: 6,
           paddingBottom: bottomInset,
-          paddingTop: 4,
+          // sem `height` — RN calcula naturalmente a partir dos itens
         },
       }}>
       <Tabs.Screen
