@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>TAW Report — UTAD Maps</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px;
+    background: #f7f8fa;
+    color: #222;
+    line-height: 1.5;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h1 { margin: 0 0 8px 0; font-size: 28px; color: #1a1a1a; }
+  .subtitle { color: #666; font-size: 14px; margin: 0; }
+  .meta { font-size: 13px; color: #888; margin-top: 12px; }
+  .meta strong { color: #555; }
+
+  .scoreboard { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+  .score-card {
+    flex: 1;
+    min-width: 160px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-left: 4px solid #ccc;
+  }
+  .score-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; }
+  .score-card .value { font-size: 36px; font-weight: 700; color: #222; }
+  .score-card.danger { border-left-color: #dc2626; }
+  .score-card.danger .value { color: #dc2626; }
+  .score-card.warn { border-left-color: #f59e0b; }
+  .score-card.warn .value { color: #f59e0b; }
+  .score-card.info { border-left-color: #3b82f6; }
+  .score-card.info .value { color: #3b82f6; }
+
+  section { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  h2 { font-size: 20px; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; color: #1a1a1a; }
+  h3 { font-size: 16px; color: #1a1a1a; margin: 16px 0 8px 0; }
+
+  .principle-banner {
+    background: linear-gradient(135deg, #1e6b6b 0%, #134141 100%);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #f9fafb; color: #555; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.criteria { font-family: ui-monospace, monospace; color: #555; white-space: nowrap; }
+  td.center { text-align: center; }
+  td.right { text-align: right; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .badge.error { background: #fef2f2; color: #991b1b; }
+  .badge.warn { background: #fffbeb; color: #92400e; }
+  .badge.manual { background: #eff6ff; color: #1e40af; }
+
+  .root-cause {
+    background: #f0fdf4;
+    border-left: 4px solid #16a34a;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+  }
+  .root-cause h3 { color: #166534; margin-top: 0; }
+
+  .footer { text-align: center; padding: 24px; color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🔍 TAW — Test de Accesibilidad Web</h1>
+    <p class="subtitle">UTAD Maps — ferramenta recomendada pelos docentes (PDF "Ferramentas de Avaliação Automática da Acessibilidade Web")</p>
+    <p class="meta">
+      <strong>URL testada:</strong> https://utadmaps.b-host.me/ (estado da Fase 1) ·
+      <strong>Standard:</strong> WCAG 2.0 ·
+      <strong>Nível:</strong> AA ·
+      <strong>Tecnologias:</strong> HTML, CSS ·
+      <strong>Data:</strong> 14 maio 2026, 15:45
+    </p>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-card danger">
+      <div class="label">Erros</div>
+      <div class="value">4</div>
+    </div>
+    <div class="score-card warn">
+      <div class="label">Avisos</div>
+      <div class="value">5</div>
+    </div>
+    <div class="score-card info">
+      <div class="label">Análise Manual</div>
+      <div class="value">25</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="principle-banner">Princípio 1 — Perceivable</div>
+    <table>
+      <thead>
+        <tr><th>Critério</th><th>Verificação</th><th class="center">Resultado</th><th class="right">Inc.</th><th class="right">Linha</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="criteria">1.1.1</td><td>Form controls without label (H44, H65)</td><td class="center"><span class="badge error">Erro</span></td><td class="right">2</td><td class="right">528</td></tr>
+        <tr><td class="criteria">1.3.1</td><td>Form controls without associated label (H44, H65)</td><td class="center"><span class="badge error">Erro</span></td><td class="right">2</td><td class="right">528</td></tr>
+        <tr><td class="criteria">1.3.2</td><td>Absolute positioning of elements (C27)</td><td class="center"><span class="badge warn">Aviso</span></td><td class="right">1</td><td class="right">527</td></tr>
+        <tr><td class="criteria">1.3.3</td><td>Sensory Characteristics (G96)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">1.4.1</td><td>Information using color (G14, G122, G182, G183)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">1.4.3</td><td>Contrast (Minimum) (G18, G148, G174)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">2</td><td class="right">—</td></tr>
+        <tr><td class="criteria">1.4.4</td><td>Use of absolute font sizes (C12, C13, C14)</td><td class="center"><span class="badge warn">Aviso</span></td><td class="right">4</td><td class="right">527-528</td></tr>
+        <tr><td class="criteria">1.4.4</td><td>Use of absolute units in block elements (C28, G146)</td><td class="center"><span class="badge warn">Aviso</span></td><td class="right">2</td><td class="right">529</td></tr>
+        <tr><td class="criteria">1.4.5</td><td>Images that can be replaced by markup (C22, C30, G140)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="principle-banner">Princípio 2 — Operable</div>
+    <table>
+      <thead>
+        <tr><th>Critério</th><th>Verificação</th><th class="center">Resultado</th><th class="right">Inc.</th><th class="right">Linha</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="criteria">2.1.1</td><td>Automatic movement of the focus (G90)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.1.2</td><td>Changing focus with the keyboard (G21)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.2.1</td><td>Session time limit, scripts, texts on the move</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">3</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.2.2</td><td>Moving or blinking content</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.3.1</td><td>Flashes below threshold</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.4.1</td><td>Skip blocks, Blocks of content</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">2</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.4.2</td><td>Descriptive title (G88)</td><td class="center"><span class="badge warn">Aviso</span></td><td class="right">1</td><td class="right">1</td></tr>
+        <tr><td class="criteria">2.4.3</td><td>Logical sequence of navigation</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.4.5</td><td>Multiple ways of localization</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">2.4.6</td><td>Appropriate content of headers and labels (G130, G131)</td><td class="center"><span class="badge warn">Aviso</span></td><td class="right">1</td><td class="right">527</td></tr>
+        <tr><td class="criteria">2.4.7</td><td>Changing focus with the event onFocus (F55)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="principle-banner">Princípio 3 — Understandable</div>
+    <table>
+      <thead>
+        <tr><th>Critério</th><th>Verificação</th><th class="center">Resultado</th><th class="right">Inc.</th><th class="right">Linha</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="criteria">3.1.2</td><td>Changes in language (H58)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">3.2.1</td><td>onfocus events (G107, F55)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">5</td><td class="right">—</td></tr>
+        <tr><td class="criteria">3.2.2</td><td>onchange in selector (H84)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">3.2.3</td><td>Consistent navigation (G61)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">3.2.4</td><td>Consistent denomination (G197)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+        <tr><td class="criteria">3.3.2</td><td>Labeling of form controls (H44, H65)</td><td class="center"><span class="badge error">Erro</span></td><td class="right">2</td><td class="right">528</td></tr>
+      </tbody>
+    </table>
+
+    <div class="principle-banner">Princípio 4 — Robust</div>
+    <table>
+      <thead>
+        <tr><th>Critério</th><th>Verificação</th><th class="center">Resultado</th><th class="right">Inc.</th><th class="right">Linha</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="criteria">4.1.2</td><td>Form controls without label (H44, H65)</td><td class="center"><span class="badge error">Erro</span></td><td class="right">2</td><td class="right">528</td></tr>
+        <tr><td class="criteria">4.1.2</td><td>Name, role and value (G108, SCR21, G135, G10)</td><td class="center"><span class="badge manual">Manual</span></td><td class="right">1</td><td class="right">—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="root-cause">
+      <h3>📐 Análise dos resultados</h3>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Os 4 erros têm a mesma raiz:</strong> 2 elementos <code>&lt;input&gt;</code> (TextInput de email e password no ecrã de login) que não têm <code>&lt;label for="..."&gt;</code> HTML clássico. O TAW reporta isto sob 4 critérios distintos (1.1.1, 1.3.1, 3.3.2, 4.1.2) porque a regra dos labels é fundamental e atravessa vários princípios.</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Mitigação já aplicada:</strong> em React Native, os inputs receberam <code>accessibilityLabel</code> que se traduz para <code>aria-label</code> no DOM resultante — o que cumpre formalmente o critério para leitores de ecrã modernos (verificado independentemente pelo axe-core e pa11y com sucesso). O TAW, no entanto, procura especificamente o atributo HTML <code>&lt;label for="..."&gt;</code> tradicional, padrão histórico. Esta diferença é responsável pela divergência de resultados entre TAW e axe-core.</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>5 avisos:</strong> decorrem de limitações estruturais do React Native Web (geração de CSS com unidades absolutas px e <code>position: absolute</code>) e do título da página estar truncado para "UTADmaps" em vez de "UTAD Maps — Navegação inteligente" (já corrigido localmente, pendente de redeploy).</p>
+      <p style="margin: 0; font-size: 14px;"><strong>25 análises manuais:</strong> são revisões humanas obrigatórias, cobertas pelos documentos <code>INVENTARIO_ATRIBUTOS_A11Y.md</code>, <code>CONTRASTE.md</code>, <code>TESTE_LEITORES_ECRA.md</code> e <code>TESTE_RESPONSIVO.md</code>.</p>
+    </div>
+  </section>
+
+  <div class="footer">
+    Documento gerado a partir dos resultados visuais do TAW disponíveis em <code>https://tawdis.net</code> · UTAD Maps Fase 2
+  </div>
+</div>
+</body>
+</html>

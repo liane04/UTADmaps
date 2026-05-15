@@ -41,7 +41,7 @@ Legenda:
 | 1.4.1 | Uso da cor | A | ✅ | Cor nunca é o único meio. Estados (selecionado, urgente) usam cor + texto + ícone |
 | 1.4.2 | Controlo de áudio | A | N/A | Sem áudio automático |
 | 1.4.3 | **Contraste (Minimum)** | **AA** | ✅ | 22/24 combinações testadas ≥ 4.5:1 (texto normal) ou ≥ 3:1 (texto grande). Ver `CONTRASTE.md`. 2 gaps menores documentados com mitigação |
-| 1.4.4 | Redimensionar texto até 200% | AA | ✅ | Slider de 5 níveis em Definições (Pequeno 0.85x → Máximo 2.00x). Toda a UI usa `fs()` em vez de `fontSize` literal |
+| 1.4.4 | Redimensionar texto até 200% | AA | ✅ | Slider de 5 níveis em Definições (Pequeno 0.85x → Máximo 2.00x). Toda a UI usa `fs()` em vez de `fontSize` literal. Bug **B-05** detectado a 200% (TabBar excessiva) e **resolvido durante a Fase 2** — ver C-09 |
 | 1.4.5 | Imagens de texto | AA | ✅ | Todo o texto é renderizado via `<Text>` |
 | 1.4.6 | Contraste melhorado | AAA | ✅ | Modo Alto Contraste em Definições usa preto/branco puro (rácio 21:1) |
 | 1.4.10 | Reflow | AA | ✅ | Layout flexbox. Sem larguras fixas em píxeis. Validado em 320×568 |

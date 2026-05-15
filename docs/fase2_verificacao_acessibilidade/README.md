@@ -74,7 +74,7 @@ fase2_verificacao_acessibilidade/
 
 ## Metodologia em síntese
 
-A Fase 2 combina **avaliação automática** (3 ferramentas) com **análise manual** (4 procedimentos)
+A Fase 2 combina **avaliação automática** (4 ferramentas, incluindo a T.A.W. recomendada pelos docentes da UC) com **análise manual** (4 procedimentos)
 sobre a aplicação móvel UTAD Maps. A escolha desta combinação respeita o enunciado do desafio
 ("ferramenta automática **ou** análise manual") e maximiza a cobertura dos critérios WCAG 2.2
 que ferramentas automáticas não conseguem verificar isoladamente (e.g. teste com leitor de ecrã,
@@ -83,9 +83,10 @@ respostas semânticas dos elementos, navegação por toque, contraste real em di
 ### Avaliação automática
 | Ferramenta | Aplicada onde | Reporta |
 |---|---|---|
-| **Lighthouse** (Chrome DevTools) | App em emulação mobile (web build) | Score 0–100 de acessibilidade + lista de audits |
-| **axe DevTools** (extensão Chrome) | App em emulação mobile (web build) | Issues por severidade, com critério WCAG |
-| **React Native Accessibility Inspector** | App nativa em simulador iOS | Verificação dos `accessibilityLabel/Role/Hint/State` propagados |
+| **Lighthouse 12** (Chrome DevTools) | App em emulação mobile (web build) | Score 0–100 de acessibilidade + lista de audits |
+| **axe-core 4.11** (CLI) | App em emulação mobile (web build) | Issues por severidade, com critério WCAG |
+| **pa11y 9** (axe + HTML CodeSniffer) | App em emulação mobile (web build) | Validação cruzada WCAG2AA |
+| **T.A.W.** (https://tawdis.net) | `utadmaps.b-host.me` | **Ferramenta recomendada pelos docentes da UC**. Classifica resultados por princípio (Perceivable / Operable / Understandable / Robust) |
 
 ### Análise manual
 | Procedimento | Foco | Documento |

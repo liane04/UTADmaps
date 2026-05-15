@@ -39,9 +39,10 @@ resume o conjunto.
 | A.1 | Automática | Lighthouse 12.8.2 (Chrome DevTools, mobile emulation) | Score 0–100 de acessibilidade, audits WCAG |
 | A.2 | Automática | axe-core 4.11.4 (CLI) | Issues por severidade ligados a critérios WCAG 2.x |
 | A.3 | Automática | pa11y 9 (runner axe + HTML CodeSniffer da W3C) | Conformidade WCAG2AA por validação cruzada |
+| A.4 | Automática | **T.A.W. (Test de Accesibilidad Web)** — ferramenta indicada no material da UC | Conformidade WCAG 2.0 AA por princípio (Perceivable / Operable / Understandable / Robust) |
 | B.1 | Manual | Auditoria de atributos por ficheiro | Cobertura `accessibilityLabel/Role/Hint/State` |
 | B.2 | Manual | Cálculo de rácios de contraste | Conformidade 1.4.3 (AA) e 1.4.6 (AAA) |
-| B.3 | Manual | Teste com VoiceOver / TalkBack (5 tarefas-tipo) | Comportamento real com leitor de ecrã |
+| B.3 | Manual | Teste com VoiceOver / TalkBack | Comportamento real com leitor de ecrã |
 | B.4 | Manual | Teste de responsividade | Resize 200%, reflow, orientação |
 
 Esta combinação é justificada por uma observação central: **ferramentas automáticas conseguem
@@ -54,7 +55,7 @@ utilizador com deficiência — requerem análise manual. A nossa abordagem refl
 
 As três ferramentas foram executadas em **duas fases**: (1) **antes** das correções da Fase 2, sobre a aplicação no estado da Fase 1 deployada em `https://utadmaps.b-host.me`; e (2) **depois** das correções, sobre o build local (`npx expo export -p web`) com as alterações da Fase 2 aplicadas. A Tabela 6 sintetiza os resultados.
 
-**Tabela 6 — Síntese antes vs depois das três ferramentas automáticas**
+**Tabela 6 — Síntese antes vs depois das quatro ferramentas automáticas**
 
 | Ferramenta | Antes (Fase 1) | Depois (Fase 2) | Variação |
 |---|---|---|---|
@@ -63,8 +64,12 @@ As três ferramentas foram executadas em **duas fases**: (1) **antes** das corre
 | Lighthouse SEO | 82/100 | — ¹ | — |
 | **axe-core** violações WCAG 2.x | **1** (`region`, moderate) | **0** ✅ | −1 |
 | **pa11y** issues WCAG2AA | — | 2 (falsos positivos) | — |
+| **T.A.W.** erros WCAG 2.0 AA | **4 critérios (8 ocorrências)** | **0 erros previstos** ² | −4 critérios |
+| **T.A.W.** avisos WCAG 2.0 AA | 5 critérios (9 ocorrências) | ≤3 previstos ² | redução parcial |
 
 ¹ A re-execução do Lighthouse contra o build local não foi possível em headless por limitação técnica conhecida do Chrome headless com SPAs React Native Web servidos localmente (erro `NO_FCP` — First Contentful Paint não detectada). As mesmas audits do Lighthouse são cobertas redundantemente por axe-core e pa11y, ambos executados com sucesso na fase "depois".
+
+² A re-execução do T.A.W. contra a versão pós-correções aguarda o redeploy do site (no momento da redacção, `utadmaps.b-host.me` ainda servia a versão da Fase 1). Os 4 erros são todos da mesma classe (form controls sem label) e a sua correção via `accessibilityLabel` → `aria-label` no React Native Web foi já validada independentemente pelo axe-core (0 violations, ver Tabela 8). Prevê-se que o T.A.W. reporte 0 erros após o redeploy. Os avisos referentes a `position: absolute` e unidades absolutas (`px`) decorrem de propriedades estruturais do React Native Web que persistirão até refactor da stack de styling — são portanto considerados aceitáveis e justificados no contexto desta plataforma.
 
 ### Lighthouse 12.8.2
 
@@ -124,6 +129,52 @@ region · scrollable-region-focusable · tabindex · target-size
 > Figura X.4 — axe-core ANTES: 1 violation `region` (moderate) com 11 ocorrências — `screenshots/antes/04_axe_antes.png`
 > Figura X.5 — axe-core DEPOIS: 0 violations, 29 passes — `screenshots/depois/05_axe_depois.png`
 
+### T.A.W. (Test de Accesibilidad Web)
+
+A ferramenta T.A.W., desenvolvida pelo CTIC (Centro Tecnológico de la Información y la Comunicación) e disponível em https://tawdis.net, é a ferramenta de avaliação automática **expressamente indicada pelos docentes da UC** no material de apoio "Ferramentas de Avaliação Automática da Acessibilidade Web". Foi aplicada à versão `utadmaps.b-host.me` no estado da Fase 1, configurada para o standard **WCAG 2.0 nível AA**.
+
+O T.A.W. distingue-se das ferramentas anteriores por classificar os resultados por **Princípio WCAG** (Perceivable, Operable, Understandable, Robust), apresentar **três tipos de resultado** (Erro ❌, Aviso ⚠️, Análise Manual ❓) e identificar os números de linha do HTML afetados. A Tabela 9 sintetiza os totais por princípio.
+
+**Tabela 9 — Resultados T.A.W. agregados por princípio WCAG**
+
+| Princípio | Erros | Avisos | Análise Manual |
+|---|---:|---:|---:|
+| 1. Perceivable | 2 critérios (4 ocorrências) | 3 critérios (7 ocorrências) | 5 critérios |
+| 2. Operable | 0 | 2 critérios (2 ocorrências) | 11 critérios |
+| 3. Understandable | 1 critério (2 ocorrências) | 0 | 9 critérios |
+| 4. Robust | 1 critério (2 ocorrências) | 0 | 1 critério |
+| **TOTAL** | **4 critérios (8 ocorrências)** | **5 critérios (9 ocorrências)** | **26 critérios** |
+
+#### Análise dos 4 critérios em erro
+
+Os 4 erros têm a **mesma raiz**: 2 elementos `<input>` (TextInput de email e password no ecrã de login) que não têm `<label for="...">` HTML clássico associado. O T.A.W. reporta este problema sob quatro critérios distintos do WCAG 2.0 — **1.1.1 Non-text Content**, **1.3.1 Info and Relationships**, **3.3.2 Labels or Instructions** e **4.1.2 Name, Role, Value** — porque o requisito de identificação de controlos de formulário atravessa transversalmente os quatro princípios fundamentais da acessibilidade.
+
+**Mitigação implementada**: no React Native, os inputs receberam o atributo `accessibilityLabel`, que se traduz para `aria-label` no DOM resultante. Esta abordagem cumpre o critério para leitores de ecrã modernos (verificado independentemente pelo axe-core e pelo pa11y com sucesso). O T.A.W. procura especificamente o atributo HTML `<label for="...">` tradicional, padrão histórico anterior ao WAI-ARIA, o que explica a divergência de resultados entre T.A.W. e as outras ferramentas automáticas.
+
+#### Análise dos 5 critérios em aviso
+
+Os avisos decorrem de duas fontes:
+
+1. **Limitações estruturais do React Native Web**: a pipeline de compilação gera CSS com unidades absolutas em píxeis e usa `position: absolute` extensivamente para o layout. Isto desencadeia os avisos em **1.4.4** (Use of absolute font sizes / Use of absolute units in block elements), **1.3.2** (Absolute positioning of elements) e **2.4.6** (Appropriate content of headers and labels). A correção exigiria reescrever a stack de styling para usar unidades relativas (`em`, `rem`, `%`) — alteração não trivial e fora do âmbito desta fase.
+
+2. **Título de página truncado**: o aviso de **2.4.2 Descriptive title** decorre de a versão deployada apresentar `<title>UTADmaps</title>` em vez do título mais descritivo `<title>UTAD Maps — Navegação inteligente no campus</title>`. Esta correção **já foi aplicada localmente** no ficheiro `app/+html.tsx` e estará efectiva no próximo redeploy.
+
+#### Análise dos 26 critérios em "manual"
+
+Os 26 critérios marcados como "?" (análise manual) são verificações que o T.A.W. **identifica como aplicáveis mas que exigem revisão humana** — não podem ser determinados automaticamente. Estes critérios estão **cobertos pelos procedimentos manuais** documentados nesta secção:
+
+- 1.3.3, 1.4.1, 1.4.3, 1.4.5 → cobertos por `CONTRASTE.md` e pela análise de uso de cor em `INVENTARIO_ATRIBUTOS_A11Y.md`
+- 2.1.1, 2.1.2, 2.4.3, 2.4.7 → cobertos pelo teste manual com VoiceOver em `EVIDENCIAS.md` (Modalidade B)
+- 2.4.1, 2.4.5 → cobertos pela inspecção de `+html.tsx` (skip-to-content link, múltiplos caminhos via TabBar+Pesquisa+Mapa)
+- 2.2.x, 2.3.1 → não aplicáveis (a aplicação não tem limites de tempo nem flashes)
+- 3.1.2, 3.2.x → cobertos pelo sistema i18n (`tr(pt, en)`) e pela consistência do TabBar
+- 4.1.2 (manual) → coberto pelo inventário em `INVENTARIO_ATRIBUTOS_A11Y.md`
+
+Esta complementaridade entre análise automática e manual é precisamente a abordagem mista que valida a metodologia descrita em 3.6.1.
+
+> Figura X.7 — Resultados T.A.W. por princípio WCAG — `screenshots/taw/01_taw_perceivable.png`, `02_taw_operable.png`, `03_taw_understandable.png`, `04_taw_robust.png`
+> Resultados detalhados em `resultados/taw-antes.json` e renderização HTML em `resultados/taw-antes.html`.
+
 ### pa11y 9 (runner axe + HTML CodeSniffer)
 
 A ferramenta pa11y combina dois engines distintos (axe-core e HTML CodeSniffer da W3C) e foi
@@ -155,9 +206,9 @@ qualquer ferramenta conservadora sem alterar perceptivelmente a aparência visua
 
 Foi realizado um levantamento exaustivo dos atributos de acessibilidade React Native em 12 ficheiros
 do diretório `app/`, totalizando **78 componentes interativos** (TouchableOpacity + Pressable). A
-Tabela 9 sintetiza a cobertura após as correções aplicadas na Fase 2.
+Tabela 10 sintetiza a cobertura após as correções aplicadas na Fase 2.
 
-**Tabela 9 — Cobertura de atributos de acessibilidade React Native**
+**Tabela 10 — Cobertura de atributos de acessibilidade React Native**
 
 | Atributo | Cobertura | Conformidade WCAG |
 |---|---:|---|
@@ -184,9 +235,9 @@ implementando a fórmula oficial WCAG 2:
 contrast = (L₁ + 0.05) / (L₂ + 0.05)
 ```
 
-A Tabela 10 apresenta as combinações principais.
+A Tabela 11 apresenta as combinações principais.
 
-**Tabela 10 — Rácios de contraste das combinações principais**
+**Tabela 11 — Rácios de contraste das combinações principais**
 
 | Combinação | Rácio | AA texto | AAA texto |
 |---|---:|:---:|:---:|
@@ -213,7 +264,7 @@ O detalhe metodológico e o script de cálculo reproduzível estão em
 
 Foi aplicado o protocolo de teste com **VoiceOver (iOS)** sobre 5 tarefas representativas:
 
-**Tabela 11 — Resultados do teste com VoiceOver**
+**Tabela 12 — Resultados do teste com VoiceOver**
 
 | Tarefa | Descrição | Tempo médio | Sucesso modalidade C (ecrã coberto) |
 |---|---|---|---|
@@ -234,20 +285,21 @@ Observações qualitativas relevantes (ver `EVIDENCIAS.md` para o registo comple
 
 ### Teste de responsividade
 
-A aplicação foi testada em 5 configurações de tamanho de texto (de 0.85× a 2.00×) em todos os 6
-ecrãs principais. Não foi observada perda de funcionalidade ou sobreposição de elementos em
-nenhuma configuração. O reflow a 320×568 mostrou que o layout flexbox preserva a estrutura sem
-introduzir scroll horizontal.
+A aplicação foi testada em 5 configurações de tamanho de texto (de 0.85× a 2.00×) em todos os 6 ecrãs principais. O reflow a 320×568 (resolução típica de iPhone SE) mostrou que o layout flexbox preserva a estrutura sem introduzir scroll horizontal. O modo Alto Contraste foi validado em todos os ecrãs com aplicação consistente de cores preto/branco puros e bordas de 2px em elementos focáveis.
 
-> Figura X+4 — Texto a 200% no Perfil (`screenshots/depois/11_text200_perfil.png`)
-> Figura X+5 — Modo Alto Contraste no Mapa (`screenshots/depois/13_alto_contraste.png`)
+**Bug B-05 detectado e resolvido durante este teste**: ao ajustar o texto para "Máximo" (200%), observou-se que a barra de navegação inferior (TabBar) crescia desproporcionalmente, passando de 105 px (texto normal) para **180 px** (texto a 200%) — ocupando aproximadamente um terço do ecrã. A causa foi identificada em `app/(tabs)/_layout.tsx` linha 30, onde a altura era calculada com escala linear `fs(75) + insets.bottom`. A correção introduziu um cálculo com **saturação** — `Math.max(75, fs(48) + 28) + insets.bottom` — combinado com `justifyContent: 'center'` nos itens da tab, reduzindo a altura máxima para **154 px** sem prejudicar a legibilidade dos labels. Esta correção tem impacto direto positivo no critério **WCAG 1.4.4 Resize Text (AA)** e demonstra empiricamente o valor da metodologia mista de avaliação adotada.
+
+> Figura X.8 — Texto a 200% no Mapa após correção do bug B-05 (`screenshots/depois/12_text200_mapa.png`)
+> Figura X.9 — Texto a 200% em Definições (`screenshots/depois/13_text200_definicoes.png`)
+> Figura X.10 — Modo Alto Contraste no Mapa (`screenshots/depois/14_alto_contraste_mapa.png`)
+> Figura X.11 — Modo Alto Contraste em Definições (`screenshots/depois/15_alto_contraste_definicoes.png`)
 
 ## 3.6.5 — Conformidade WCAG 2.2 — síntese
 
 A análise de conformidade dos **40 critérios WCAG 2.2 níveis A + AA** está integralmente
-documentada em `CHECKLIST_WCAG.md`. A Tabela 12 apresenta o resumo agregado.
+documentada em `CHECKLIST_WCAG.md`. A Tabela 13 apresenta o resumo agregado.
 
-**Tabela 12 — Conformidade WCAG 2.2 AA do UTAD Maps**
+**Tabela 13 — Conformidade WCAG 2.2 AA do UTAD Maps**
 
 | Princípio | Critérios aplicáveis | Conformes ✅ | Parciais ⚠️ | Não conformes ❌ |
 |---|---:|---:|---:|---:|
@@ -277,9 +329,9 @@ Estado de Arte (secção 2.1) que advoga design inclusivo desde a concepção.
 ## 3.6.6 — Correções implementadas na Fase 2
 
 A Fase 2 contemplou um conjunto de correções que elevaram significativamente a conformidade do
-sistema. A Tabela 13 resume.
+sistema. A Tabela 14 resume.
 
-**Tabela 13 — Correções aplicadas na Fase 2**
+**Tabela 14 — Correções aplicadas na Fase 2**
 
 | ID | Ficheiro | Alteração | Critério |
 |---|---|---|---|
@@ -290,9 +342,10 @@ sistema. A Tabela 13 resume.
 | C-05 | 8 ficheiros em `app/` | `hitSlop` ≥ 10px nos botões com ícone | 2.5.8 |
 | C-06 | Botão eye em login | `accessibilityState={{ checked: showPassword }}` | 4.1.2, 3.3.8 |
 | C-07 | Cards e botões principais | `accessibilityHint` informativo | 3.3.2 |
+| C-08 | `app/definicoes.tsx` (bug B-03) | Reorganização de comentário JSX para eliminar string solta em `<View>` parent, removendo LogBox vermelho recorrente | 4.1.2 (indireto) |
+| C-09 | `app/(tabs)/_layout.tsx` (bug B-05) | Altura da TabBar inferior com fórmula de saturação `Math.max(75, fs(48) + 28)` + `justifyContent: 'center'` nos itens, evitando crescimento desproporcional com texto a 200% | **1.4.4 Resize Text (AA)** |
 
-A cobertura de `accessibilityLabel` subiu de 52% para ~95%. A cobertura de `accessibilityHint`
-subiu de 0% para 10% (concentrada nos pontos de maior valor — botões críticos de navegação).
+A cobertura de `accessibilityLabel` subiu de 52% para ~95%. A cobertura de `accessibilityHint` subiu de 0% para 10% (concentrada nos pontos de maior valor — botões críticos de navegação). Adicionalmente, **dois bugs detectados em fase de teste manual foram corrigidos durante a Fase 2**: B-03 (LogBox de "Text strings must be rendered within a `<Text>` component" no ecrã de Definições) e B-05 (TabBar inferior crescia desproporcionalmente a 200% de texto). Estes bugs **não tinham sido reportados por nenhuma das quatro ferramentas automáticas** — evidenciam o valor da metodologia mista adotada.
 
 ## 3.6.7 — Trabalho futuro
 

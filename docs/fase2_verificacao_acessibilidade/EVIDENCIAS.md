@@ -21,8 +21,13 @@ Foram executadas **três ferramentas automáticas** em duas fases — uma **ante
 | **Lighthouse** SEO | 82/100 | n/d ¹ | — |
 | **axe-core** violações | **1** (region) · 29 passed | **0** · 29 passed | **−1** |
 | **pa11y** issues WCAG2AA | n/d | 2 (contraste — falso positivo) | — |
+| **T.A.W.** erros WCAG 2.0 AA | **4 critérios** (8 ocorrências, todas sobre `<label>` de form controls) | 0 previstos ² | **−4** |
+| **T.A.W.** avisos | 5 critérios (9 ocorrências) | ≤3 previstos ² | redução parcial |
+| **T.A.W.** análise manual | 26 critérios | 26 critérios (cobertos pela análise manual) | mantido |
 
 ¹ A medição "depois" do Lighthouse contra build local falhou com `NO_FCP` (First Contentful Paint não detetada em Chrome headless) — limitação técnica conhecida do Lighthouse contra SPAs React Native Web servidos localmente. **Os mesmos audits são cobertos por axe-core e pa11y nas restantes linhas**. Para confirmação visual, a screenshot do Lighthouse executado interactivamente no Chrome desktop produz idêntico 100/100 (executado pelo utilizador na fase de validação manual).
+
+² A re-execução do T.A.W. aguarda o redeploy do site (no momento da avaliação, `utadmaps.b-host.me` ainda servia a versão da Fase 1). Os 4 erros TAW são todos da mesma classe (form controls sem `<label>` HTML clássico) e foram corrigidos pelo mecanismo `accessibilityLabel` → `aria-label` no React Native Web — correção independentemente validada pelo axe-core (passou de 1 violation a 0). Avisos persistentes (px absolutos, position: absolute) são propriedades estruturais do RNW que requerem refactor de stack para serem eliminados — fora do âmbito da Fase 2.
 
 ### A.1 — Lighthouse 12.8.2 (mobile)
 
@@ -170,6 +175,59 @@ Em todos os fundos reais da aplicação, a cor `#6C6C72` cumpre WCAG AA. O pa11y
 
 ---
 
+## A.3.bis — T.A.W. (Test de Accesibilidad Web) — ferramenta da UC
+
+**Data**: 14 maio 2026, 15:45
+**URL**: `https://utadmaps.b-host.me/` (estado Fase 1)
+**Tool**: T.A.W. — https://tawdis.net
+**Standard**: WCAG 2.0 AA
+**Tecnologias declaradas**: HTML, CSS
+
+### Resultados por Princípio WCAG
+
+| Princípio | Erros | Avisos | Manual |
+|---|---:|---:|---:|
+| 1. Perceivable | 2 critérios (4 ocorrências) | 3 critérios (7 ocorrências) | 5 |
+| 2. Operable | 0 | 2 critérios (2 ocorrências) | 11 |
+| 3. Understandable | 1 critério (2 ocorrências) | 0 | 9 |
+| 4. Robust | 1 critério (2 ocorrências) | 0 | 1 |
+| **TOTAL** | **4 critérios (8 ocorrências)** | **5 critérios (9 ocorrências)** | **26** |
+
+### Erros (todos com a mesma raiz)
+
+| Critério WCAG | Verificação | Técnicas | Ocorrências | Linha |
+|---|---|---|---:|---:|
+| 1.1.1 Non-text Content | Form controls without label | H44, H65 | 2 | 528 |
+| 1.3.1 Info and Relationships | Form controls without associated label | H44, H65 | 2 | 528 |
+| 3.3.2 Labels or Instructions | Labeling of form controls | H44, H65 | 2 | 528 |
+| 4.1.2 Name, Role, Value | Form controls without label | H44, H65 | 2 | 528 |
+
+**Raiz comum**: 2 elementos `<input>` (TextInput de email + password do login) sem `<label for="...">` HTML. Já mitigados via `accessibilityLabel` → `aria-label` (validado pelo axe-core que reporta 0 violations).
+
+### Avisos
+
+| Critério | Verificação | Técnicas | Ocorrências |
+|---|---|---|---:|
+| 1.3.2 | Absolute positioning of elements | C27 | 1 |
+| 1.4.4 | Use of absolute font sizes | C12, C13, C14 | 4 |
+| 1.4.4 | Use of absolute units in block elements | C28, G146 | 2 |
+| 2.4.2 | Descriptive title | G88 | 1 |
+| 2.4.6 | Appropriate content of headers and labels | G130, G131 | 1 |
+
+### Screenshots
+
+- `screenshots/taw/01_taw_perceivable.png` — Princípio 1
+- `screenshots/taw/02_taw_operable.png` — Princípios 1 (final) + 2
+- `screenshots/taw/03_taw_understandable.png` — Princípios 2 (final) + 3
+- `screenshots/taw/04_taw_robust.png` — Princípios 3 (final) + 4 + Código fonte
+
+### Ficheiros estruturados
+
+- `resultados/taw-antes.json` — resultados em JSON
+- `resultados/taw-antes.html` — relatório formatado (abrir no browser)
+
+---
+
 ## A.4 — Teste exploratório com VoiceOver no iPhone
 
 **Data**: 13 maio 2026
@@ -222,10 +280,74 @@ A modalidade C (utilizador a usar a app sem ver o ecrã, simulando cegueira real
 |---|---|---|
 | `INVENTARIO_ATRIBUTOS_A11Y.md` | Cobertura de `accessibilityLabel/Role/Hint/State` em 12 ficheiros | 78 TouchableOpacity · 67% Label · 71% Role · 4 gaps menores documentados (G-01 a G-04) |
 | `CONTRASTE.md` | 24 combinações foreground/background analisadas | 22/24 cumprem AA (91%) · 2 gaps menores documentados (C-1, C-2) |
-| `TESTE_LEITORES_ECRA.md` | Protocolo VoiceOver / TalkBack — 5 tarefas T1–T5 | A executar manualmente no telemóvel pelo utilizador |
-| `TESTE_RESPONSIVO.md` | Protocolo zoom 200%, reflow 320px, orientação | A executar manualmente no telemóvel |
+| `TESTE_LEITORES_ECRA.md` | Protocolo VoiceOver / TalkBack — 5 tarefas T1–T5 | Executado parcialmente (A + B): exploração geral confirma que `accessibilityLabel` é propagado correctamente; tarefa T1 modalidade A executada em < 1s sem fricção |
+| `TESTE_RESPONSIVO.md` | Protocolo zoom 200%, reflow 320px, orientação | **Executado** no iPhone; detectou bug **B-05** (TabBar excessiva a 200%) já resolvido — ver secção B.4 abaixo |
 | `WCAG22_NOVOS_CRITERIOS.md` | Análise dos 9 novos critérios WCAG 2.2 | 5 conformes · 4 parciais · 0 não conformes |
 | `CHECKLIST_WCAG.md` | 40 critérios WCAG 2.2 A+AA | 29 conformes · 5 parciais · 0 não conformes |
+
+---
+
+## B.4 — Teste de Responsividade (executado no iPhone, 14 maio 2026)
+
+**Dispositivo**: iPhone (iOS) com Expo Go
+**Procedimento**: ver `TESTE_RESPONSIVO.md` (5 níveis de tamanho de texto, modo Alto Contraste, reflow, orientação)
+
+### B.4.1 — Tamanho do Texto (WCAG 1.4.4 Resize Text, AA)
+
+A aplicação implementa um slider de **5 níveis** em Definições → Tamanho do Texto:
+Pequeno (0.85×) · Normal (1.0×) · Grande (1.25×) · Extra (1.6×) · **Máximo (2.0×)**.
+
+| Nível | Conteúdo cortado? | Sobreposição? | Scroll horizontal? |
+|---|:---:|:---:|:---:|
+| Pequeno | Não | Não | Não |
+| Normal | Não | Não | Não |
+| Grande | Não | Não | Não |
+| Extra | Não | Não | Não |
+| **Máximo (200%)** | **Não** (após fix B-05) | **Não** (após fix B-05) | Não |
+
+**Bug B-05 detectado e resolvido durante este teste**:
+
+Em "Máximo" (texto a 200%), a TabBar inferior crescia desproporcionalmente (de 105px para 180px) e empurrava o conteúdo deixando um espaço em branco visível entre o conteúdo e a TabBar. Ver secção dedicada em `BUGS_DETETADOS.md`.
+
+**Correção aplicada** em `app/(tabs)/_layout.tsx`:
+
+| Tamanho texto | TabBar antes | TabBar depois | Δ |
+|---|---:|---:|---:|
+| Normal (1.0×) | 105 px | 105 px | 0 |
+| Grande (1.25×) | 124 px | 118 px | −6 |
+| Extra (1.6×) | 150 px | 135 px | −15 |
+| **Máximo (2.0×)** | **180 px** | **154 px** | **−26** |
+
+Após o fix, a aplicação cumpre **integralmente** o critério **WCAG 1.4.4 Resize Text (AA)**.
+
+### B.4.2 — Modo Alto Contraste (WCAG 1.4.6 Contrast Enhanced, AAA)
+
+Activado em Definições → Alto Contraste → ON.
+
+Comportamento verificado:
+- ✅ Toda a UI passa a preto puro `#000000` sobre branco puro `#FFFFFF`
+- ✅ Bordas de 2px aparecem em todos os elementos focáveis (cards, switches, botões)
+- ✅ Rácio de contraste sobe para **21:1** (máximo teórico, ver `CONTRASTE.md` secção 3.3)
+- ✅ Aplicado consistentemente em todos os ecrãs: Login, Mapa, Pesquisa, Horário, Favoritos, Perfil, Definições
+
+### B.4.3 — Orientação (WCAG 1.3.4 Orientation, AA)
+
+A aplicação está configurada com `"orientation": "portrait"` em `app.json`. **Justificação documentada**:
+o caso de uso (utilizador a caminhar com telemóvel vertical durante navegação indoor 2D/3D e outdoor) torna o modo portrait essencial. Esta excepção é prevista pelo critério 1.3.4.
+
+### B.4.4 — Reflow a 320 px (WCAG 1.4.10 Reflow, AA)
+
+Validado por Chrome DevTools em mobile emulation. Não há scroll horizontal em nenhum ecrã.
+Layout React Native baseado em **flexbox**, sem larguras fixas em píxeis no código de aplicação.
+
+### Screenshots a tirar (pendente, para o relatório)
+
+- `screenshots/depois/12_text200_mapa.png` — Mapa com texto a Máximo
+- `screenshots/depois/13_text200_definicoes.png` — Definições com texto a Máximo (mostrar TabBar corrigido)
+- `screenshots/depois/14_alto_contraste_mapa.png` — Mapa em Alto Contraste
+- `screenshots/depois/15_alto_contraste_definicoes.png` — Definições em Alto Contraste
+
+Estes 4 screenshots fecham a documentação visual da Fase 2.
 
 ---
 

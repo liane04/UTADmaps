@@ -41,15 +41,74 @@ O botão "Entrar" no ecrã de login original funciona corretamente. O bug é esp
 
 ---
 
-## Bug B-03 — Warning: "Text strings must be rendered within a `<Text>` component"
+## Bug B-03 — Warning: "Text strings must be rendered within a `<Text>` component" ✅ RESOLVIDO
 
-**Severidade**: Baixa
-**Descoberto em**: Boot da app no Expo Go
-**Sintoma**: aparece no log do Metro um warning sobre uma string solta fora de `<Text>`.
+**Severidade**: Baixa (mas chocante para o utilizador porque aparece como LogBox vermelho)
+**Descoberto em**: Boot da app no Expo Go (visível no ecrã Definições)
+**Onde**: `app/definicoes.tsx`, linha 40
 
-**Impacto a11y**: nulo (a string não é visível porque RN ignora-a no render); no entanto, indica código a corrigir.
+**Sintoma**: aparece um LogBox vermelho no fundo do ecrã com a mensagem "Text strings must be rendered within a `<Text>` component", com call stack apontando para `createTextInstance` no `ReactFabric-dev.js`.
 
-**Correção sugerida**: localizar a string solta (provavelmente um espaço ou variável a renderizar diretamente em JSX) e envolvê-la em `<Text>`.
+**Causa raiz identificada**: o `<View style={styles.header}>` tinha três children, sendo o terceiro:
+
+```jsx
+<View style={{ width: 80 }} /> {/* Spacer to center title */}
+```
+
+O **espaço em branco entre `/>` e `{/* … */}`** estava a ser interpretado como string solta dentro do `<View>` pai. O React Native (motor Fabric) sinaliza isto como erro porque texto solto não pode ser renderizado fora de um `<Text>`.
+
+**Correção aplicada**: reorganizar o JSX para que o comentário fique numa linha própria antes do spacer, eliminando o espaço:
+
+```jsx
+{/* Spacer para centrar o título */}
+<View style={{ width: 80 }} />
+```
+
+**Impacto a11y**: nulo (a string não é visível); no entanto, o LogBox sobreposto no ecrã prejudicava significativamente a experiência durante desenvolvimento e o teste com utilizadores.
+
+**Estado**: ✅ Corrigido. Verificado por grep `/> \{/\*` em `app/` que não encontra mais ocorrências.
+
+---
+
+## Bug B-05 — TabBar inferior cresce desproporcionalmente com tamanho de texto ✅ RESOLVIDO
+
+**Severidade**: Média (afeta usabilidade ao aumentar texto — princípio de acessibilidade WCAG 1.4.4 Resize Text)
+**Descoberto em**: B.4 Teste de responsividade (utilizador a aumentar texto a "Máximo")
+**Onde**: `app/(tabs)/_layout.tsx`, linha 30
+
+**Sintoma**: ao ajustar o tamanho do texto em Definições → Tamanho do Texto para "Máximo" (200%), a barra de navegação inferior **subia ocupando metade do ecrã** e deixava o conteúdo da tab actual (mapa, pesquisa, etc.) com um espaço em branco visual entre o conteúdo e a TabBar.
+
+**Causa raiz identificada**: a altura da TabBar era calculada como:
+
+```jsx
+height: fs(75) + Math.max(insets.bottom, 12)
+```
+
+A função `fs()` escala linearmente pelo factor de tamanho do texto. Com texto a 200%, `fs(75) = 150`, o que tornava a TabBar com 150px + 30px (home indicator iOS) = **180px de altura**, demasiado para uso prático.
+
+**Correção aplicada**: substituir o cálculo linear por um cálculo com **saturação**, que garante que a TabBar cresce moderadamente sem se tornar excessiva, e adicionar `justifyContent: 'center'` ao `tabBarItemStyle` para distribuir icon+label uniformemente no espaço disponível.
+
+```jsx
+const tabBarBaseHeight = Math.max(75, fs(48) + 28);
+const bottomInset = Math.max(insets.bottom, 12);
+
+// ...
+tabBarItemStyle: {
+  justifyContent: 'center',
+  paddingVertical: 6,
+},
+tabBarStyle: {
+  height: tabBarBaseHeight + bottomInset,
+  paddingBottom: bottomInset,
+  paddingTop: 4,
+}
+```
+
+Resultado: altura passa de 75px (texto normal) → ~110px (texto máximo), em vez dos 180px anteriores.
+
+**Impacto a11y**: **positivo direto** — cumpre o critério WCAG 1.4.4 (Resize Text) de forma mais funcional. O utilizador com baixa visão pode aumentar o texto a 200% sem perder área útil do ecrã.
+
+**Estado**: ✅ Corrigido. Validação por inspecção visual no iPhone com texto a "Máximo".
 
 ---
 
@@ -66,11 +125,14 @@ O botão "Entrar" no ecrã de login original funciona corretamente. O bug é esp
 
 ## Síntese
 
-| ID | Severidade | Impacto a11y | A corrigir antes da entrega final? |
+| ID | Severidade | Impacto a11y | Estado |
 |---|---|---|---|
-| B-01 | Alta | Indireto (3.2.1/3.2.2) | **Sim** — trivial |
-| B-02 | Crítica | Indireto (privacidade) | **Sim — alta prioridade** |
-| B-03 | Baixa | Nulo | Sim, fácil |
-| B-04 | Code smell | Nulo | Não bloqueante |
+| B-01 | Alta | Indireto (3.2.1/3.2.2) | ⏳ Pendente — correção trivial |
+| B-02 | Crítica (privacidade) | Indireto (privacidade) | ⏳ Pendente — alta prioridade |
+| B-03 | Baixa (chocante visualmente) | Nulo | ✅ **Resolvido** durante Fase 2 |
+| B-04 | Code smell | Nulo | ⏸️ Não bloqueante |
+| B-05 | Média (WCAG 1.4.4) | **Direto** — Resize Text 200% | ✅ **Resolvido** durante Fase 2 |
 
-Estes 4 bugs serão referenciados na secção 3.6.7 do relatório (Trabalho Futuro) como evidência adicional de que a metodologia de teste manual produz valor para além das ferramentas automáticas.
+Os 5 bugs constituem **evidência do valor do teste manual** — nenhum foi reportado pelas ferramentas automáticas. **B-03 e B-05 foram resolvidos durante a Fase 2**, justificando o procedimento e produzindo melhorias concretas no produto. B-01, B-02 e B-04 ficam para iteração antes da Fase 3.
+
+Esta tabela será referenciada na secção 3.6.7 do relatório (Trabalho Futuro) e na secção 3.6.6 (Correções Implementadas), demonstrando que a metodologia de teste manual produz valor para além das ferramentas automáticas.

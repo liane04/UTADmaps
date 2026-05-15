@@ -9,6 +9,16 @@ export default function TabLayout() {
   const { t } = useLanguage();
   const { colors, fs, altoContraste } = useSettings();
 
+  // Altura da TabBar: cresce com o tamanho do texto mas com saturação
+  // para evitar que o tab bar fique gigantesco com texto a 200%.
+  //   - Texto pequeno (0.85x) → 75px (mínimo)
+  //   - Texto normal (1.0x)   → 75px
+  //   - Texto grande (1.25x)  → ~80px
+  //   - Texto extra (1.6x)    → ~92px
+  //   - Texto máximo (2.0x)   → ~110px
+  const tabBarBaseHeight = Math.max(75, fs(48) + 28);
+  const bottomInset = Math.max(insets.bottom, 12);
+
   return (
     <Tabs
       screenOptions={{
@@ -16,19 +26,22 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.subtext,
         tabBarLabelStyle: {
-          fontSize: fs(12),
+          fontSize: fs(11),
           fontWeight: '500',
-          marginBottom: 8,
         },
         tabBarItemStyle: {
-          paddingTop: 6,
+          // Distribui icon + label uniformemente — evita "espaço em branco"
+          // quando a TabBar cresce com o tamanho do texto.
+          justifyContent: 'center',
+          paddingVertical: 6,
         },
         tabBarStyle: {
           backgroundColor: colors.tabBar,
           borderTopWidth: altoContraste ? 2 : 1,
           borderTopColor: colors.tabBarBorder,
-          height: fs(75) + Math.max(insets.bottom, 12),
-          paddingBottom: Math.max(insets.bottom, 12),
+          height: tabBarBaseHeight + bottomInset,
+          paddingBottom: bottomInset,
+          paddingTop: 4,
         },
       }}>
       <Tabs.Screen

@@ -37,7 +37,8 @@ export default function DefinicoesScreen() {
           <Text style={[styles.backText, { color: colors.text, fontSize: fs(16) }]}>{t.voltar}</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text, fontSize: fs(16) }]}>{t.definicoes}</Text>
-        <View style={{ width: 80 }} /> {/* Spacer to center title */}
+        {/* Spacer para centrar o título */}
+        <View style={{ width: 80 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>

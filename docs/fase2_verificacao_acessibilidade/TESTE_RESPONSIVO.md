@@ -46,11 +46,33 @@ Tirar 5 screenshots no nível **Máximo (200%)**:
 - `screenshots/depois/text200_favoritos.png`
 - `screenshots/depois/text200_perfil.png`
 
-### 1.4 Resultado esperado
+### 1.4 Resultado (após teste no iPhone, 14 maio 2026)
 
-✅ **Conforme** WCAG 1.4.4 AA — texto escalável até 200% sem perda de informação ou
-funcionalidade. O slider de 5 níveis é uma implementação **acima do mínimo** exigido (o
-critério apenas exige que seja possível atingir 200%; ter um slider granular é melhoria de UX).
+✅ **Conforme** WCAG 1.4.4 AA — texto escalável até 200% sem perda de informação ou funcionalidade. O slider de 5 níveis é uma implementação **acima do mínimo** exigido (o critério apenas exige que seja possível atingir 200%; ter um slider granular é melhoria de UX).
+
+**Bug detectado durante o teste (B-05)**: ao definir texto "Máximo", a TabBar inferior crescia de 105 px (texto normal) para 180 px, ocupando ~1/3 do ecrã e deixando espaço em branco visível entre o conteúdo da página e a TabBar.
+
+**Causa**: cálculo `height: fs(75) + insets.bottom` em `app/(tabs)/_layout.tsx`. A função `fs()` escala linearmente, multiplicando a altura pelo factor 2.0 quando o texto está a 200%.
+
+**Correção aplicada**: substituir por cálculo com saturação:
+
+```ts
+const tabBarBaseHeight = Math.max(75, fs(48) + 28);
+const bottomInset = Math.max(insets.bottom, 12);
+// height: tabBarBaseHeight + bottomInset
+```
+
+Tabela de evolução:
+
+| Texto | TabBar antes (px) | TabBar depois (px) |
+|---|---:|---:|
+| Pequeno (0.85×) | 105 | 105 |
+| Normal (1.0×) | 105 | 105 |
+| Grande (1.25×) | 124 | 118 |
+| Extra (1.6×) | 150 | 135 |
+| Máximo (2.0×) | **180** | **154** |
+
+Documentado em `BUGS_DETETADOS.md` como B-05 (✅ Resolvido) e em `AVALIACAO_ACESSIBILIDADE.md` Tabela 14 como C-09.
 
 ---
 
