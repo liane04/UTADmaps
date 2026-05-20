@@ -1,0 +1,133 @@
+
+> utadmaps@1.0.0 web
+> expo start --web
+
+Starting project at C:\Users\UM3402\repos\UTADmaps
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+λ Bundled 1765ms node_modules\expo-router\node\render.js (915 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (900/900)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 4101ms node_modules\expo-router\entry.js (900 modules)
+Web Bundled 398ms node_modules\expo-router\entry.js (776 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 30ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 410ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 50ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 34ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 404ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 44ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 36ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 406ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 40ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 33ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 334ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 28ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 21ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 353ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 57ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 97ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 56ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 35ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 333ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 23ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 307ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 33ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 21ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 308ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 31ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 313ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 27ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 30ms node_modules\expo-router\entry.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 377ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 38ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\leaflet\dist\leaflet-src.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 871ms node_modules\leaflet\dist\leaflet-src.js (1 module)
+Web Bundled 141ms node_modules\leaflet.markercluster\dist\leaflet.markercluster-src.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 33ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 525ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 20ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 302ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 27ms node_modules\expo-router\node\render.js (1 module)
+Require cycle: store/useAppStore.ts -> services/api.ts -> store/useAppStore.ts
+
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 40ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 396ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 40ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+ LOG  [web] Logs will appear in the browser console

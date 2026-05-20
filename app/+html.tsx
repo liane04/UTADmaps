@@ -62,6 +62,17 @@ body {
     background-color: #000000;
   }
 }
+/* O wrapper <main id="main"> tem de preencher a viewport. Sem altura definida,
+   a app (que assenta em flex:1) colapsa para altura 0 e o ecrã fica em branco. */
+html, body { height: 100%; }
+#main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
 /* WCAG 2.4.7 Focus Visible: garantir contorno em todos os elementos focados via teclado */
 *:focus-visible {
   outline: 3px solid #0066CC;
