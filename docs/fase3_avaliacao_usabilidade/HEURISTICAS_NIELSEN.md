@@ -151,3 +151,17 @@ O segundo problema mais grave é o **bug B-01**, em que o botão "Iniciar sessã
 Os restantes problemas correspondem maioritariamente a melhorias de feedback (H1), mensagens de erro mais informativas (H9), e enriquecimento do onboarding e da documentação contextual (H10). A análise é compatível com os achados das ferramentas automáticas e da análise manual da Fase 2, reforçando a robustez metodológica do conjunto da avaliação.
 
 A síntese cruzada destes problemas com os identificados pelas restantes técnicas (Shneiderman e User Tests) está documentada em `PROBLEMAS_DETECTADOS.md`, e as propostas de melhoria em `MELHORIAS_PROPOSTAS.md`.
+
+---
+
+## 7. Notas de Revisão e Correções (Pedro Braz)
+
+Durante a revisão deste documento, foram identificadas e corrigidas as seguintes inconsistências aritméticas que constavam no rascunho inicial:
+
+1. **Correção de problemas de severidade 2 (menores)**: O rascunho indicava a existência de 7 problemas de severidade 2, mas a contagem direta nas tabelas dos peritos P1, P2 e P3 revelou 8 problemas menores.
+2. **Correção da soma total**: Com a contagem correta dos problemas menores, o total de problemas identificados na avaliação heurística foi atualizado de 14 para **15 problemas**.
+3. **Correção dos problemas prioritários**: O número de problemas com severidade $\ge$ 2 (prioritários para correção) foi atualizado de 10 para **11 problemas**.
+4. **Ajuste na Tabela Compilada (Soma/Média)**: Na tabela do capítulo 5, na linha "Soma", a coluna "Média" indicava o valor `30` (que representava a soma acumulada de todas as notas). Este valor foi corrigido para **`10,00`**, que é a média correta da soma das severidades dividida pelos 3 peritos ($30 / 3 = 10,00$).
+
+Estas correções foram também refletidas de forma idêntica na secção correspondente do relatório geral (`AVALIACAO_USABILIDADE.md`).
+
