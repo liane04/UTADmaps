@@ -81,16 +81,16 @@ São os problemas com maior validade metodológica porque foram identificados in
 | Técnica | N.º problemas únicos identificados | N.º partilhados com outras técnicas |
 |---|---:|---:|
 | Avaliação Heurística (AH) | 14 problemas distintos | 6 também noutras técnicas |
-| Regras de Shneiderman (SH) | 4 problemas distintos | 4 também noutras técnicas |
-| User Tests (UT) | 8 problemas distintos | 4 também noutras técnicas |
+| Regras de Shneiderman (SH) | 5 problemas distintos | 4 também noutras técnicas |
+| User Tests (UT) | 8 problemas distintos | 3 também noutras técnicas |
 
-> A Avaliação Heurística com três peritos foi a técnica que mais problemas identificou em termos absolutos, o que é consistente com a literatura (Nielsen, 1994). Os User Tests acrescentaram problemas qualitativos relacionados com **affordances** e **expectativas dos utilizadores** que a inspecção heurística não captou. As Regras de Shneiderman serviram principalmente como validação cruzada (4 dos seus 4 *gaps* identificados também aparecem nas outras técnicas).
+> A Avaliação Heurística com três peritos foi a técnica que mais problemas identificou em termos absolutos, o que é consistente com a literatura (Nielsen, 1994). Os User Tests acrescentaram problemas qualitativos relacionados com **affordances** e **expectativas dos utilizadores** que a inspecção heurística não captou. As Regras de Shneiderman serviram principalmente como validação cruzada (4 dos seus 5 problemas identificados também aparecem nas outras técnicas; P-12 é o único exclusivo desta técnica).
 
 ---
 
 ## 4. Problemas que cruzam com a Fase 2
 
-Cinco problemas desta Fase 3 cruzam directamente com bugs ou *gaps* identificados na Fase 2, reforçando que a avaliação manual de usabilidade detecta problemas que as ferramentas automáticas não captam mas que estes problemas são **reais e persistentes**.
+Cinco problemas desta Fase 3 cruzam directamente com bugs ou *gaps* identificados na Fase 2, reforçando que a avaliação manual de usabilidade detecta problemas que as ferramentas automáticas não captam, e mostrando que tais problemas são **reais e persistentes**.
 
 | ID Fase 3 | Bug/Gap Fase 2 | Estado em Fase 2 | Estado em Fase 3 |
 |---|---|---|---|
@@ -108,6 +108,6 @@ A combinação das três técnicas de avaliação de usabilidade identificou **2
 
 A convergência entre técnicas é elevada: **30 % dos problemas (6 em 20) foram detectados por mais do que uma técnica**, com destaque para o problema **P-04 (feedback insuficiente)** que aparece nas três. Esta convergência valida metodologicamente a combinação adoptada e indica que estes seis problemas devem ser prioritários para qualquer iteração subsequente do produto.
 
-A cruzamento com a Fase 2 mostra que **cinco problemas** documentados como bugs ou *gaps* de acessibilidade foram **revalidados** pelas técnicas de usabilidade, reforçando a sua urgência. Em particular, os **bugs B-01 e B-02** são agora problemas confirmados em múltiplas técnicas e devem ser corrigidos antes de qualquer entrega futura.
+O cruzamento com a Fase 2 mostra que **cinco problemas** documentados como bugs ou *gaps* de acessibilidade foram **revalidados** pelas técnicas de usabilidade, reforçando a sua urgência. Em particular, os **bugs B-01 e B-02** são agora problemas confirmados em múltiplas técnicas e devem ser corrigidos antes de qualquer entrega futura.
 
 O plano priorizado de correcção encontra-se em `MELHORIAS_PROPOSTAS.md`.
