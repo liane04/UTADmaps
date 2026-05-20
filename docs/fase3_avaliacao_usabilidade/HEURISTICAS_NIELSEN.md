@@ -111,7 +111,7 @@ A Tabela seguinte cruza as três grelhas e calcula a média de severidade por he
 | 8 | Design estético e minimalista | 0 | 1 | 0 | **0,33** | 1 |
 | 9 | Ajudar a reconhecer e recuperar erros | 2 | 0 | 2 | **1,33** | 2 |
 | 10 | Ajuda e documentação | 0 | 1 | 2 | **1,00** | 2 |
-| | **Soma** | **10** | **6** | **14** | **30** | — |
+| | **Soma** | **10** | **6** | **14** | **10,00** | — |
 
 ### Heurísticas ordenadas por gravidade (média decrescente)
 
@@ -132,17 +132,17 @@ A Tabela seguinte cruza as três grelhas e calcula a média de severidade por he
 |---|---:|
 | Catastróficos (sev 4) | **1** |
 | Maiores (sev 3) | **2** |
-| Menores (sev 2) | **7** |
+| Menores (sev 2) | **8** |
 | Cosméticos (sev 1) | **4** |
-| **Total de problemas identificados** | **14** |
+| **Total de problemas identificados** | **15** |
 
-> Em termos de Nielsen (1994), apenas problemas de severidade ≥ 2 são prioritários para correcção. **10 problemas** entram nessa categoria.
+> Em termos de Nielsen (1994), apenas problemas de severidade ≥ 2 são prioritários para correcção. **11 problemas** entram nessa categoria.
 
 ---
 
 ## 6. Conclusões da avaliação heurística
 
-A análise heurística por três peritos independentes identificou **14 problemas** de usabilidade ao longo das 10 heurísticas de Nielsen, dos quais **um catastrófico**, **dois maiores**, **sete menores** e **quatro cosméticos**. Nenhuma heurística apresenta problemas em todas as três avaliações independentes, mas **quatro heurísticas** (H1, H5, H9 e H10) registam problemas em pelo menos dois peritos, indicando que são as áreas mais consensualmente problemáticas.
+A análise heurística por três peritos independentes identificou **15 problemas** de usabilidade ao longo das 10 heurísticas de Nielsen, dos quais **um catastrófico**, **dois maiores**, **oito menores** e **quatro cosméticos**. Nenhuma heurística apresenta problemas em todas as três avaliações independentes, mas **quatro heurísticas** (H1, H5, H9 e H10) registam problemas em pelo menos dois peritos, indicando que são as áreas mais consensualmente problemáticas.
 
 O **problema mais grave** detectado é a persistência do horário académico após o utilizador terminar sessão (H5, sev 4 em P3 e sev 3 em P1), com implicações imediatas de privacidade que afectam o **critério WCAG 3.3.4 Error Prevention** documentado na Fase 2 e que se cruza com o **bug B-02** previamente identificado.
 

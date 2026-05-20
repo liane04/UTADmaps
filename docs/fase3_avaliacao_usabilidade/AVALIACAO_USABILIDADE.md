@@ -42,9 +42,9 @@ A Tabela 16 apresenta a compilação das três grelhas com a média de severidad
 | 8 | Design estético e minimalista | 0 | 1 | 0 | 0,33 | 1 |
 | 9 | Ajudar a reconhecer e recuperar erros | 2 | 0 | 2 | 1,33 | 2 |
 | 10 | Ajuda e documentação | 0 | 1 | 2 | 1,00 | 2 |
-| | **Soma** | **10** | **6** | **14** | — | — |
+| | **Soma** | **10** | **6** | **14** | **10,00** | — |
 
-Foram identificados, no conjunto das três grelhas, **14 problemas distintos** distribuídos em quatro categorias de severidade: um problema **catastrófico** (sev 4), dois problemas **maiores** (sev 3), sete problemas **menores** (sev 2) e quatro **cosméticos** (sev 1). O problema mais grave detectado é a persistência do horário académico após o utilizador terminar sessão (heurística 5, sev 4 na grelha de P3 e sev 3 na grelha de P1), com implicações de privacidade em contexto multi-utilizador (telemóveis partilhados). O segundo mais grave é o *bug* funcional do botão "Iniciar sessão" no ecrã de Perfil, que deixa de responder após um *logout* prévio (heurística 3, sev 3 em P1), aprisionando o utilizador em modo convidado.
+Foram identificados, no conjunto das três grelhas, **15 problemas distintos** distribuídos em quatro categorias de severidade: um problema **catastrófico** (sev 4), dois problemas **maiores** (sev 3), oito problemas **menores** (sev 2) e quatro **cosméticos** (sev 1). O problema mais grave detectado é a persistência do horário académico após o utilizador terminar sessão (heurística 5, sev 4 na grelha de P3 e sev 3 na grelha de P1), com implicações de privacidade em contexto multi-utilizador (telemóveis partilhados). O segundo mais grave é o *bug* funcional do botão "Iniciar sessão" no ecrã de Perfil, que deixa de responder após um *logout* prévio (heurística 3, sev 3 em P1), aprisionando o utilizador em modo convidado.
 
 A heurística com maior média de severidade é a **H5 — Prevenção de erros** (média 2,33), seguida da **H1 — Visibilidade do estado do sistema** (média 1,67). As heurísticas 4 (Consistência) e 8 (Estética e minimalismo) registaram apenas problemas cosméticos, indicando que o sistema de design da aplicação é robusto e coerente.
 
