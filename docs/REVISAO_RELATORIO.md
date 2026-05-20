@@ -9,14 +9,14 @@
 
 ## Sumário executivo
 
-| Categoria | Quantidade | Prioridade |
-|---|---:|---|
-| 🚨 Erros críticos (corrigir antes de submeter) | **9** | Alta |
-| ⚠️ Erros de média gravidade | 8 | Média |
-| ✏️ Sugestões de melhoria editorial | 12 | Baixa |
-| 🔍 Repetições e redundâncias | 5 | Baixa |
-| 🌐 Anglicismos a rever | 7 | Baixa |
-| ✅ Pontos fortes a destacar | 6 | — |
+| Categoria                                       |  Quantidade | Prioridade |
+| ----------------------------------------------- | ----------: | ---------- |
+| 🚨 Erros críticos (corrigir antes de submeter) | **9** | Alta       |
+| ⚠️ Erros de média gravidade                  |           8 | Média     |
+| ✏️ Sugestões de melhoria editorial           |          12 | Baixa      |
+| 🔍 Repetições e redundâncias                 |           5 | Baixa      |
+| 🌐 Anglicismos a rever                          |           7 | Baixa      |
+| ✅ Pontos fortes a destacar                     |           6 | —         |
 
 **Veredicto geral**: o relatório está **academicamente sólido e bem estruturado**, com excelente fundamentação no Estado de Arte e na Análise de Acessibilidade. Tem alguns erros pontuais de numeração, formatação e duplicações que comprometem a apresentação. **Nada de fundo problemático** — só limpeza editorial.
 
@@ -24,7 +24,7 @@
 
 # 🚨 ERROS CRÍTICOS (corrigir antes de submeter)
 
-## C1. Numeração 1.2 duplicada no índice e no corpo
+## C1. Numeração 1.2 duplicada no índice e no corpo CORRIGIDO LIANE
 
 **Onde**: índice (página 3) e secção 1 (página 4)
 
@@ -37,7 +37,7 @@ A primeira subsecção da Introdução está numerada como "**1.2 - Contextualiz
 
 ---
 
-## C2. Numeração 3.5.2 duplicada
+## C2. Numeração 3.5.2 duplicada CORRIGIDO LIANE
 
 **Onde**: índice (página 3) e capítulo 3.5
 
@@ -50,7 +50,7 @@ Existem duas subsecções "**3.5.2**":
 
 ---
 
-## C3. Falta entrada "5 - Referências Bibliográficas" no índice
+## C3. Falta entrada "5 - Referências Bibliográficas" no índice CORRIGIDO LIANE
 
 **Onde**: índice (página 3)
 
@@ -60,7 +60,7 @@ O índice salta de "**4 - Conclusão**" para "**6 - Nome do curso e turma**". A 
 
 ---
 
-## C4. Numeração de figuras duplicada (22 e 23)
+## C4. Numeração de figuras duplicada (22 e 23) CORRIGIDO LIANE
 
 **Onde**: capítulo 3.5.3 (Implementação do protótipo final)
 
@@ -73,7 +73,7 @@ Há duas **Figura 22** e duas **Figura 23**:
 
 ---
 
-## C5. Salto na numeração de figuras (faltam 28 e 29)
+## C5. Salto na numeração de figuras (faltam 28 e 29) CORRIGIDO LIANE
 
 **Onde**: entre as figuras 27 e 30
 
@@ -83,7 +83,7 @@ A numeração das figuras salta de **Figura 27** (Indoor ECT polo 1 piso 2) dire
 
 ---
 
-## C6. Erro ortográfico "Defenições" na Figura 11
+## C6. Erro ortográfico "Defenições" na Figura 11 CORRIGIDO LIANE
 
 **Onde**: Figura 11 — Wireframe das Definições (página 39)
 
@@ -93,7 +93,7 @@ A legenda diz "**Figura 11 - Wireframe das Defenições**" — ortografia incorr
 
 ---
 
-## C7. Tabela 7 e Tabela 10 — valor "2004.1.2" em vez de "4.1.2"
+## C7. Tabela 7 e Tabela 10 — valor "2004.1.2" em vez de "4.1.2" CORRIGIDO LIANE
 
 **Onde**: Tabela 7 (Lighthouse audits) e Tabela 10 (Cobertura atributos)
 
@@ -106,7 +106,7 @@ O Word auto-formatou os critérios WCAG transformando "4.1.2" em "2004.1.2" (int
 
 ---
 
-## C8. Falta ponto final no último parágrafo da 3.6.5
+## C8. Falta ponto final no último parágrafo da 3.6.5 COORIGIDO LIANE
 
 **Onde**: fim da subsecção 3.6.5 (Conformidade WCAG 2.2: síntese)
 
@@ -116,7 +116,7 @@ O parágrafo termina com "...remediação tardia" — falta o **ponto final**.
 
 ---
 
-## C9. Emails com espaço a separar @ de "alunos.utad.pt"
+## C9. Emails com espaço a separar @ de "alunos.utad.pt" CORRIGIDO LIANE
 
 **Onde**: secção 8 - Emails de cada elemento do grupo (página 88)
 
@@ -237,14 +237,14 @@ A subsecção 3.6.6 termina e há um grande espaço em branco antes de "**3.7 - 
 
 A maioria dos anglicismos no relatório são **termos técnicos aceites** na área (e justificadamente em itálico). Listo apenas os que poderiam ser portuguesados sem perda de precisão:
 
-| Anglicismo no relatório | Alternativa pt-PT | Onde |
-|---|---|---|
-| "**tabuletas físicas**" | "placas físicas" ou "sinalética em papel" | 1.1 Contextualização |
-| "**stack de styling**" | "camada de estilos" | 3.6.3 (T.A.W. avisos) |
-| "**link privado**" | "ligação privada" ou "ligação de sincronização" | Resumo, 2.1.3, 3.2 |
-| "**Cloud gerido**" | "alojado em serviço *cloud*" | Tabela 4 (Supabase) |
-| "**push effect / pull effect**" (em parênteses) | "efeito de impulso/tração" (manter o original entre parênteses) | 2.1.3 |
-| "**tabela**" repetido junto a "**Tabela**" | Verificar concordância | várias |
+| Anglicismo no relatório                               | Alternativa pt-PT                                                  | Onde                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------ | ---------------------- |
+| "**tabuletas físicas**"                         | "placas físicas" ou "sinalética em papel"                        | 1.1 Contextualização |
+| "**stack de styling**"                           | "camada de estilos"                                                | 3.6.3 (T.A.W. avisos)  |
+| "**link privado**"                               | "ligação privada" ou "ligação de sincronização"              | Resumo, 2.1.3, 3.2     |
+| "**Cloud gerido**"                               | "alojado em serviço*cloud*"                                     | Tabela 4 (Supabase)    |
+| "**push effect / pull effect**" (em parênteses) | "efeito de impulso/tração" (manter o original entre parênteses) | 2.1.3                  |
+| "**tabela**" repetido junto a "**Tabela**" | Verificar concordância                                            | várias                |
 
 **Termos a manter em inglês com itálico** (boas práticas técnicas): *wireframes*, *mockups*, *mobile-first*, *swipe*, *toggle*, *audio cues*, *build*, *wayfinding*, *fingerprinting*, *Wi-Fi positioning*, *backend*/*frontend*, *Pub/Sub*, *cache*, *DOM*, *hidratação*, *sans-serif*, *drop shadows*.
 
@@ -382,6 +382,7 @@ Para contrabalançar, é importante notar o que está **muito bom**:
 Por ordem de prioridade, antes de gerar o PDF final:
 
 ## Críticas (10 min de trabalho)
+
 - [ ] **C1** Renumerar primeira subsecção da Introdução de "1.2" para "1.1"
 - [ ] **C2** Renumerar segunda "3.5.2" para "3.5.3"
 - [ ] **C3** Garantir que "5 - Referências Bibliográficas" aparece no índice (verificar estilo do título)
@@ -393,14 +394,16 @@ Por ordem de prioridade, antes de gerar o PDF final:
 - [ ] **C9** Remover espaços nos emails al79012, al80990, al81311, al82626
 
 ## Médias (15 min)
+
 - [ ] **M1** Corrigir layout da Figura 21 sobre o título 3.5.3
 - [ ] **M2** Ajustar quebras de linha em "Navegação Outdoor" (Figura 17)
 - [ ] **M3** Trocar "será desenvolvida" por "foi desenvolvida" no 2.1.3 ponto 5
 - [ ] **M4** Substituir o caminho longo do `contrast.js` por descrição curta
 
 ## Finais (5 min)
+
 - [ ] Ativar hifenização automática
-- [ ] `Ctrl+H` substituir `  ` (duplo espaço) por ` ` até 0 ocorrências
+- [ ] `Ctrl+H` substituir  (duplo espaço) por  até 0 ocorrências
 - [ ] Atualizar índice automático (F9)
 - [ ] Gerar PDF
 - [ ] Submeter NONIO
