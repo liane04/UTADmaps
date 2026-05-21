@@ -62,12 +62,12 @@ As oito regras de ouro propostas por Ben Shneiderman foram aplicadas como **insp
 |  2  | Procurar a usabilidade universal                      |       Conforme       |          —          |
 |  3  | Dar feedback informativo                              | Parcialmente conforme |      2 (menor)      |
 |  4  | Projectar diálogos que indiquem o fim de uma acção | Parcialmente conforme |      2 (menor)      |
-|  5  | Prevenir erros                                        | Parcialmente conforme |      3 (maior)      |
+|  5  | Prevenir erros                                        | Parcialmente conforme |   4 (catastrófico)   |
 |  6  | Permitir a fácil reversão de acções               |       Conforme       |          —          |
 |  7  | Manter os utilizadores no controlo                    |       Conforme       |          —          |
 |  8  | Reduzir a carga de memória de curta duração        |       Conforme       |          —          |
 
-Cinco das oito regras são **integralmente cumpridas** (consistência, usabilidade universal, reversão, controlo e redução da carga de memória) e três são **parcialmente cumpridas** com *gaps* identificados (feedback informativo, fim de acção e prevenção de erros). A regra mais problemática é a **regra 5 (Prevenir erros)**, cujos *gaps* coincidem directamente com os problemas catastrófico e maior identificados pela heurística de Nielsen: o *logout* sem confirmação e a persistência indevida do horário no `AsyncStorage`. Esta sobreposição entre as duas técnicas reforça a urgência da correção destes pontos.
+Cinco das oito regras são **integralmente cumpridas** (consistência, usabilidade universal, reversão, controlo e redução da carga de memória) e três são **parcialmente cumpridas** com *gaps* identificados (feedback informativo, fim de acção e prevenção de erros). A regra mais problemática é a **regra 5 (Prevenir erros)**, cujo *gap* coincide directamente com o problema catastrófico identificado pela heurística de Nielsen: a persistência indevida do horário no `AsyncStorage` após o utilizador terminar sessão. Esta sobreposição entre as duas técnicas reforça a urgência da correção deste ponto.
 
 Os *gaps* nas regras 3 e 4 são menores e referem-se a oportunidades de melhoria em feedback nas alterações de definições e em notificação explícita de chegada ao destino durante a navegação outdoor.
 
@@ -115,27 +115,25 @@ A combinação das três técnicas identificou **20 problemas distintos** no UTA
 | ---- | ------------------------------------------------------------------------ | :-: | :-: | :-: | :---------------: |
 | P-01 | Horário académico permanece visível após "Terminar sessão"          | ✓ | ✓ | — | 4 (Catastrófico) |
 | P-02 | Botão "Iniciar sessão" no Perfil não responde após*logout* prévio | ✓ | — | ✓ |     3 (Maior)     |
-| P-03 | "Terminar sessão" sem diálogo de confirmação                         | ✓ | ✓ | — |     3 (Maior)     |
 | P-04 | Falta de feedback informativo em acções de Definições                | ✓ | ✓ | ✓ |     2 (Menor)     |
 | P-10 | Pesquisa de salas pode demorar 2–3 s sem indicador                      | ✓ | — | ✓ |     2 (Menor)     |
 | P-13 | Recálculo de rota durante navegação sem aviso visual                  | ✓ | ✓ | — |     2 (Menor)     |
 
-O problema **P-04** foi o único identificado pelas três técnicas em simultâneo, o que o torna o problema **mais robustamente fundamentado** desta avaliação. Os problemas **P-01, P-02 e P-03** convergem em duas técnicas e dizem respeito a comportamentos da gestão de sessão (logout, perfil, persistência de dados) que constituem a área **mais crítica** a corrigir.
+O problema **P-04** foi o único identificado pelas três técnicas em simultâneo, o que o torna o problema **mais robustamente fundamentado** desta avaliação. Os problemas **P-01 e P-02** convergem em duas técnicas e dizem respeito a comportamentos da gestão de sessão (perfil, persistência de dados) que constituem a área **mais crítica** a corrigir.
 
-Cinco dos 20 problemas cruzam com *bugs* e *gaps* documentados na Fase 2 (`BUGS_DETETADOS.md`), nomeadamente os *bugs* B-01 (botão "Iniciar sessão"), B-02 (persistência do horário), e os *gaps* G-01 a G-05. A revalidação destes itens por três técnicas independentes reforça a urgência da sua correção.
+Cinco dos 19 problemas cruzam com *bugs* e *gaps* documentados na Fase 2 (`BUGS_DETETADOS.md`), nomeadamente os *bugs* B-01 (botão "Iniciar sessão"), B-02 (persistência do horário), e os *gaps* G-01 a G-05. A revalidação destes itens por três técnicas independentes reforça a urgência da sua correção.
 
 ---
 
 ## 3.7.6 — Plano de melhorias propostas
 
-Com base nos 20 problemas identificados, propõe-se um plano de **20 melhorias** organizadas em três *sprints* sequenciais e classificadas numa matriz de **Impacto × Esforço**. O **Quadrante I** (Impacto Alto × Esforço Baixo) reúne **oito melhorias** consideradas de prioridade máxima e estimadamente concluíveis em **um dia de trabalho**, resolvendo todos os problemas catastróficos e maiores. A Tabela 21 resume estas oito melhorias.
+Com base nos 19 problemas identificados, propõe-se um plano de **19 melhorias** organizadas em três *sprints* sequenciais e classificadas numa matriz de **Impacto × Esforço**. O **Quadrante I** (Impacto Alto × Esforço Baixo) reúne **sete melhorias** consideradas de prioridade máxima e estimadamente concluíveis em **um dia de trabalho**, resolvendo todos os problemas catastróficos e maiores. A Tabela 21 resume estas sete melhorias.
 
 ### Tabela 21 — Melhorias de prioridade máxima (Sprint 1)
 
 | #    | Melhoria                                                                                     | Resolve            | Esforço |
 | ---- | -------------------------------------------------------------------------------------------- | ------------------ | -------- |
 | M-01 | Limpar `AsyncStorage` no logout (chaves do horário, favoritos, próxima aula, histórico) | P-01 catastrófico | Trivial  |
-| M-02 | Diálogo de confirmação antes de "Terminar sessão"                                        | P-03 maior         | Trivial  |
 | M-03 | Corrigir o*handler* do botão "Iniciar sessão" no Perfil                                  | P-02 maior         | Pequeno  |
 | M-04 | `hitSlop` de 10 px no botão de favoritar na pesquisa                                      | P-07 menor         | Trivial  |
 | M-05 | `accessibilityState={{ selected }}` em chips e *pills* de selecção                     | P-15 cosmético    | Pequeno  |
@@ -143,7 +141,7 @@ Com base nos 20 problemas identificados, propõe-se um plano de **20 melhorias**
 | M-07 | `accessibilityLiveRegion="polite"` na barra de navegação outdoor                         | P-13 menor         | Pequeno  |
 | M-08 | `ActivityIndicator` durante a pesquisa de salas no backend                                 | P-10 menor         | Trivial  |
 
-Os restantes 12 problemas são abordados num Sprint 2 (melhorias de fluxo, 2 dias) e num Sprint 3 (polimento, 1 dia) detalhados em `MELHORIAS_PROPOSTAS.md`.
+Os restantes 12 problemas são abordados num Sprint 2 (melhorias de fluxo, 2 dias) e num Sprint 3 (polimento, 1 dia) detalhados em `MELHORIAS_PROPOSTAS.md`. *(O acerto da contagem para 19 reflecte-se ainda em ajustes a aplicar pelos responsáveis dos restantes documentos.)*
 
 A implementação do Sprint 1 eleva a estimativa da taxa de sucesso nos *user tests* de **92 % para 97–98 %**, elimina o problema de privacidade catastrófico (P-01), e cumpre integralmente as regras 3, 4 e 5 de Shneiderman, deixando a aplicação pronta para uso em produção pela comunidade académica da UTAD.
 
@@ -157,17 +155,17 @@ A presente avaliação apresenta três limitações metodológicas que se docume
 2. **Número de peritos heurísticos**: foram convidados três peritos, no limite inferior da recomendação de Nielsen (3 a 5). O acréscimo de mais peritos permitiria identificar problemas adicionais menores não capturados.
 3. **Cobertura temporal**: a avaliação foi conduzida em dois dias úteis, sem possibilidade de iterar correcções entre rondas de avaliação. Numa iteração subsequente do produto, recomenda-se repetir as três técnicas após implementação das melhorias do Sprint 1 para verificar empiricamente os ganhos previstos.
 
-Apesar destas limitações, a convergência entre três técnicas independentes, o cruzamento com os achados da Fase 2, e a identificação de **20 problemas distintos** com plano de correção priorizado fornecem uma base sólida para a próxima iteração da aplicação. As três limitações enunciadas serão abordadas em trabalho futuro com utilizadores externos não familiarizados com a aplicação e com avaliação por número maior de peritos.
+Apesar destas limitações, a convergência entre três técnicas independentes, o cruzamento com os achados da Fase 2, e a identificação de **19 problemas distintos** com plano de correção priorizado fornecem uma base sólida para a próxima iteração da aplicação. As três limitações enunciadas serão abordadas em trabalho futuro com utilizadores externos não familiarizados com a aplicação e com avaliação por número maior de peritos.
 
 ---
 
 ## 3.7.8 — Conclusão da avaliação
 
-A avaliação de usabilidade do UTAD Maps combinou as três técnicas previstas no enunciado da Fase 3 (Heurísticas de Nielsen, Regras de Ouro de Shneiderman e Testes com Utilizadores), aplicadas de forma convergente e independente. A convergência metodológica é elevada — **30 % dos problemas (6 em 20) foram identificados por mais do que uma técnica** —, validando a robustez do desenho misto adoptado.
+A avaliação de usabilidade do UTAD Maps combinou as três técnicas previstas no enunciado da Fase 3 (Heurísticas de Nielsen, Regras de Ouro de Shneiderman e Testes com Utilizadores), aplicadas de forma convergente e independente. A convergência metodológica é elevada — **cerca de 26 % dos problemas (5 em 19) foram identificados por mais do que uma técnica** —, validando a robustez do desenho misto adoptado.
 
-A aplicação apresenta **bons indicadores globais de usabilidade**: 92 % de taxa de sucesso nos *user tests*, 4,4/5 de facilidade média, 4,68/5 de pontuação Likert global, e cumprimento integral de cinco das oito regras de Shneiderman. As principais áreas a melhorar concentram-se na **gestão de sessão** (logout sem confirmação, persistência indevida do horário e *bug* do botão "Iniciar sessão") e no **feedback informativo** em acções de Definições.
+A aplicação apresenta **bons indicadores globais de usabilidade**: 92 % de taxa de sucesso nos *user tests*, 4,4/5 de facilidade média, 4,68/5 de pontuação Likert global, e cumprimento integral de cinco das oito regras de Shneiderman. As principais áreas a melhorar concentram-se na **gestão de sessão** (persistência indevida do horário no `AsyncStorage` após terminar sessão e *bug* do botão "Iniciar sessão" no Perfil) e no **feedback informativo** em acções de Definições.
 
-O plano de melhorias propõe **20 acções concretas**, das quais oito de prioridade máxima e exequibilidade trivial, suficientes para elevar significativamente a usabilidade do produto antes de uma eventual iteração subsequente. Em particular, a correção do problema P-01 (privacidade — horário persiste após logout) é a mais urgente do conjunto e pode ser resolvida com poucas linhas de código no *handler* de *logout*, eliminando o único problema catastrófico identificado em toda a avaliação.
+O plano de melhorias propõe **19 acções concretas**, das quais sete de prioridade máxima e exequibilidade trivial, suficientes para elevar significativamente a usabilidade do produto antes de uma eventual iteração subsequente. Em particular, a correção do problema P-01 (privacidade — horário persiste após logout) é a mais urgente do conjunto e pode ser resolvida com poucas linhas de código no *handler* de *logout*, eliminando o único problema catastrófico identificado em toda a avaliação.
 
 A documentação detalhada de cada técnica, das grelhas individuais de peritos e participantes, da síntese cruzada de problemas e do plano de melhorias encontra-se nos documentos anexos da Fase 3.
 
