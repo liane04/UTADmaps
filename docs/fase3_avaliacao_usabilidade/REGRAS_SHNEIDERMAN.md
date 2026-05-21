@@ -75,13 +75,13 @@ Para cada regra é apresentado: (i) o critério da regra; (ii) o estado da confo
 
 **Critério**: as sequências de acções devem ter início, meio e fim claros, com mensagem de conclusão informativa.
 
-**Estado no UTAD Maps**: parcialmente cumprida. A maioria das acções tem fim claro (botão Voltar nos ecrãs secundários, retorno automático ao mapa após terminar navegação), mas existem dois pontos sem indicação clara de conclusão:
+**Estado no UTAD Maps**: parcialmente cumprida. A maioria das acções tem fim claro (botão Voltar nos ecrãs secundários, retorno automático ao mapa após terminar navegação), mas existem dois pontos em que a conclusão da acção não é suficientemente clara:
 
 **Gap 1** — a importação do horário, quando bem-sucedida, fecha o modal **sem qualquer mensagem de conclusão**. O utilizador deduz que correu bem porque o horário aparece preenchido, mas falta uma confirmação explícita (só existe mensagem em caso de erro).
 
-**Gap 2** — na navegação outdoor, quando o utilizador chega ao destino, a aplicação **não emite** notificação explícita de chegada. O utilizador percebe pela proximidade visual no mapa mas falta confirmação clara.
+**Gap 2** — na navegação outdoor, a chegada ao destino é sinalizada **apenas pela instrução "Chegou ao destino"** apresentada no mesmo cartão de navegação que as restantes indicações do percurso. Falta um aviso destacado de chegada — *pop-up*, som ou vibração — que torne o fim do percurso inequívoco, sobretudo para quem não esteja a olhar para o ecrã.
 
-**Severidade**: 2 (menor) · **Recomendação**: exibir uma mensagem de conclusão após a importação do horário; e implementar um evento "Chegada ao destino" quando a distância à coordenada destino for inferior a 15 m, com pop-up "Chegou ao destino — toque para iniciar navegação interior" se o edifício tiver indoor.
+**Severidade**: 2 (menor) · **Recomendação**: exibir uma mensagem de conclusão após a importação do horário; e destacar a chegada ao destino com um aviso dedicado (*pop-up*, som ou vibração) em vez de apenas alterar a instrução no cabeçalho — quando o destino tem interior, esse aviso pode encaminhar o utilizador para o botão "Entrar no edifício" já existente.
 
 ### Regra 5 — Prevenir erros ⚠️
 
@@ -89,9 +89,9 @@ Para cada regra é apresentado: (i) o critério da regra; (ii) o estado da confo
 
 **Estado no UTAD Maps**: parcialmente cumprida. A aplicação tem várias salvaguardas: campos de email com `keyboardType="email-address"`, *autoComplete* e *placeholders* explícitos; e um **diálogo de confirmação antes de "Terminar sessão"** (`Alert.alert` com opções *Cancelar* / *Terminar* em dispositivo móvel e `window.confirm` na versão web). Existe, contudo, **um problema grave** que se enquadra nesta regra:
 
-**Problema** (severidade 4 — catastrófico em contexto multi-utilizador) — após "Terminar sessão", **o horário académico do utilizador anterior permanece visível** na tab Horário. Em telemóvel partilhado (laboratórios, biblioteca) o utilizador seguinte vê informação privada do anterior. Identificado como bug **B-02** na Fase 2 e como problema crítico em P3 (Ana Marques) na avaliação heurística.
+**Problema** (severidade 4 — catastrófico em contexto multi-utilizador) — após "Terminar sessão", **o horário académico do utilizador anterior permanece visível** na tab Horário. O horário é guardado no `AsyncStorage` sob a chave `utadmaps_schedule_v2` (gravada em `app/(tabs)/horario.tsx`); a função `logout()` (em `store/useAppStore.ts`) limpa o utilizador, o *token* e os favoritos, mas **nunca remove essa chave**. Em telemóvel partilhado (laboratórios, biblioteca) o utilizador seguinte vê informação privada do anterior — e o próprio botão de logout chega a anunciar, na sua dica de acessibilidade, que "remove o horário sincronizado", comportamento que o código não cumpre. Identificado como bug **B-02** na Fase 2 e como problema crítico em P3 (Ana Marques) na avaliação heurística.
 
-**Severidade do *gap***: 4 (catastrófico) · **Recomendação**: limpar o `AsyncStorage` na função `logout()` (chave `utadmaps_schedule_v2` e similares), removendo o horário guardado ao terminar sessão.
+**Severidade do *gap***: 4 (catastrófico) · **Recomendação**: remover a chave `utadmaps_schedule_v2` do `AsyncStorage` ao terminar sessão — acrescentando essa limpeza à função `logout()` (`store/useAppStore.ts`) ou ao `handleLogout` (`app/(tabs)/perfil.tsx`).
 
 ### Regra 6 — Permitir a fácil reversão de acções ✅
 
@@ -116,8 +116,8 @@ A única operação não trivialmente reversível é o **logout**, mas esse é o
 - **Sem notificações push** — a aplicação não envia notificações não solicitadas
 - **Sem redirecionamentos automáticos** entre ecrãs (excepto após login bem-sucedido, que é esperado)
 - **Sem animações longas obrigatórias** — o utilizador pode tocar para acelerar transições
-- **Onboarding saltável** com botão "Saltar e explorar"
-- **Modo convidado** disponível sem autenticação
+- **Onboarding saltável** — botão "Saltar" (ou "Saltar tutorial") presente em todos os três *slides*
+- **Modo convidado** disponível sem autenticação, através do botão "Saltar e explorar" no ecrã de início de sessão
 - **Mapa não invasivo** — o mapa principal não persegue continuamente a posição GPS; mostra uma vista estável controlada pelo utilizador. Na navegação outdoor existe um botão de recentrar manual
 
 ### Regra 8 — Reduzir a carga de memória de curta duração ✅
@@ -126,7 +126,7 @@ A única operação não trivialmente reversível é o **logout**, mas esse é o
 
 **Estado no UTAD Maps**: cumprida. A aplicação aplica este princípio em vários pontos:
 
-- **Histórico de pesquisas** visível no ecrã de Pesquisa
+- **Pesquisas recentes** no ecrã de Pesquisa — lista de atalhos para locais comuns (Biblioteca, ECT, Reitoria, Cantina) que evita reescrever pesquisas frequentes
 - **Favoritos persistentes** acessíveis numa tab dedicada
 - **Filtros visíveis em todo o momento** (chips Todos/Edifícios/Salas/Serviços)
 - **Próxima aula visível no Perfil** sem necessidade de o utilizador recordar o horário
@@ -185,7 +185,7 @@ Para além da leitura do código, a responsável abriu a aplicação em execuç�
 - **Ícone do separador Mapa:** é um ícone de mapa, não de casa (I3).
 - **Botão de recentrar do mapa principal:** ao ser tocado não produz qualquer efeito (I5).
 
-Esta verificação prática sustenta as correcções aplicadas. Mantiveram-se válidas, sem alteração, as restantes afirmações centrais da análise — em particular o Problema da Regra 5 (o horário permanece em `AsyncStorage` após o logout, confirmado em `store/useAppStore.ts`), o Gap 1 da Regra 3 e a totalidade da Regra 8.
+Esta verificação prática sustenta as correcções aplicadas. Mantiveram-se válidas, sem alteração, as restantes afirmações centrais da análise — em particular o Problema da Regra 5 (o horário permanece no `AsyncStorage`, na chave `utadmaps_schedule_v2`, após o logout, porque a função `logout()` não a remove), o Gap 1 da Regra 3 e a totalidade da Regra 8.
 
 ### 5.4 Impacto da revisão e recomendações
 
