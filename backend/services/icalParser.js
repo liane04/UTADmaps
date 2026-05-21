@@ -19,9 +19,15 @@ function parseIcal(icsText) {
     // Usa os valores do ical.js directamente — evita problemas de timezone UTC vs. local
     const data = `${inicio.year}-${pad(inicio.month)}-${pad(inicio.day)}`;
 
-    // Eventos de dia inteiro (entregas, etc.) têm isDate=true → hora 00:00
-    const horaInicio = inicio.isDate ? '00:00' : `${pad(inicio.hour)}:${pad(inicio.minute)}`;
-    const horaFim = fim.isDate ? '00:00' : `${pad(fim.hour)}:${pad(fim.minute)}`;
+    // Eventos de dia inteiro (entregas, prazos, etc.) têm isDate=true → hora 00:00.
+    // O iCal do Inforestudante usa DTSTART;VALUE=DATE para "Entrega de trabalhos"
+    // e similares, distinguindo-os de aulas que têm DTSTART com hora.
+    const diaInteiro = !!(inicio.isDate);
+    const horaInicio = diaInteiro ? '00:00' : `${pad(inicio.hour)}:${pad(inicio.minute)}`;
+    const horaFim    = (fim && fim.isDate) ? '00:00' : (fim ? `${pad(fim.hour)}:${pad(fim.minute)}` : '00:00');
+
+    // Classifica o evento: aulas têm hora; eventos de dia inteiro são entregas/prazos.
+    const tipo = diaInteiro ? 'entrega' : 'aula';
 
     // Dia da semana calculado a partir da data (sem depender de JS Date + UTC)
     const diaSemana = DIAS[new Date(`${data}T12:00:00`).getDay()];
@@ -38,6 +44,7 @@ function parseIcal(icsText) {
       horaFim,
       sala,
       locationRaw: location,
+      tipo,        // 'aula' | 'entrega' — permite distinguir no UI
     };
   });
 }

@@ -20,7 +20,18 @@ type Aula = {
   horaFim: string;
   sala: string;
   locationRaw: string;
+  /** 'aula' = aula com hora; 'entrega' = prazo de dia inteiro. Opcional para
+   *  retrocompatibilidade com horários importados antes desta versão. */
+  tipo?: 'aula' | 'entrega';
 };
+
+/** Devolve true se o evento for uma aula (e não uma entrega/prazo).
+ *  Usa o campo `tipo` quando presente; caso contrário aplica heurística
+ *  (horaInicio === '00:00' && horaFim === '00:00' → dia inteiro → entrega). */
+function isAula(a: Aula): boolean {
+  if (a.tipo) return a.tipo === 'aula';
+  return !(a.horaInicio === '00:00' && a.horaFim === '00:00');
+}
 
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -132,8 +143,11 @@ export default function PerfilScreen() {
         }
         const aulas: Aula[] = JSON.parse(raw);
         const ahora = new Date();
-        // Aceita aula que está em curso ou ainda no futuro próximo
+        // Aceita aula que está em curso ou ainda no futuro próximo.
+        // EXCLUI entregas/prazos de dia inteiro (00:00–00:00) — esses não são
+        // aulas e estavam a aparecer no card de "Próxima Aula".
         const candidatas = aulas
+          .filter(isAula)
           .filter((a) => {
             const [h, min] = a.horaFim.split(':').map(Number);
             const [y, m, d] = a.data.split('-').map(Number);

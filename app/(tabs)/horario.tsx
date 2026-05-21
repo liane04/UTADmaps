@@ -25,7 +25,16 @@ type Aula = {
   horaFim: string;
   sala: string;
   locationRaw: string;
+  /** 'aula' = aula com hora; 'entrega' = prazo de dia inteiro. Opcional para
+   *  retrocompatibilidade com horários importados antes desta versão. */
+  tipo?: 'aula' | 'entrega';
 };
+
+/** True se for entrega/prazo de dia inteiro (em vez de aula com hora). */
+function isEntrega(a: Aula): boolean {
+  if (a.tipo) return a.tipo === 'entrega';
+  return a.horaInicio === '00:00' && a.horaFim === '00:00';
+}
 
 const DIAS = [
   { key: 'segunda', ptCurto: 'Seg', enCurto: 'Mon' },
@@ -201,11 +210,20 @@ export default function HorarioScreen() {
     [aulas, inicioSemana, fimSemana],
   );
 
-  // Aulas do dia activo dentro dessa semana
+  // Aulas do dia activo dentro dessa semana — apenas eventos com hora (não entregas)
   const aulasDia = useMemo(() =>
     aulasSemana
       .filter((a) => a.diaSemana === diaAtivo)
+      .filter((a) => !isEntrega(a))
       .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)),
+    [aulasSemana, diaAtivo],
+  );
+
+  // Entregas / prazos do dia activo — mostrados em bloco separado por cima da timeline
+  const entregasDia = useMemo(() =>
+    aulasSemana
+      .filter((a) => a.diaSemana === diaAtivo)
+      .filter((a) => isEntrega(a)),
     [aulasSemana, diaAtivo],
   );
 
@@ -324,11 +342,47 @@ export default function HorarioScreen() {
       {/* Conteúdo */}
       {importado ? (
         <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
+          {/* Entregas / prazos do dia (acima da timeline de aulas) */}
+          {entregasDia.length > 0 && (
+            <View style={styles.entregasContainer}>
+              {entregasDia.map((entrega, i) => (
+                <View
+                  key={`entrega-${i}`}
+                  style={[
+                    styles.entregaCard,
+                    {
+                      backgroundColor: altoContraste ? colors.card : '#FFF4E5',
+                      borderColor: '#FF9500',
+                      borderWidth: altoContraste ? 2 : 1,
+                    },
+                  ]}
+                  accessibilityRole="text"
+                  accessibilityLabel={tr(
+                    `Entrega: ${entrega.disciplina}`,
+                    `Deadline: ${entrega.disciplina}`,
+                  )}>
+                  <Ionicons name="alert-circle-outline" size={20} color="#C76900" style={{ marginRight: 8 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.entregaBadge, { color: '#C76900', fontSize: fs(11) }]}>
+                      {tr('ENTREGA / PRAZO', 'DEADLINE')}
+                    </Text>
+                    <Text
+                      style={[styles.entregaTitle, { color: colors.text, fontSize: fs(15) }]}
+                      numberOfLines={2}>
+                      {entrega.disciplina}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
           {timeline.length === 0 ? (
             <View style={styles.emptyDay}>
               <Ionicons name="checkmark-circle-outline" size={56} color={colors.subtext} />
               <Text style={[styles.emptyDayText, { color: colors.subtext, fontSize: fs(16) }]}>
-                {tr('Sem aulas neste dia', 'No classes this day')}
+                {entregasDia.length > 0
+                  ? tr('Sem aulas — apenas entregas', 'No classes — only deadlines')
+                  : tr('Sem aulas neste dia', 'No classes this day')}
               </Text>
             </View>
           ) : (
@@ -654,6 +708,26 @@ const styles = StyleSheet.create({
   classTime: {
     fontSize: 12,
     color: '#8E8E93',
+  },
+  // Entregas / prazos (eventos de dia inteiro)
+  entregasContainer: {
+    marginBottom: 12,
+    gap: 8,
+  },
+  entregaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  entregaBadge: {
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  entregaTitle: {
+    fontWeight: '600',
   },
   // Bloco "Livre"
   livreBlock: {
