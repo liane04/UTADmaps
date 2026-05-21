@@ -104,82 +104,10 @@ const THREE_HTML = `<!DOCTYPE html>
     // ─── CORE STATE ──────────────────────────────────────────────────────────
     let scene, camera, renderer, currentModel;
 
-    // ─── PERSON STATE ────────────────────────────────────────────────────────
-    let personMarker = null;
-    let personPos = new THREE.Vector3(0, 0, 0);
-    let personAnimPath = null;
-    let personAnimT = 0;
-    let personAnimSpeedPerFrame = 0.008;
-    let personAnimating = false;
-    let personFloorY = 0;
-    let modelSpan = 20; // updated after each model load; drives person scale
-
-    // ─── MARKER TEXTURES (canvas-generated at init) ───────────────────────────
-    let arrowTexture = null;   // THREE.Texture for person arrow (flat on floor)
-    let pinTexture   = null;   // THREE.Texture for destination pin (sprite)
-    const PERSON_FACING_OFFSET = Math.PI;
-
-    function buildFallbackPerson() {
-      const group = new THREE.Group();
-      group.renderOrder = 10;
-      const s = Math.max(0.15, modelSpan * 0.025);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xFF6B00, emissive: 0xDD2200, emissiveIntensity: 0.5, depthTest: false });
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.55, 12), bodyMat);
-      body.position.y = 0.27 * s; body.scale.setScalar(s); body.renderOrder = 10; group.add(body);
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xFFCC33, emissive: 0xFF8800, emissiveIntensity: 0.5, depthTest: false });
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), headMat);
-      head.position.y = 0.72 * s; head.scale.setScalar(s); head.renderOrder = 10; group.add(head);
-      const arrowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1, depthTest: false });
-      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), arrowMat);
-      arrow.position.set(0, 0.28 * s, -0.28 * s); arrow.rotation.x = Math.PI / 2;
-      arrow.scale.setScalar(s); arrow.renderOrder = 10; group.add(arrow);
-      return group;
-    }
-
-    function buildPersonArrow() {
-      const wrap = new THREE.Group();
-      const sz = Math.max(0.4, modelSpan * 0.025);
-      const geom = new THREE.PlaneGeometry(sz, sz);
-      const mat = new THREE.MeshBasicMaterial({
-        map: arrowTexture,
-        transparent: true,
-        alphaTest: 0.05,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        depthTest: false,
-      });
-      const inner = new THREE.Mesh(geom, mat);
-      inner.rotation.x = -Math.PI / 2;
-      inner.rotation.y = PERSON_FACING_OFFSET;
-      inner.position.y = Math.max(0.25, modelSpan * 0.01);
-      inner.renderOrder = 10;
-      wrap.renderOrder = 10;
-      wrap.add(inner);
-      return wrap;
-    }
-
-    function createPersonMarker(pos) {
-      if (personMarker) { scene.remove(personMarker); personMarker = null; }
-      const group = arrowTexture ? buildPersonArrow() : buildFallbackPerson();
-      group.position.copy(pos);
-      personMarker = group;
-      scene.add(personMarker);
-    }
-
-    function clearPerson() {
-      if (personMarker) { scene.remove(personMarker); personMarker = null; }
-      personAnimating = false;
-      personAnimPath = null;
-    }
-
-    function beginPersonAnimation(curve) {
-      personAnimPath = curve;
-      personAnimT = 0;
-      personAnimating = true;
-      const len = curve.getLength();
-      // ~2.5x faster than before; full path in ~0.8s for short paths.
-      personAnimSpeedPerFrame = 1 / Math.max(24, len * 2.4);
-    }
+    // ─── NAVIGATION STATE ─────────────────────────────────────────────────────
+    let floorEntrancePos = new THREE.Vector3(0, 0, 0); // entrada do piso (origem do caminho estático)
+    let personFloorY = 0;      // cota do chão do piso atual
+    let modelSpan = 20;        // atualizado a cada modelo; escala do caminho/realce
 
     // ─── HELPERS ─────────────────────────────────────────────────────────────
     function isNavNode(name) {
@@ -203,12 +131,10 @@ const THREE_HTML = `<!DOCTYPE html>
       return lo === 'bar' || lo.startsWith('wc_');
     }
 
-    // ─── ROOM-BLOCKING STATE ─────────────────────────────────────────────────
-    let activeRooms = new Set();      // nomes dos meshes de sala desbloqueados
-    let currentRoom = null;           // sala onde o boneco está agora
-    let destinationRoom = null;       // sala de destino atual
+    // ─── ROOM STATE ──────────────────────────────────────────────────────────
+    let activeRooms = new Set();      // sala atualmente selecionada (desbloqueada no grid)
     let roomBBoxes = new Map();       // Map<string, THREE.Box3>
-    let onAnimationEnd = null;        // callback quando personAnimT >= 1
+    let roomHighlight = null;         // mesh de realce (zona verde) da sala selecionada
 
     // Devolve o nome da sala cujo bbox XZ contém o ponto, ou null.
     function getRoomAtPoint(point) {
@@ -232,7 +158,6 @@ const THREE_HTML = `<!DOCTYPE html>
     let zoomMin = 3, zoomMax = 500;
 
     function init() {
-      initMarkerTextures();
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf2f2f7);
       // OrthographicCamera → projeção paralela ao plano. Sem perspetiva, paredes
@@ -451,8 +376,7 @@ const THREE_HTML = `<!DOCTYPE html>
         const bestHit = hits.find(h => !wallSet.has(h.object)) || hits[hits.length - 1];
         dest = bestHit.point.clone();
       } else {
-        // No mesh hit — project the camera ray onto the navigation plane.
-        // This lets the person navigate to open corridors with no floor geometry.
+        // No mesh hit — project the camera ray onto the floor plane.
         const navPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -personFloorY);
         dest = new THREE.Vector3();
         if (!camRay.ray.intersectPlane(navPlane, dest)) return;
@@ -460,23 +384,12 @@ const THREE_HTML = `<!DOCTYPE html>
 
       dest.y = personFloorY;
 
-      // Determinar sala de destino e atualizar activeRooms.
-      // getRoomAtPoint só procura em roomBBoxes (apenas sala_*), por isso
-      // cliques no bar, wc, ou corredores cube* devolvem null.
+      // Só reagimos a cliques DENTRO de uma sala (sala_*). Cliques em corredores,
+      // bar ou wc são ignorados — não há sala para realçar nem destino.
       const tappedRoom = getRoomAtPoint(dest);
-      if (tappedRoom && tappedRoom !== currentRoom) {
-        // Nova sala de destino — desbloquear destino + manter origem ativa
-        destinationRoom = tappedRoom;
-        activeRooms.add(tappedRoom);
-        if (currentRoom) activeRooms.add(currentRoom);
-        buildGrid();
-      } else if (!tappedRoom) {
-        // Clicou num corredor / bar / wc — sem nova sala de destino
-        destinationRoom = null;
-      }
-      // Se tappedRoom === currentRoom: o boneco já está nessa sala, sem alterações
+      if (!tappedRoom) return;
 
-      navigateToPoint(dest);
+      showRoomStatic(tappedRoom);
 
       const hint = document.getElementById('hint');
       if (hint) { hint.style.opacity = '0'; setTimeout(() => { hint.style.display = 'none'; }, 600); }
@@ -763,42 +676,11 @@ const THREE_HTML = `<!DOCTYPE html>
       return out;
     }
 
-    // ─── RENDER / ANIMATION LOOP ──────────────────────────────────────────────
-    let pathLine = null, destMarker = null, pulseT = 0;
+    // ─── RENDER LOOP ──────────────────────────────────────────────────────────
+    let pathLine = null;
 
     function animate() {
       requestAnimationFrame(animate);
-      if (destMarker) {
-        pulseT += 0.05;
-        const pulse = 1 + 0.15 * Math.sin(pulseT);
-        if (destMarker.isSprite) {
-          destMarker.scale.set(
-            (destMarker.userData.baseSX || 1) * pulse,
-            (destMarker.userData.baseSY || 1) * pulse,
-            1
-          );
-        } else {
-          destMarker.scale.setScalar((destMarker.userData.baseScale || 1) * pulse);
-        }
-      }
-      if (personAnimating && personAnimPath) {
-        personAnimT = Math.min(1, personAnimT + personAnimSpeedPerFrame);
-        const pos = personAnimPath.getPoint(personAnimT);
-        pos.y = personFloorY;
-        if (personMarker) {
-          if (personAnimT < 0.999) {
-            const ahead = personAnimPath.getPoint(Math.min(1, personAnimT + 0.01));
-            const d2 = new THREE.Vector2(ahead.x - pos.x, ahead.z - pos.z);
-            if (d2.lengthSq() > 0.00001) personMarker.rotation.y = Math.atan2(-d2.x, -d2.y);
-          }
-          personMarker.position.copy(pos);
-        }
-        personPos.copy(pos);
-        if (personAnimT >= 1) {
-          personAnimating = false;
-          if (onAnimationEnd) { const cb = onAnimationEnd; onAnimationEnd = null; cb(); }
-        }
-      }
       renderer.render(scene, camera);
     }
 
@@ -811,13 +693,15 @@ const THREE_HTML = `<!DOCTYPE html>
     }
 
     function clearPath() {
-      [pathLine, destMarker].forEach(m => { if (m) scene.remove(m); });
-      pathLine = destMarker = null;
+      if (pathLine) { scene.remove(pathLine); pathLine = null; }
+    }
+
+    function clearHighlight() {
+      if (roomHighlight) { scene.remove(roomHighlight); roomHighlight = null; }
     }
 
     // Build a path of straight line segments — no curve smoothing so the path
-    // can never bulge into walls at corners. Used for both the visible tube
-    // and the person animation.
+    // can never bulge into walls at corners.
     function buildLinearPath(positions) {
       const cp = new THREE.CurvePath();
       for (let i = 0; i < positions.length - 1; i++) {
@@ -838,111 +722,98 @@ const THREE_HTML = `<!DOCTYPE html>
       scene.add(pathLine);
     }
 
-    function drawDestMarker(pos) {
-      let marker;
-      if (pinTexture) {
-        const spriteMat = new THREE.SpriteMaterial({
-          map: pinTexture, transparent: true, depthWrite: false, sizeAttenuation: true,
-        });
-        const sprite = new THREE.Sprite(spriteMat);
-        const pinH = Math.max(0.6, modelSpan * 0.04);
-        const pinW = pinH * (256 / 310);
-        sprite.scale.set(pinW, pinH, 1);
-        sprite.position.copy(pos);
-        sprite.position.y += pinH * 0.5;
-        sprite.renderOrder = 1;
-        sprite.userData.baseSX = pinW;
-        sprite.userData.baseSY = pinH;
-        sprite.userData.goalPos = pos.clone();
-        marker = sprite;
-      } else {
-        const r = Math.max(0.07, modelSpan * 0.025);
-        marker = new THREE.Mesh(
-          new THREE.SphereGeometry(r, 16, 16),
-          new THREE.MeshStandardMaterial({ color: 0xFF2D55, emissive: 0xFF0000, emissiveIntensity: 0.9 })
-        );
-        marker.position.copy(pos); marker.position.y += r;
-        marker.userData.baseSX = 1; marker.userData.baseSY = 1;
-        marker.userData.goalPos = pos.clone();
-      }
-      destMarker = marker;
-      pulseT = 0; scene.add(destMarker);
+    // ─── REALCE DA SALA (zona verde) ──────────────────────────────────────────
+    // Plano semi-transparente verde claro sobre a área (footprint XZ) da sala.
+    function highlightRoom(bb) {
+      clearHighlight();
+      const w = bb.max.x - bb.min.x;
+      const d = bb.max.z - bb.min.z;
+      const plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, d),
+        new THREE.MeshBasicMaterial({ color: 0x9CE89C, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false })
+      );
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.set((bb.min.x + bb.max.x) / 2, bb.min.y + 0.03, (bb.min.z + bb.max.z) / 2);
+      plane.renderOrder = 1;
+      roomHighlight = plane;
+      scene.add(plane);
     }
 
-    // ─── NAVIGATE ────────────────────────────────────────────────────────────
-    function navigateToPoint(goalPos) {
-      if (!currentModel) { showToast('Modelo ainda não carregado'); return; }
-      if (!grid) { showToast('Mapa de navegação ainda a carregar...'); return; }
-      clearPath();
+    // ─── CORTE DO CAMINHO NA ENTRADA DA SALA ──────────────────────────────────
+    function pointInBB(p, bb) {
+      return p.x >= bb.min.x && p.x <= bb.max.x && p.z >= bb.min.z && p.z <= bb.max.z;
+    }
 
-      // Capturar a sala de origem agora — currentRoom pode ser null se o
-      // boneco estiver num corredor/bar/wc, e isso é correto.
-      const originRoom = currentRoom;
-      // Callback chamado quando o boneco chega ao destino: fechar a sala de
-      // origem e tornar a sala de destino na "sala atual".
-      onAnimationEnd = () => {
-        if (originRoom && originRoom !== destinationRoom) {
-          activeRooms.delete(originRoom);
-        }
-        currentRoom = destinationRoom || currentRoom;
-        destinationRoom = null;
-        buildGrid();
-      };
+    // Parâmetro t∈[0,1] onde o segmento a→b entra na caixa (slab method, plano XZ).
+    function segBoxEntryT(ax, az, bx, bz, x0, x1, z0, z1) {
+      const dx = bx - ax, dz = bz - az;
+      let lo = 0, hi = 1;
+      if (Math.abs(dx) > 1e-9) { const t1 = (x0-ax)/dx, t2 = (x1-ax)/dx; lo = Math.max(lo, Math.min(t1,t2)); hi = Math.min(hi, Math.max(t1,t2)); }
+      if (Math.abs(dz) > 1e-9) { const t1 = (z0-az)/dz, t2 = (z1-az)/dz; lo = Math.max(lo, Math.min(t1,t2)); hi = Math.min(hi, Math.max(t1,t2)); }
+      return Math.max(0, Math.min(1, lo));
+    }
 
-      // Check direct path using the GRID (not bbox LOS — grid is always consistent)
-      if (gridLineIsClear(personPos.x, personPos.z, goalPos.x, goalPos.z)) {
-        drawDestMarker(goalPos);
-        const pts = [personPos.clone(), goalPos.clone()];
-        drawPath(pts); beginPersonAnimation(buildLinearPath(pts));
-        return;
+    // Trunca o caminho no ponto onde entra na bbox da sala — a "entrada da sala".
+    // Assim a linha vai da entrada do piso até à porta, e não até ao centro.
+    function clipPathAtRoomEntrance(pts, bb) {
+      for (let i = 0; i < pts.length; i++) {
+        if (!pointInBB(pts[i], bb)) continue;
+        if (i === 0) return [pts[0].clone()];
+        const a = pts[i - 1], b = pts[i];
+        const t = segBoxEntryT(a.x, a.z, b.x, b.z, bb.min.x, bb.max.x, bb.min.z, bb.max.z);
+        const entry = a.clone().lerp(b, t);
+        entry.y = personFloorY;
+        const out = pts.slice(0, i);
+        out.push(entry);
+        return out;
       }
+      return pts;
+    }
 
-      // Grid A* — navigates cell by cell through any door gap
-      const sc = worldToCell(personPos.x, personPos.z);
-      const gc = worldToCell(goalPos.x,   goalPos.z);
+    // ─── SELEÇÃO ESTÁTICA DE SALA ─────────────────────────────────────────────
+    // Realça a sala e desenha um caminho estático (A*, sem animação) da entrada
+    // do piso até à entrada da sala.
+    function showRoomStatic(roomName) {
+      if (!currentModel) { showToast('Modelo ainda não carregado'); return; }
+      clearPath();
+      clearHighlight();
+
+      // Desbloquear apenas esta sala para que o A* consiga entrar pela porta.
+      activeRooms = new Set([roomName]);
+      buildGrid();
+
+      const bb = roomBBoxes.get(roomName);
+      if (!bb) return;
+      highlightRoom(bb);
+
+      if (!grid) return;
+      const centroid = bb.getCenter(new THREE.Vector3());
+      centroid.y = personFloorY;
+
+      const sc = worldToCell(floorEntrancePos.x, floorEntrancePos.z);
+      const gc = worldToCell(centroid.x, centroid.z);
       const s  = nearestFree(sc.c, sc.r);
       const g  = nearestFree(gc.c, gc.r);
       const raw = gridAstar(s.c, s.r, g.c, g.r);
+      if (!raw || raw.length < 2) return; // sem caminho — fica só o realce
 
-      if (!raw || raw.length < 2) {
-        showToast('Não é possível encontrar um caminho para este local');
-        return;
-      }
-
-      // Pin exact world start/end, then string-pull using the grid
-      raw[0] = personPos.clone();
-      raw[raw.length - 1] = goalPos.clone();
-      const pts = simplifyPathGrid(raw);
-
-      drawDestMarker(goalPos);
-      drawPath(pts);
-      beginPersonAnimation(buildLinearPath(pts));
+      raw[0] = floorEntrancePos.clone();
+      raw[raw.length - 1] = centroid.clone();
+      let pts = simplifyPathGrid(raw);
+      pts = clipPathAtRoomEntrance(pts, bb);
+      if (pts.length >= 2) drawPath(pts);
     }
 
-    // Called from NAVIGATE message with a named destination
+    // Chamado por NAVIGATE / destino pendente (vindo da pesquisa) com o nome da sala.
     function navigateFromPersonTo(destName) {
       if (!currentModel) return;
-      const nodes = [];
+      let match = null;
       currentModel.traverse(obj => {
-        if (obj.isMesh && isNavNode(obj.name)) nodes.push({ id: obj.name, pos: getRoomCentroid(obj) });
+        if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
+        if (obj.name === destName || obj.name.toLowerCase() === destName.toLowerCase()) match = obj.name;
       });
-      const goal = nodes.find(n => n.id === destName)
-                || nodes.find(n => n.id.toLowerCase() === destName.toLowerCase());
-      if (!goal) { showError(destName + ' não encontrada'); return; }
-
-      // Atualizar activeRooms — mesmo comportamento do handleTap para
-      // garantir que a sala de destino está desbloqueada antes de navegar.
-      const destRoom = isBlockableRoom(goal.id) ? goal.id : null;
-      if (destRoom && destRoom !== currentRoom) {
-        destinationRoom = destRoom;
-        activeRooms.add(destRoom);
-        if (currentRoom) activeRooms.add(currentRoom);
-        buildGrid();
-      } else if (!destRoom) {
-        destinationRoom = null;
-      }
-
-      navigateToPoint(goal.pos);
+      if (!match) { showError(destName + ' não encontrada'); return; }
+      showRoomStatic(match);
     }
 
     // ─── GLB LOADER ──────────────────────────────────────────────────────────
@@ -950,15 +821,12 @@ const THREE_HTML = `<!DOCTYPE html>
       showLoader(true);
       if (currentModel) { scene.remove(currentModel); currentModel = null; }
       clearPath();
-      clearPerson();
+      clearHighlight();
       wallMeshes = [];
       wallBBoxes  = [];
       grid = null;
       activeRooms.clear();
       roomBBoxes.clear();
-      currentRoom = null;
-      destinationRoom = null;
-      onAnimationEnd = null;
 
       const binaryStr = atob(base64);
       const bytes = new Uint8Array(binaryStr.length);
@@ -1086,21 +954,11 @@ const THREE_HTML = `<!DOCTYPE html>
           startPos = autoStartPos || new THREE.Vector3(0, box.min.y + 0.3, 0);
         }
         personFloorY = startPos.y;
-        personPos.copy(startPos);
-        createPersonMarker(startPos);
+        floorEntrancePos.copy(startPos);
 
-        // Centrar câmera na posição inicial da pessoa (não em 0,0,0)
-        target.set(personPos.x, personFloorY, personPos.z);
+        // Centrar câmera na entrada do piso (não em 0,0,0)
+        target.set(floorEntrancePos.x, personFloorY, floorEntrancePos.z);
         updateCamera();
-
-        // Determinar sala inicial do boneco e marcá-la como ativa.
-        // Reconstruir grid para que essa sala não esteja bloqueada.
-        const startRoom = getRoomAtPoint(startPos);
-        if (startRoom) {
-          currentRoom = startRoom;
-          activeRooms.add(startRoom);
-          buildGrid();
-        }
 
         // Debug — visible in Metro / Expo console
         const dbg = { type: 'DEBUG_LOAD', walls: wallMeshes.length,
@@ -1155,112 +1013,6 @@ const THREE_HTML = `<!DOCTYPE html>
     let pendingDestino = null;
     let pendingStartPos = null;
     let currentFloorLevel = 0;
-
-    function makeArrowTexture() {
-      const S = 256;
-      const canvas = document.createElement('canvas');
-      canvas.width = S; canvas.height = S;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, S, S);
-      const cx = S / 2;
-      // Red glow
-      const grd = ctx.createRadialGradient(cx, S * 0.6, 10, cx, S * 0.6, S * 0.46);
-      grd.addColorStop(0, 'rgba(255,80,80,0.55)');
-      grd.addColorStop(1, 'rgba(255,50,50,0)');
-      ctx.fillStyle = grd;
-      ctx.beginPath(); ctx.arc(cx, S * 0.6, S * 0.46, 0, Math.PI * 2); ctx.fill();
-      // Left face (darker red)
-      ctx.beginPath();
-      ctx.moveTo(cx, S * 0.08);
-      ctx.lineTo(S * 0.12, S * 0.76);
-      ctx.lineTo(cx, S * 0.60);
-      ctx.closePath();
-      ctx.fillStyle = '#b71c1c'; ctx.fill();
-      // Right face (brighter red)
-      ctx.beginPath();
-      ctx.moveTo(cx, S * 0.08);
-      ctx.lineTo(S * 0.88, S * 0.76);
-      ctx.lineTo(cx, S * 0.60);
-      ctx.closePath();
-      ctx.fillStyle = '#ef5350'; ctx.fill();
-      // Tail left
-      ctx.beginPath();
-      ctx.moveTo(S * 0.12, S * 0.76);
-      ctx.lineTo(cx, S * 0.90);
-      ctx.lineTo(cx, S * 0.60);
-      ctx.closePath();
-      ctx.fillStyle = '#c62828'; ctx.fill();
-      // Tail right
-      ctx.beginPath();
-      ctx.moveTo(S * 0.88, S * 0.76);
-      ctx.lineTo(cx, S * 0.90);
-      ctx.lineTo(cx, S * 0.60);
-      ctx.closePath();
-      ctx.fillStyle = '#e53935'; ctx.fill();
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.needsUpdate = true;
-      return tex;
-    }
-
-    function makeLocationPinTexture() {
-      const W = 256, H = 310;
-      const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, W, H);
-      const cx = W / 2;
-      const R = 92, cy = R + 8, tipY = H - 6;
-
-      function fillPinShape(r, _cy, _tip) {
-        const hw = r * 0.65;
-        const chy = _cy + Math.sqrt(r * r - hw * hw);
-        ctx.beginPath(); ctx.arc(cx, _cy, r, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(cx - hw, chy); ctx.lineTo(cx, _tip); ctx.lineTo(cx + hw, chy);
-        ctx.closePath(); ctx.fill();
-      }
-
-      // Main body — radial gradient for 3D rounded look
-      const bodyGrad = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.3, R * 0.05, cx, cy + R * 0.3, R * 1.5);
-      bodyGrad.addColorStop(0,    '#ff8a65');
-      bodyGrad.addColorStop(0.25, '#f44336');
-      bodyGrad.addColorStop(0.7,  '#e53935');
-      bodyGrad.addColorStop(1,    '#c62828');
-      ctx.fillStyle = bodyGrad;
-      fillPinShape(R, cy, tipY);
-
-      // Dark rim around the hole (tunnel effect)
-      ctx.beginPath(); ctx.arc(cx, cy, R * 0.56, 0, Math.PI * 2);
-      ctx.fillStyle = '#b71c1c'; ctx.fill();
-
-      // Mid transition ring
-      ctx.beginPath(); ctx.arc(cx, cy, R * 0.50, 0, Math.PI * 2);
-      ctx.fillStyle = '#d4a090'; ctx.fill();
-
-      // White/beige hole interior with subtle radial gradient
-      const holeGrad = ctx.createRadialGradient(cx - R * 0.12, cy - R * 0.12, R * 0.02, cx, cy, R * 0.46);
-      holeGrad.addColorStop(0,   '#ffffff');
-      holeGrad.addColorStop(0.7, '#f5e8de');
-      holeGrad.addColorStop(1,   '#e8d0c0');
-      ctx.beginPath(); ctx.arc(cx, cy, R * 0.44, 0, Math.PI * 2);
-      ctx.fillStyle = holeGrad; ctx.fill();
-
-      // Specular highlight (upper-left gloss)
-      const hlGrad = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 0, cx - R * 0.3, cy - R * 0.3, R * 0.65);
-      hlGrad.addColorStop(0, 'rgba(255,255,255,0.38)');
-      hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = hlGrad;
-      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
-
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.needsUpdate = true;
-      return tex;
-    }
-
-    function initMarkerTextures() {
-      arrowTexture = makeArrowTexture();
-      pinTexture   = makeLocationPinTexture();
-    }
 
     function handleMessage(raw) {
       try {
