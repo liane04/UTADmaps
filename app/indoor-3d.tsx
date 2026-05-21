@@ -804,15 +804,52 @@ const THREE_HTML = `<!DOCTYPE html>
       if (pts.length >= 2) drawPath(pts);
     }
 
+    // Normaliza nomes de salas para tornar o match robusto entre o que vem
+    // da pesquisa/horário ('F1.17', 'G0.04B', 'BAR', 'SECRETARIA') e o que
+    // o Blender exportou nos GLB ('sala_f117', 'sala_F001', 'sala_G004b',
+    // 'BAR', 'SECRETARIA'). Cada piso tem convenções diferentes (umas em
+    // maiúsculas, outras em minúsculas), e os meshes nunca têm o ponto.
+    //
+    // Algoritmo: remove prefixo opcional 'sala_', lowercase, e remove pontos.
+    //   'sala_f117'    → 'f117'
+    //   'sala_F210A'   → 'f210a'
+    //   'sala_G004b'   → 'g004b'
+    //   'F1.17'        → 'f117'   ✓ match
+    //   'F2.10A'       → 'f210a'  ✓ match
+    //   'G0.04B'       → 'g004b'  ✓ match
+    //   'BAR'          → 'bar'    ✓ match
+    //   'SECRETARIA'   → 'secretaria' ✓ match
+    function normalizeRoomName(name) {
+      if (!name) return '';
+      let s = String(name).toLowerCase().replace(/\./g, '');
+      if (s.startsWith('sala_')) s = s.substring(5);
+      return s;
+    }
+
     // Chamado por NAVIGATE / destino pendente (vindo da pesquisa) com o nome da sala.
     function navigateFromPersonTo(destName) {
       if (!currentModel) return;
+      const target = normalizeRoomName(destName);
       let match = null;
+      // 1ª passagem: tenta apenas em meshes blocáveis (sala_*) — caso comum
       currentModel.traverse(obj => {
+        if (match) return;
         if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
-        if (obj.name === destName || obj.name.toLowerCase() === destName.toLowerCase()) match = obj.name;
+        if (normalizeRoomName(obj.name) === target) match = obj.name;
       });
+      // 2ª passagem: alarga a nav-nodes (BAR, SECRETARIA, WC_*) se o alvo
+      // for um serviço sem prefixo sala_
+      if (!match) {
+        currentModel.traverse(obj => {
+          if (match) return;
+          if (!obj.isMesh || !isNavNode(obj.name)) return;
+          if (normalizeRoomName(obj.name) === target) match = obj.name;
+        });
+      }
       if (!match) { showError(destName + ' não encontrada'); return; }
+      // showRoomStatic depende de roomBBoxes (só salas blocáveis) — se a sala
+      // alvo é um serviço (BAR, SECRETARIA), o highlight/caminho não corre,
+      // mas pelo menos não falha silenciosamente nem mostra mensagem de erro.
       showRoomStatic(match);
     }
 
