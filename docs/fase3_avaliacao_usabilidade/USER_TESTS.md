@@ -1,6 +1,6 @@
 # Testes com Utilizadores (User Tests)
 
-**Responsável**: Filipe Silva
+**Responsável**: Participante 5
 **Datas**: 20 e 21 de maio de 2026
 **Aplicação avaliada**: UTAD Maps v1.0 (build mobile via Expo Go em iPhone e Android)
 
@@ -79,14 +79,14 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 ---
 
-## 2. Sessão 1 — Participante: Liane Duarte
+## 2. Sessão 1 — Participante 1
 
 ### 2.1 Informação do teste
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
-| Nome do Participante | Liane Duarte |
+| Nome do Avaliador | Participante 5 |
+| Nome do Participante | Participante 1 |
 | Data | 20 de maio de 2026, 18:30 |
 | Sistema Avaliado | UTAD Maps v1.0 |
 | Plataforma | iOS (Expo Go) |
@@ -143,14 +143,14 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 ---
 
-## 3. Sessão 2 — Participante: Bruno Alves
+## 3. Sessão 2 — Participante 2
 
 ### 3.1 Informação do teste
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
-| Nome do Participante | Bruno Alves |
+| Nome do Avaliador | Participante 5 |
+| Nome do Participante | Participante 2 |
 | Data | 20 de maio de 2026, 19:00 |
 | Plataforma | Android (Expo Go) |
 | Dispositivo | Xiaomi Redmi Note 11, Android 13 |
@@ -206,14 +206,14 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 ---
 
-## 4. Sessão 3 — Participante: Pedro Braz
+## 4. Sessão 3 — Participante 3
 
 ### 4.1 Informação do teste
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
-| Nome do Participante | Pedro Braz |
+| Nome do Avaliador | Participante 5 |
+| Nome do Participante | Participante 3 |
 | Data | 21 de maio de 2026, 10:00 |
 | Plataforma | Android (Expo Go) |
 | Dispositivo | Samsung Galaxy A52, Android 13 |
@@ -269,14 +269,14 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 ---
 
-## 5. Sessão 4 — Participante: Diogo Queiroz
+## 5. Sessão 4 — Participante 4
 
 ### 5.1 Informação do teste
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
-| Nome do Participante | Diogo Queiroz |
+| Nome do Avaliador | Participante 5 |
+| Nome do Participante | Participante 4 |
 | Data | 21 de maio de 2026, 11:30 |
 | Plataforma | iOS (Expo Go) |
 | Dispositivo | iPhone 12 Pro, iOS 17 |
@@ -330,20 +330,20 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 **Pontuação Likert média**: **5,0 / 5**
 
-> *Nota: Diogo é o responsável pela modelação 3D — conhecimento muito profundo do produto, o que explica a pontuação máxima. Esta sessão deve ser interpretada com cautela como possivelmente enviesada por familiaridade extrema.*
+> *Nota: Participante 4 tem conhecimento muito profundo do produto, o que explica a pontuação máxima. Esta sessão deve ser interpretada com cautela como possivelmente enviesada por familiaridade extrema.*
 
 ---
 
-## 6. Sessão 5 — Participante: Filipe Silva
+## 6. Sessão 5 — Participante 5
 
-> *Conduzida pelo Bruno Alves para evitar conflito de interesse — Filipe é o moderador habitual.*
+> *Conduzida pelo Participante 2 para evitar conflito de interesse — Participante 5 é o moderador habitual.*
 
 ### 6.1 Informação do teste
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Bruno Alves |
-| Nome do Participante | Filipe Silva |
+| Nome do Avaliador | Participante 2 |
+| Nome do Participante | Participante 5 |
 | Data | 21 de maio de 2026, 14:00 |
 | Plataforma | iOS (Expo Go) |
 | Dispositivo | iPhone 14, iOS 18 |
@@ -388,7 +388,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 ### 7.1 Taxa de sucesso global
 
-| Tarefa | U1 Liane | U2 Bruno | U3 Pedro | U4 Diogo | U5 Filipe | Taxa de sucesso |
+| Tarefa | U1 P1 | U2 P2 | U3 P3 | U4 P4 | U5 P5 | Taxa de sucesso |
 |---|:---:|:---:|:---:|:---:|:---:|---|
 | T1 Login + mostrar password | Sim | Sim | Sim | Sim | Sim | **100 %** |
 | T2 Horário | Sim | Sim | Sim | Sim | Sim | **100 %** |
@@ -403,7 +403,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 | T11 Navigating outdoor | Sim | Sim | Sim | Sim | Sim | **100 %** |
 | T12 Suporte FAQ | Sim | Sim | Sim | Sim | Sim | **100 %** |
 | T13 Logout+Login+auto-import | **Parcial** | **Parcial** | Sim | Sim | Sim | **60 %** (2 parciais) |
-| **Total** | 11S 2P | 10S 3P | 12S 1P | 13S | 13S | **90,8 %** (59/65) |
+| **Total** | 11S · 2P | 10S · 3P | 12S · 1P | 13S | 13S | **90,8 %** (59/65) |
 
 ### 7.2 Tempos médios por tarefa
 
