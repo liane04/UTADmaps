@@ -2,6 +2,7 @@
 import {
   POLO1_BUILDINGS,
   extrairCodigoSala,
+  getFloorForSala,
   getIndoorIdForSala,
 } from '../constants/polo1Data';
 import { haversine, type Coord } from './geo';
@@ -49,6 +50,7 @@ export function rotaIndoorParaSala(
 ): NavRoute {
   const codigo = extrairCodigoSala(salaCode);
   const indoorId = getIndoorIdForSala(codigo);
+  const piso = getFloorForSala(codigo);
 
   if (indoorId) {
     const building = POLO1_BUILDINGS.find((b) => b.id === indoorId);
@@ -72,6 +74,8 @@ export function rotaIndoorParaSala(
           destName: building.name.pt,
           // Sala alvo no indoor — propagada para o botão "Entrar no edifício"
           indoorDestino: codigo,
+          // Piso da sala — para o indoor abrir já no piso certo
+          ...(piso != null ? { indoorFloor: String(piso) } : {}),
         },
       };
     }
@@ -84,6 +88,8 @@ export function rotaIndoorParaSala(
         buildingName: building?.name.pt ?? 'ECT - Polo I',
         floors: JSON.stringify((building?.floors ?? []).map((f) => f.level).slice(0, 3) || [0, 1, 2]),
         destino: codigo,
+        // Abrir já no piso da sala (em vez do piso mais baixo por defeito)
+        ...(piso != null ? { floorDestino: String(piso) } : {}),
       },
     };
   }
