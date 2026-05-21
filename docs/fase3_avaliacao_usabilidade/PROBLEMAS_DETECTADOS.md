@@ -12,7 +12,7 @@ A presente síntese cruza os problemas identificados pelas três técnicas de av
 
 - **AH** — Avaliação Heurística de Nielsen (3 peritos, 10 heurísticas, severidade 0–4)
 - **SH** — Regras de Ouro de Shneiderman (8 regras)
-- **UT** — Testes com Utilizadores (5 participantes, 5 tarefas, checklist, questionário Likert)
+- **UT** — Testes com Utilizadores (5 participantes anonimizados como P1–P5, 13 tarefas T1–T13, checklist, questionário Likert)
 
 Cada problema é caracterizado por: ID, descrição, técnica(s) onde foi detectado, heurística ou regra correspondente, severidade agregada, frequência (quantas técnicas o detectaram), e referência cruzada com a Fase 2 quando aplicável.
 
@@ -27,11 +27,11 @@ A tabela está ordenada por **severidade agregada** decrescente.
 | ID | Descrição | AH | SH | UT | Heurística / Regra | Severidade | Ref. Fase 2 |
 |---|---|:---:|:---:|:---:|---|:---:|:---:|
 | **P-01** | Horário académico permanece visível após "Terminar sessão" (problema de privacidade) | ✅ P1, P3 | ✅ Regra 5 | — | H5 / Regra 5 | **4 — Catastrófico** | B-02 |
-| **P-02** | Botão "Iniciar sessão" no Perfil deixa de responder após um logout prévio | ✅ P1 | — | ✅ U2 Bruno | H3 | **3 — Maior** | B-01 |
-| **P-03** | Falta de feedback informativo em acções de definições (toggles, sliders) | ✅ P2 (parcial) | ✅ Regra 3 | ✅ U1 Liane, U3 Pedro, U2 Bruno | H1 / Regra 3 | **2 — Menor** | — |
+| **P-02** | Botão "Iniciar sessão" no Perfil deixa de responder após um logout prévio | ✅ P1 | — | ✅ U2 (P2), U5 (P1 atenuado) | H3 | **3 — Maior** | B-01 |
+| **P-03** | Falta de feedback informativo em acções de definições (toggles, sliders) | ✅ P2 (parcial) | ✅ Regra 3 | ✅ U1 (P1), U2 (P2), U3 (P3) | H1 / Regra 3 | **2 — Menor** | — |
 | **P-04** | Tarefa T5 (Importar horário) com tempo médio elevado (~102 s) e dois erros frequentes | — | — | ✅ U1, U2, U3 | — | **2 — Menor** | — |
 | **P-05** | Ausência de atalho directo no Mapa para "próxima aula" | ✅ P3 | — | — | H7 | **2 — Menor** | — |
-| **P-06** | Pesquisa de salas pode demorar 2–3 s sem indicador de carregamento | ✅ P1 | — | ✅ U1 Liane | H1 / Regra 3 | **2 — Menor** | — |
+| **P-06** | Pesquisa de salas pode demorar 2–3 s sem indicador de carregamento | ✅ P1 | — | ✅ U1 (P1) | H1 / Regra 3 | **2 — Menor** | — |
 | **P-07** | Mensagens de erro genéricas (rota OSRM, distância elevada) | ✅ P1, P3 | — | — | H9 | **2 — Menor** | — |
 | **P-08** | Chegada ao destino sem notificação explícita | — | ✅ Regra 4 | — | Regra 4 | **2 — Menor** | — |
 | **P-09** | Recálculo de rota durante navegação sem aviso visual | ✅ P3 | ✅ Regra 3 | — | H1 / Regra 3 | **2 — Menor** | Gap G-05 |
@@ -39,8 +39,11 @@ A tabela está ordenada por **severidade agregada** decrescente.
 | **P-11** | Pills/chips de seleção sem `accessibilityState="selected"` | ✅ P2 | — | — | H1 | **1 — Cosmético** | Gaps G-01 a G-03 |
 | **P-12** | Falta legenda explícita das cores dos marcadores no mapa | ✅ P2 | — | — | H6 | **2 — Menor** | — |
 | **P-13** | Pequena inconsistência no raio de cantos arredondados entre cards | ✅ P2 | — | — | H4 | **1 — Cosmético** | — |
-| **P-14** | Affordance pouco evidente do cartão de aula como elemento clicável | — | — | ✅ U1 Liane | — | **1 — Cosmético** | — |
+| **P-14** | Affordance pouco evidente do cartão de aula (timeline do Horário) como elemento clicável | — | — | ✅ U1 (P1) | — | **1 — Cosmético** | — |
 | **P-15** | Dificuldade em encontrar a chave de sincronização no portal Inforestudante | — | — | ✅ U2, U3 | — | **2 — Menor** | — |
+| **P-16** | Posição inicial do boneco no Piso 1 do Indoor 3D parece fora do corredor em Android (`FLOOR_START_POSITIONS` mal calibrado) | — | — | ✅ U2 (P2) | — | **2 — Menor** | — |
+| **P-17** | Affordance do card "Próxima Aula" no Perfil não indica que é clicável (distinto de P-14: este é o card do Perfil) | — | — | ✅ U1 (P1) | — | **1 — Cosmético** | — |
+| **P-18** | Suporte/FAQ sem campo de pesquisa — utilizadores percorrem as 6 entradas linearmente | — | — | ✅ U1 (P1), U3 (P3) | — | **2 — Menor** | — |
 
 ---
 
@@ -66,9 +69,9 @@ São os problemas com maior validade metodológica porque foram identificados in
 |---|---:|
 | 4 — Catastrófico | **1** |
 | 3 — Maior | **1** |
-| 2 — Menor | **10** |
-| 1 — Cosmético | **3** |
-| **Total** | **15** |
+| 2 — Menor | **12** |
+| 1 — Cosmético | **4** |
+| **Total** | **18** |
 
 ### 3.3 Distribuição por técnica
 
@@ -76,9 +79,9 @@ São os problemas com maior validade metodológica porque foram identificados in
 |---|---:|---:|
 | Avaliação Heurística (AH) | 11 problemas distintos | 5 também noutras técnicas |
 | Regras de Shneiderman (SH) | 4 problemas distintos | 3 também noutras técnicas |
-| User Tests (UT) | 6 problemas distintos | 3 também noutras técnicas |
+| User Tests (UT) | 9 problemas distintos | 3 também noutras técnicas |
 
-> A Avaliação Heurística com três peritos foi a técnica que mais problemas identificou em termos absolutos, o que é consistente com a literatura (Nielsen, 1994). Os User Tests acrescentaram problemas qualitativos relacionados com **affordances** e **expectativas dos utilizadores** que a inspecção heurística não captou. As Regras de Shneiderman serviram principalmente como validação cruzada (3 dos seus 4 problemas identificados também aparecem nas outras técnicas; P-08 é o único exclusivo desta técnica).
+> A Avaliação Heurística com três peritos foi a técnica que mais problemas identificou em termos absolutos, o que é consistente com a literatura (Nielsen, 1994). Os **User Tests com 13 tarefas e 5 participantes** acrescentaram problemas qualitativos relacionados com **affordances** e **expectativas dos utilizadores** que a inspecção heurística não captou (P-14, P-15, P-16, P-17, P-18 são exclusivos desta técnica). As Regras de Shneiderman serviram principalmente como validação cruzada (3 dos seus 4 problemas identificados também aparecem nas outras técnicas; P-08 é o único exclusivo desta técnica).
 
 ---
 
@@ -97,9 +100,9 @@ Quatro problemas desta Fase 3 cruzam directamente com bugs ou *gaps* identificad
 
 ## 5. Conclusões da síntese
 
-A combinação das três técnicas de avaliação de usabilidade identificou **15 problemas distintos** no UTAD Maps, dos quais **12 são prioritários para correcção** (severidade ≥ 2). O problema mais grave é **P-01** (catastrófico, privacidade) seguido de **P-02** (maior, gestão de sessão).
+A combinação das três técnicas de avaliação de usabilidade identificou **18 problemas distintos** no UTAD Maps, dos quais **14 são prioritários para correcção** (severidade ≥ 2). O problema mais grave é **P-01** (catastrófico, privacidade) seguido de **P-02** (maior, gestão de sessão).
 
-A convergência entre técnicas é elevada: **33 % dos problemas (5 em 15) foram detectados por mais do que uma técnica**, com destaque para o problema **P-03 (feedback insuficiente)** que aparece nas três. Esta convergência valida metodologicamente a combinação adoptada e indica que estes cinco problemas devem ser prioritários para qualquer iteração subsequente do produto.
+A convergência entre técnicas é elevada: **28 % dos problemas (5 em 18) foram detectados por mais do que uma técnica**, com destaque para o problema **P-03 (feedback insuficiente)** que aparece nas três. Esta convergência valida metodologicamente a combinação adoptada e indica que estes cinco problemas devem ser prioritários para qualquer iteração subsequente do produto. A expansão dos User Tests para **13 tarefas** revelou três problemas adicionais (P-16, P-17, P-18) que só foram visíveis através da observação de utilizadores reais em fluxos extensos — reforçando o valor da combinação de técnicas.
 
 O cruzamento com a Fase 2 mostra que **quatro problemas** documentados como bugs ou *gaps* de acessibilidade foram **revalidados** pelas técnicas de usabilidade, reforçando a sua urgência. Em particular, os **bugs B-01 e B-02** são agora problemas confirmados em múltiplas técnicas e devem ser corrigidos antes de qualquer entrega futura.
 
