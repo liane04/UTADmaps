@@ -80,7 +80,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
+| Nome do Avaliador | Filipe Silva |<>
 | Nome do Participante | Liane Duarte |
 | Data | 20 de maio de 2026, 18:30 |
 | Sistema Avaliado | UTAD Maps v1.0 |

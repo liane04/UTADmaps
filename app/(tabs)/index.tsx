@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import CampusMap from '../../components/CampusMap';
+import CampusMap, { CampusMapHandle } from '../../components/CampusMap';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useUserLocation } from '../../lib/useUserLocation';
 import {
   POLO1_CENTER,
   POLO1_BUILDINGS,
@@ -16,12 +17,66 @@ import {
   TIPO_LABEL_EN,
 } from '../../constants/polo1Data';
 
+// Limites de zoom (em graus de latitude/longitude). Acima reduz, abaixo amplia.
+const ZOOM_MIN_DELTA = 0.0008; // muito perto (~80 m)
+const ZOOM_MAX_DELTA = 0.05;   // muito longe (~5 km)
+const ZOOM_DEFAULT_DELTA = POLO1_CENTER.latitudeDelta; // 0.008
+
 export default function MapaScreen() {
   const router = useRouter();
   const { colors, fs } = useSettings();
   const { tr, language } = useLanguage();
+  const userLocation = useUserLocation();
+
+  const mapRef = useRef<CampusMapHandle | null>(null);
+  // Mantém a região "central" actual para suportar zoom in/out sem perder o foco
+  const currentRegionRef = useRef({
+    latitude: POLO1_CENTER.latitude,
+    longitude: POLO1_CENTER.longitude,
+    latitudeDelta: ZOOM_DEFAULT_DELTA,
+    longitudeDelta: ZOOM_DEFAULT_DELTA,
+  });
 
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+
+  // Handlers dos controlos do mapa
+  const handleLocate = () => {
+    if (!userLocation) return;
+    const region = {
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      latitudeDelta: ZOOM_DEFAULT_DELTA,
+      longitudeDelta: ZOOM_DEFAULT_DELTA,
+    };
+    currentRegionRef.current = region;
+    mapRef.current?.animateToRegion(region, 500);
+  };
+
+  const handleZoomIn = () => {
+    const { latitudeDelta, longitudeDelta } = currentRegionRef.current;
+    const newDelta = Math.max(ZOOM_MIN_DELTA, latitudeDelta / 2);
+    const newLngDelta = Math.max(ZOOM_MIN_DELTA, longitudeDelta / 2);
+    const region = {
+      ...currentRegionRef.current,
+      latitudeDelta: newDelta,
+      longitudeDelta: newLngDelta,
+    };
+    currentRegionRef.current = region;
+    mapRef.current?.animateToRegion(region, 300);
+  };
+
+  const handleZoomOut = () => {
+    const { latitudeDelta, longitudeDelta } = currentRegionRef.current;
+    const newDelta = Math.min(ZOOM_MAX_DELTA, latitudeDelta * 2);
+    const newLngDelta = Math.min(ZOOM_MAX_DELTA, longitudeDelta * 2);
+    const region = {
+      ...currentRegionRef.current,
+      latitudeDelta: newDelta,
+      longitudeDelta: newLngDelta,
+    };
+    currentRegionRef.current = region;
+    mapRef.current?.animateToRegion(region, 300);
+  };
 
   const totalRooms = (b: Building) =>
     b.floors.reduce((sum, floor) => sum + floor.rooms.length, 0);
@@ -67,9 +122,12 @@ export default function MapaScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <CampusMap
+        ref={mapRef}
         initialRegion={POLO1_CENTER}
         markers={markers}
         onPress={() => setSelectedBuilding(null)}
+        showsUserLocation
+        userLocation={userLocation}
       />
 
       {/* Floating UI Elements */}
@@ -91,15 +149,22 @@ export default function MapaScreen() {
         {!selectedBuilding && (
           <View style={styles.controlsContainer}>
             <TouchableOpacity
-              style={[styles.controlButton, { backgroundColor: colors.card }]}
+              style={[
+                styles.controlButton,
+                { backgroundColor: colors.card, opacity: userLocation ? 1 : 0.5 },
+              ]}
+              onPress={handleLocate}
+              disabled={!userLocation}
               accessibilityRole="button"
               accessibilityLabel={tr('Centrar mapa na minha localização', 'Center map on my location')}
+              accessibilityState={{ disabled: !userLocation }}
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
               <Ionicons name="locate" size={24} color={colors.text} />
             </TouchableOpacity>
             <View style={[styles.zoomControls, { backgroundColor: colors.card }]}>
               <TouchableOpacity
                 style={styles.zoomButton}
+                onPress={handleZoomIn}
                 accessibilityRole="button"
                 accessibilityLabel={tr('Aumentar zoom', 'Zoom in')}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
@@ -108,6 +173,7 @@ export default function MapaScreen() {
               <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
               <TouchableOpacity
                 style={styles.zoomButton}
+                onPress={handleZoomOut}
                 accessibilityRole="button"
                 accessibilityLabel={tr('Diminuir zoom', 'Zoom out')}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
