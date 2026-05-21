@@ -207,6 +207,8 @@ export default function NavigacaoOutdoorScreen() {
     destName?: string;
     /** Sala alvo dentro do indoor (ex: 'F0.01'). Propagada ao botão "Entrar no edifício". */
     indoorDestino?: string;
+    /** Piso da sala alvo no indoor (ex: '1'). Propagado para abrir o indoor já no piso certo. */
+    indoorFloor?: string;
   }>();
 
   const mapRef = useRef<CampusMapHandle | null>(null);
@@ -835,6 +837,7 @@ export default function NavigacaoOutdoorScreen() {
                     buildingName: destination.name,
                     floors: JSON.stringify([0, 1, 2]),
                     ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
+                    ...(params.indoorFloor ? { floorDestino: params.indoorFloor } : {}),
                   },
                 })
               }
@@ -888,6 +891,7 @@ export default function NavigacaoOutdoorScreen() {
                     buildingName: destination.name,
                     floors: JSON.stringify([0, 1, 2]),
                     ...(params.indoorDestino ? { destino: params.indoorDestino } : {}),
+                    ...(params.indoorFloor ? { floorDestino: params.indoorFloor } : {}),
                   },
                 })
               }

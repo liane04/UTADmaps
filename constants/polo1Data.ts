@@ -374,6 +374,36 @@ export function getIndoorIdForSala(salaCode: string | null | undefined): string 
 }
 
 /**
+ * Devolve o piso (0, 1 ou 2) a que pertence uma sala, com base no código.
+ *
+ * Convenção: o **segundo carácter** do código indica o piso, e.g.:
+ *   - 'F0.01', 'G0.04B', 'I0.06' → piso 0
+ *   - 'E1.01', 'F1.17'           → piso 1
+ *   - 'F2.10A', 'E2.04'          → piso 2
+ *
+ * Casos especiais (serviços) mapeados explicitamente:
+ *   - 'BAR'        → piso 0
+ *   - 'SECRETARIA' → piso 1
+ *
+ * Devolve `null` quando não é possível determinar (sala desconhecida) — o
+ * indoor-3d cai no fallback de abrir no piso mais baixo.
+ */
+export function getFloorForSala(salaCode: string | null | undefined): number | null {
+  if (!salaCode) return null;
+  const codigo = extrairCodigoSala(salaCode);
+  const upper = codigo.toUpperCase();
+  if (upper === 'BAR') return 0;
+  if (upper === 'SECRETARIA') return 1;
+  // Padrão "letra + dígito" — o dígito é o piso (F1.17 → 1, E2.04 → 2)
+  const m = codigo.match(/^[A-Z](\d)/i);
+  if (m) {
+    const piso = parseInt(m[1], 10);
+    if (piso >= 0 && piso <= 2) return piso;
+  }
+  return null;
+}
+
+/**
  * Procura coordenadas da entrada principal de um edifício pelo nome.
  * Útil para a pesquisa (que vem da API com `lat/lon` do centro do edifício)
  * usar a porta como destino real em vez do centro.
