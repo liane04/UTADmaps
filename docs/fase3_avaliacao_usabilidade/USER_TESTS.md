@@ -58,7 +58,7 @@ Os cinco elementos da equipa de desenvolvimento. **Limitação metodológica con
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
+| Nome do Avaliador | Filipe Silva |<>
 | Nome do Participante | Liane Duarte |
 | Data | 20 de maio de 2026, 18:30 |
 | Sistema Avaliado | UTAD Maps v1.0 |
