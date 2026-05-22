@@ -8,7 +8,7 @@
 
 ## 1. Critério de priorização
 
-As melhorias propostas resultam dos **18 problemas** identificados em `PROBLEMAS_DETECTADOS.md`. A priorização cruza dois eixos:
+As melhorias propostas resultam dos **17 problemas** (excluindo os falsos positivos) identificados em `PROBLEMAS_DETECTADOS.md`. A priorização cruza dois eixos:
 
 - **Impacto** — gravidade do problema corrigido (catastrófico, maior, menor, cosmético)
 - **Esforço** — tempo estimado de implementação (Trivial < 30 min, Pequeno 1–2 h, Médio 4–8 h, Grande 1+ dias)
@@ -32,7 +32,7 @@ Ordenada por prioridade decrescente.
 |:---:|---|---|:---:|:---:|:---:|
 | **M-01** | Limpar `AsyncStorage` no logout (chaves do horário, favoritos, próxima aula, histórico) | P-01 catastrófico | 🔴 Alto | Trivial | **I** |
 | **M-02** | Corrigir o handler do botão "Iniciar sessão" no Perfil para responder após logout (rever `onPress` e a rota de retorno ao `/`) | P-02 maior | 🔴 Alto | Pequeno | **I** |
-| **M-03** | Adicionar `accessibilityState={{ selected }}` aos chips de filtro, pills de tamanho de texto e pills de dia do horário | P-11 cosmético | 🟡 Médio ¹ | Pequeno | **I** |
+| **M-03** | Adicionar `accessibilityState={{ selected }}` aos chips de filtro de categoria de pesquisa e seleção de idioma | Gaps G-01 a G-03 | 🟡 Médio ¹ | Pequeno | **I** |
 | **M-04** | Adicionar *toast* de confirmação quando o utilizador activa Alto Contraste, muda tema, altera tamanho de texto ou muda idioma | P-03 menor | 🔴 Alto ² | Pequeno | **I** |
 | **M-05** | Implementar `accessibilityLiveRegion="polite"` na barra de instruções da navegação outdoor para anunciar mudanças de manobra e comunicar o auto-centering | P-03 menor, P-09 menor | 🟡 Médio | Pequeno | **I** |
 | **M-06** | Adicionar indicador de carregamento (`ActivityIndicator`) durante a chamada de pesquisa ao backend | P-06 menor | 🟡 Médio | Trivial | **I** |
@@ -50,9 +50,9 @@ Ordenada por prioridade decrescente.
 | **M-18** | Adicionar dica visual prévia ao indoor (badge "2D" ou "3D") nos resultados de pesquisa para distinguir entre planta 2D e modelo 3D | — (melhoria proactiva) | 🟢 Baixo | Pequeno | **III** |
 | **M-19** | Tornar a entrada "Definições" mais proeminente no ecrã de Perfil (destaque visual ou sub-label "Tema · Idioma · Acessibilidade") | P-18 cosmético | 🟢 Baixo | Trivial | **III** |
 
-> ¹ **M-03** classificada com impacto Médio (e não Baixo, apesar de P-11 ser Cosmético) porque os gaps G-01 a G-03 foram documentados na Fase 2 como requisitos de acessibilidade pendentes, tornando a sua resolução obrigatória para conformidade com as diretrizes de acessibilidade.
+> ¹ **M-03** classificada com impacto Médio porque os gaps G-01 a G-03 foram documentados na Fase 2 como requisitos de acessibilidade pendentes, tornando a sua resolução obrigatória para conformidade com as diretrizes de acessibilidade.
 >
-> ² **M-04** classificada com impacto Alto (e não Menor, apesar de P-03 ter severidade Menor) porque P-03 foi detectado pelas **três técnicas em simultâneo** (AH + SH + UT) — tal como P-01 — confirmado nos UT pelo auto-centering não comunicado (T7) e reforçado pela inspecção heurística (toggles de Definições), o que, pela regra de desempate, eleva o seu impacto para Alto.
+> ² **M-04** classificada com impacto Alto (e não Menor, apesar de P-03 ter severidade Menor) porque P-03 foi detectado por **duas técnicas em simultâneo com forte impacto prático** (SH + UT), verificado nos UT pelo auto-centering não comunicado (T7) e pelas Regras de Shneiderman, o que, pela regra de desempate, eleva o seu impacto para Alto.
 
 ---
 
@@ -66,7 +66,7 @@ Concentra todas as melhorias do Quadrante I (Impacto Alto × Esforço Baixo). Re
 
 - **M-01** — Limpar storage no logout
 - **M-02** — Fix do botão "Iniciar sessão"
-- **M-03** — `accessibilityState` nos chips e pills
+- **M-03** — `accessibilityState` nos chips de filtro e idioma
 - **M-04** — *Toast* nas alterações de definições
 - **M-05** — `accessibilityLiveRegion` na barra de navegação + comunicar auto-centering
 - **M-06** — Indicador de carregamento na pesquisa
@@ -108,7 +108,7 @@ Após implementação das três sprints, propõe-se reavaliar com as mesmas trê
 | Tempo médio na tarefa T13 (Logout + Login + auto-import) | 60 s | ≤ 45 s |
 | Facilidade média nos user tests | 4,6 / 5 | ≥ 4,8 / 5 |
 | Pontuação Likert pós-teste | 4,6 / 5 | ≥ 4,8 / 5 |
-| Cobertura `accessibilityState` em chips/pills | 0 % | **100 %** |
+| Cobertura `accessibilityState` em chips de filtro/idioma | 0 % | **100 %** |
 | Taxa de sucesso pleno em T13 (bugs B-01 e B-02) | 60 % (3/5) | **100 %** |
 
 ---

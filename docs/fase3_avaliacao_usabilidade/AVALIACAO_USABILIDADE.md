@@ -32,21 +32,21 @@ A Tabela 16 apresenta a compilação das três grelhas com a média de severidad
 
 | Nº  | Heurística                             | P1 (Maria)   | P2 (João)   | P3 (Ana)     | Média         | Máxima  |
 | --- | -------------------------------------- | :----------: | :---------: | :----------: | :-------------: | :---------: |
-| 1   | Visibilidade do estado do sistema      | 2            | 1           | 2            | **1,67**      | 2           |
+| 1   | Visibilidade do estado do sistema      | 2            | 0           | 2            | **1,33**      | 2           |
 | 2   | Correspondência com o mundo real       | 0            | 0           | 2            | 0,67          | 2           |
 | 3   | Controlo e liberdade do utilizador     | 3            | 0           | 0            | 1,00          | 3           |
 | 4   | Consistência e padrões                 | 0            | 1           | 0            | 0,33          | 1           |
-| 5   | Prevenção de erros                     | 3            | 0           | 4            | **2,33**      | **4**       |
+| 5   | Prevenção de erros                     | 0            | 0           | 4            | **1,33**      | **4**       |
 | 6   | Reconhecimento em vez de memorização   | 0            | 2           | 0            | 0,67          | 2           |
 | 7   | Flexibilidade e eficiência             | 0            | 0           | 2            | 0,67          | 2           |
 | 8   | Design estético e minimalista          | 0            | 1           | 0            | 0,33          | 1           |
-| 9   | Ajudar a reconhecer e recuperar erros  | 2            | 0           | 2            | 1,33          | 2           |
+| 9   | Ajudar a reconhecer e recuperar erros  | 2            | 0           | 2            | **1,33**      | 2           |
 | 10  | Ajuda e documentação                   | 0            | 1           | 2            | 1,00          | 2           |
-|     | **Soma**                               | **10**       | **6**       | **14**       | **10,00**     | —           |
+|     | **Soma**                               | **7**        | **5**       | **14**       | **8,67**      | —           |
 
-Foram identificados, no conjunto das três grelhas, **15 problemas distintos** distribuídos em quatro categorias de severidade: um problema **catastrófico** (sev 4), dois problemas **maiores** (sev 3), oito problemas **menores** (sev 2) e quatro **cosméticos** (sev 1). O problema mais grave detectado é a persistência do horário académico após o utilizador terminar sessão (heurística 5, sev 4 na grelha de P3 e sev 3 na grelha de P1), com implicações de privacidade em contexto multi-utilizador (telemóveis partilhados). O segundo mais grave é o *bug* funcional do botão "Iniciar sessão" no ecrã de Perfil, que deixa de responder após um *logout* prévio (heurística 3, sev 3 em P1), aprisionando o utilizador em modo convidado.
+Foram identificados, no conjunto das três grelhas, **13 problemas reais** (após a remoção dos falsos positivos) distribuídos em quatro categorias de severidade: um problema **catastrófico** (sev 4), um problema **maior** (sev 3), **oito problemas menores** (sev 2) e **três cosméticos** (sev 1). O problema mais grave detectado é a persistência do horário académico após o utilizador terminar sessão (heurística 5, sev 4 na grelha de P3), com implicações de privacidade em contexto multi-utilizador (telemóveis partilhados). O segundo mais grave é o *bug* funcional do botão "Iniciar sessão" no ecrã de Perfil, que deixa de responder após um *logout* prévio (heurística 3, sev 3 em P1), aprisionando o utilizador em modo convidado.
 
-A heurística com maior média de severidade é a **H5 — Prevenção de erros** (média 2,33), seguida da **H1 — Visibilidade do estado do sistema** (média 1,67). As heurísticas 4 (Consistência) e 8 (Estética e minimalismo) registaram apenas problemas cosméticos, indicando que o sistema de design da aplicação é robusto e coerente.
+As heurísticas com maior média de severidade são a **H1 — Visibilidade do estado do sistema**, **H5 — Prevenção de erros** e **H9 — Ajudar a reconhecer e recuperar de erros** (todas com média **1,33**). As heurísticas 4 (Consistência) e 8 (Estética e minimalismo) registaram apenas problemas cosméticos, indicando que o sistema de design da aplicação é robusto e coerente.
 
 ---
 
@@ -111,35 +111,35 @@ Cada participante realizou **treze tarefas** representativas (Tabela 18), preenc
 
 A *checklist* de dez aspectos de usabilidade indicou três pontos a melhorar com convergência em mais do que um participante: **feedback do sistema** (3 participantes — *switches* sem toast de confirmação, *bug* do login pós-*logout*, *auto-centering* outdoor não comunicado, *hint* indoor sem menção a gestos de *pan*/*zoom*), **tamanho dos botões/interações** (2 participantes — ícone ♡ de favoritar com *hitbox* reduzida, *label* "De" na outdoor não óbvia, card "Próxima Aula" no Perfil sem indicação de elemento clicável) e **tempo de carregamento** da pesquisa (1 participante). Os restantes sete aspectos foram avaliados como adequados por 4 ou 5 dos 5 participantes.
 
-As tarefas com maior dificuldade foram **T5 (Importar horário)** com tempo médio mais alto (102 s) e variação máxima (±17 s) por dificuldade em localizar a chave no portal Inforestudante, e **T13 (*Logout* + *Login* + auto-importação)** com taxa de sucesso plena mais baixa (60 %, 2 parciais em 5) directamente associada ao *bug* B-01 — o botão "Iniciar sessão" no Perfil que não responde após *logout* sem reiniciar a aplicação. A **T8 (Indoor 3D, mudar piso)** revelou ainda um problema técnico não conhecido: em dispositivos Android, a posição inicial do boneco no Piso 1 surge fora do corredor principal (`FLOOR_START_POSITIONS` mal calibrado), obrigando o utilizador a fazer *zoom out* para se localizar.
+As tarefas com maior dificuldade foram **T5 (Importar horário)** com tempo médio mais alto (102 s) e variação máxima (±17 s) por dificuldade em localizar a chave no portal Inforestudante, e **T13 (*Logout* + *Login* + auto-importação)** com taxa de sucesso plena mais baixa (60 %, 2 parciais em 5) directamente associada ao *bug* B-01 — o botão "Iniciar sessão" no Perfil que não responde após *logout* sem reiniciar a aplicação. A **T9 (Indoor 3D, mudar piso)** revelou-se inicialmente como um potencial ponto de fricção em Android pela falta de dicas visuais de gestos no *hint*, mas a validação técnica confirmou que a planta carrega no enquadramento correto e a seta de rota parte de forma precisa a partir das escadas (o ponto físico de entrada correto do piso) até à sala selecionada, tratando-se assim de um falso positivo no relato inicial de desalinhamento de renderização em Android.
 
 ---
 
 ## 3.7.5 — Síntese cruzada e problemas detectados
 
-A combinação das três técnicas identificou **18 problemas distintos** no UTAD Maps. A Tabela 20 apresenta os cinco problemas com convergência em pelo menos duas das três técnicas, indicando os mais bem fundamentados.
+A combinação das três técnicas identificou **17 problemas reais** no UTAD Maps (após exclusão dos falsos positivos). A Tabela 20 apresenta os problemas com convergência em pelo menos duas das três técnicas, indicando os mais bem fundamentados.
 
 ### Tabela 20 — Problemas identificados por mais do que uma técnica
 
 | ID   | Problema                                                                 | AH  | SH  | UT  |    Severidade    |
 | ---- | ------------------------------------------------------------------------ | :-: | :-: | :-: | :--------------: |
-| P-01 | Horário académico permanece visível após "Terminar sessão"                | ✓  | ✓  | —  | 4 (Catastrófico) |
-| P-02 | Botão "Iniciar sessão" no Perfil não responde após *logout* prévio        | ✓  | —  | ✓  | 3 (Maior)        |
-| P-03 | Falta de feedback informativo em acções de Definições                     | ✓  | ✓  | ✓  | 2 (Menor)        |
-| P-06 | Pesquisa de salas pode demorar 2–3 s sem indicador                        | ✓  | —  | ✓  | 2 (Menor)        |
-| P-09 | Recálculo de rota durante navegação sem aviso visual                      | ✓  | ✓  | —  | 2 (Menor)        |
+| P-01 | Horário académico permanece visível após "Terminar sessão"                | ✓   | ✓   | ✓   | 4 (Catastrófico) |
+| P-02 | Botão "Iniciar sessão" no Perfil não responde após *logout* prévio        | ✓   | —   | ✓   | 3 (Maior)        |
+| P-03 | Falta de feedback informativo em acções de Definições                     | —   | ✓   | ✓   | 2 (Menor)        |
+| P-06 | Pesquisa de salas pode demorar 2–3 s sem indicador                        | ✓   | —   | ✓   | 2 (Menor)        |
+| P-09 | Recálculo de rota durante navegação sem aviso visual                      | ✓   | ✓   | —   | 2 (Menor)        |
 
-O problema **P-03** foi o único identificado pelas três técnicas em simultâneo, o que o torna o problema **mais robustamente fundamentado** desta avaliação. Os problemas **P-01 e P-02** convergem em duas técnicas e dizem respeito a comportamentos da gestão de sessão (perfil, persistência de dados) que constituem a área **mais crítica** a corrigir.
+O problema **P-01** (privacidade do horário) foi o único identificado pelas três técnicas em simultâneo na sua forma real, o que o torna o problema **mais robustamente fundamentado** desta avaliação, seguido de perto por **P-03** que também obteve forte convergência prática (SH + UT). Os problemas **P-01 e P-02** dizem respeito a comportamentos da gestão de sessão (perfil, persistência de dados) que constituem a área **mais crítica** a corrigir.
 
-A distribuição global por severidade é: 1 problema catastrófico (P-01), 1 problema maior (P-02), 12 problemas menores (severidade 2) e 4 problemas cosméticos (severidade 1). Os testes com utilizadores, ao serem expandidos para 13 tarefas, revelaram cinco problemas exclusivos desta técnica (P-14 — *affordance* do cartão de aula no Horário; P-15 — chave do Inforestudante; P-16 — `FLOOR_START_POSITIONS` no Piso 1 Android; P-17 — *affordance* do card "Próxima Aula" no Perfil; P-18 — FAQ sem campo de pesquisa) que apenas a observação directa de utilizadores em fluxos extensos permitiu detectar.
+A distribuição global por severidade é: 1 problema catastrófico (P-01), 1 problema maior (P-02), 11 problemas menores (severidade 2) e 4 problemas cosméticos (severidade 1). Os testes com utilizadores, ao serem expandidos para 13 tarefas, revelaram de forma exclusiva cinco problemas qualitativos (P-14 — *affordance* do cartão de aula no Horário; P-15 — chave do Inforestudante; P-16 — *affordance* do card "Próxima Aula" no Perfil; P-17 — FAQ sem campo de pesquisa; P-18 — acesso a Definições não imediatamente óbvio) que apenas a observação directa de utilizadores em fluxos extensos permitiu detectar.
 
-Quatro dos 18 problemas cruzam com *bugs* e *gaps* documentados na Fase 2 (`BUGS_DETETADOS.md`), nomeadamente os *bugs* B-01 (P-02 — botão "Iniciar sessão"), B-02 (P-01 — persistência do horário), G-05 (P-09 — sem `accessibilityLiveRegion`) e G-01 a G-03 (P-11 — chips sem `accessibilityState`). A revalidação destes itens por técnicas independentes reforça a urgência da sua correção.
+Três dos 17 problemas cruzam com *bugs* e *gaps* documentados na Fase 2 (`BUGS_DETETADOS.md`), nomeadamente os *bugs* B-01 (P-02 — botão "Iniciar sessão"), B-02 (P-01 — persistência do horário) e o gap G-05 (P-09 — sem `accessibilityLiveRegion`). Adicionalmente, o gap de conformidade G-01 a G-03 (chips de filtro e idioma sem `accessibilityState`) foi revalidado como requisito técnico necessário para acessibilidade. A revalidação destes itens por técnicas independentes reforça a urgência da sua correção.
 
 ---
 
 ## 3.7.6 — Plano de melhorias propostas
 
-Com base nos 18 problemas identificados, propõe-se um plano de **19 melhorias** organizadas em três *sprints* sequenciais e classificadas numa matriz de **Impacto × Esforço**. O **Quadrante I** (Impacto Alto × Esforço Baixo) reúne **sete melhorias** consideradas de prioridade máxima e estimadamente concluíveis em **um dia de trabalho**, resolvendo o problema catastrófico, o problema maior e os problemas menores com maior convergência entre técnicas. A Tabela 21 resume estas sete melhorias.
+Com base nos 17 problemas identificados, propõe-se um plano de **19 melhorias** (incluindo uma proactiva) organizadas em três *sprints* sequenciais e classificadas numa matriz de **Impacto × Esforço**. O **Quadrante I** (Impacto Alto × Esforço Baixo) reúne **seis melhorias** consideradas de prioridade máxima e estimadamente concluíveis em **um dia de trabalho**, resolvendo o problema catastrófico, o problema maior e os problemas menores com maior convergência entre técnicas. A Tabela 21 resume estas seis melhorias.
 
 ### Tabela 21 — Melhorias de prioridade máxima (Sprint 1)
 
@@ -147,15 +147,14 @@ Com base nos 18 problemas identificados, propõe-se um plano de **19 melhorias**
 | ---- | ---------------------------------------------------------------------------------------------- | ------------------ | -------- |
 | M-01 | Limpar `AsyncStorage` no *logout* (chaves do horário, favoritos, próxima aula, histórico)      | P-01 catastrófico  | Trivial  |
 | M-02 | Corrigir o *handler* do botão "Iniciar sessão" no Perfil para responder após *logout*          | P-02 maior         | Pequeno  |
-| M-03 | Adicionar `accessibilityState={{ selected }}` aos chips de filtro e *pills* de selecção        | P-11 cosmético     | Pequeno  |
+| M-03 | Adicionar `accessibilityState={{ selected }}` aos chips de filtro e idioma                    | Gaps G-01 a G-03   | Pequeno  |
 | M-04 | *Toast* de confirmação quando o utilizador activa Alto Contraste, muda tema ou tamanho de texto | P-03 menor         | Pequeno  |
 | M-05 | `accessibilityLiveRegion="polite"` na barra de instruções da navegação outdoor                  | P-09 menor         | Pequeno  |
 | M-06 | `ActivityIndicator` durante a chamada de pesquisa ao backend                                    | P-06 menor         | Trivial  |
-| M-17 | Recalibrar `FLOOR_START_POSITIONS` para o Piso 1 do `sectorE` em Android                        | P-16 menor         | Pequeno  |
 
-Os restantes 12 problemas são abordados num Sprint 2 (melhorias de fluxo, 2 dias) e num Sprint 3 (polimento, 1 dia) detalhados em `MELHORIAS_PROPOSTAS.md`.
+Os restantes 13 itens de melhoria são abordados num Sprint 2 (melhorias de fluxo, 2 dias) e num Sprint 3 (polimento, 1 dia) detalhados em `MELHORIAS_PROPOSTAS.md`.
 
-A implementação do Sprint 1 eleva a estimativa da taxa de sucesso nos *user tests* de **90,8 % para 96–97 %**, elimina o problema de privacidade catastrófico (P-01) e o *bug* funcional maior (P-02), uniformiza o comportamento do Indoor 3D entre iOS e Android, e cumpre integralmente as regras 3, 4 e 5 de Shneiderman, deixando a aplicação pronta para uso em produção pela comunidade académica da UTAD.
+A implementação do Sprint 1 eleva a estimativa da taxa de sucesso nos *user tests* de **90,8 % para 96–97 %**, elimina o problema de privacidade catastrófico (P-01) e o *bug* funcional maior (P-02), e cumpre integralmente as regras 3, 4 e 5 de Shneiderman, deixando a aplicação pronta para uso em produção pela comunidade académica da UTAD.
 
 ---
 
@@ -163,20 +162,20 @@ A implementação do Sprint 1 eleva a estimativa da taxa de sucesso nos *user te
 
 A presente avaliação apresenta três limitações metodológicas que se documentam explicitamente para garantir a transparência e o rigor do estudo:
 
-1. **Amostra dos *user tests***: os cinco participantes são os elementos da equipa de desenvolvimento, situação que enviesa os resultados absolutos por familiaridade prévia com o produto. Os resultados de tempo e taxa de sucesso devem ser interpretados como **estimativas optimistas** comparativamente a utilizadores externos. Para mitigar parcialmente este enviesamento, a sessão do moderador habitual (P5) foi conduzida por P2, e a matriz de cobertura tarefa × funcionalidade (`USER_TESTS.md` § 7.7) documenta explicitamente as funcionalidades não exercidas — *onboarding* com *swipe*, modo visitante, limpar histórico/horário, "Entrar no Edifício" como transição outdoor→indoor, Rotas Acessíveis em contexto real e Leitor de Ecrã com VoiceOver/TalkBack — que deverão ser cobertas em iterações futuras com utilizadores externos não familiarizados com a aplicação. Esta limitação é consequência do constrangimento temporal de execução da Fase 3 (20 a 22 de maio).
+1. **Amostra dos *user tests***: os cinco participantes são os elementos da equipa de desenvolvimento, situação que enviesa os resultados absolutos por familiaridade prévia com o produto. Os resultados de tempo e taxa de sucesso devem ser interpretados como **estimativas optimistas** comparativamente a utilizadores externos. Para mitigar parcialmente este enviesamento, a sessão do moderador habitual (P5) foi conduzida por P2, e a matriz de cobertura tarefa × funcionalidade (`USER_TESTS.md` § 7.7) documenta explicitamente as funcionalidades não exercidas — *onboarding* com *swipe*, modo visitante, limpar histórico/horário, "Entrar no Edifício" como transição outdoor→indoor, Rotas Acessíveis em contexto real e Leitor de Ecrã com VoiceOver/TalkBack — que deverão ser cobertas em iterações futures com utilizadores externos não familiarizados com a aplicação. Esta limitação é consequência do constrangimento temporal de execução da Fase 3 (20 a 22 de maio).
 2. **Número de peritos heurísticos**: foram convidados três peritos, no limite inferior da recomendação de Nielsen (3 a 5). O acréscimo de mais peritos permitiria identificar problemas adicionais menores não capturados.
 3. **Cobertura temporal**: a avaliação foi conduzida em dois dias úteis, sem possibilidade de iterar correcções entre rondas de avaliação. Numa iteração subsequente do produto, recomenda-se repetir as três técnicas após implementação das melhorias do Sprint 1 para verificar empiricamente os ganhos previstos.
 
-Apesar destas limitações, a convergência entre três técnicas independentes, o cruzamento com os achados da Fase 2, a expansão dos *user tests* para 13 tarefas com matriz de cobertura, e a identificação de **18 problemas distintos** com plano de correção priorizado fornecem uma base sólida para a próxima iteração da aplicação.
+Apesar destas limitações, a convergência entre técnicas independentes, o cruzamento com os achados da Fase 2, a expansão dos *user tests* para 13 tarefas com matriz de cobertura, e a identificação de **17 problemas reais** com plano de correção priorizado fornecem uma base sólida para a próxima iteração da aplicação.
 
 ---
 
 ## 3.7.8 — Conclusão da avaliação
 
-A avaliação de usabilidade do UTAD Maps combinou as três técnicas previstas no enunciado da Fase 3 (Heurísticas de Nielsen, Regras de Ouro de Shneiderman e Testes com Utilizadores), aplicadas de forma convergente e independente. A convergência metodológica é elevada — **cerca de 28 % dos problemas (5 em 18) foram identificados por mais do que uma técnica** —, validando a robustez do desenho misto adoptado. Em particular, a expansão dos *user tests* para 13 tarefas permitiu detectar cinco problemas exclusivos desta técnica que a inspecção heurística não captou — quatro relacionados com *affordance* e expectativas dos utilizadores e um relativo a inconsistência de comportamento entre iOS e Android.
+A avaliação de usabilidade do UTAD Maps combinou as três técnicas previstas no enunciado da Fase 3 (Heurísticas de Nielsen, Regras de Ouro de Shneiderman e Testes com Utilizadores), aplicadas de forma convergente e independente. A convergência metodológica é elevada — **cerca de 35 % dos problemas (6 em 17) foram identificados por mais do que uma técnica**, validando a robustez do desenho misto adoptado. Em particular, a expansão dos *user tests* para 13 tarefas permitiu detectar cinco problemas exclusivos desta técnica que a inspecção heurística não captou — todos relacionados com *affordance*, facilidade de localização de opções e expectativas dos utilizadores.
 
-A aplicação apresenta **bons indicadores globais de usabilidade**: 90,8 % de taxa de sucesso nos *user tests*, 4,5/5 de facilidade média, 4,6/5 de pontuação Likert global, e cumprimento integral de cinco das oito regras de Shneiderman. As principais áreas a melhorar concentram-se na **gestão de sessão** (persistência indevida do horário no `AsyncStorage` após terminar sessão e *bug* do botão "Iniciar sessão" no Perfil), no **feedback informativo** em acções de Definições, e na **consistência multi-plataforma** do Indoor 3D entre iOS e Android.
+A aplicação apresenta **bons indicadores globais de usabilidade**: 90,8 % de taxa de sucesso nos *user tests*, 4,5/5 de facilidade média, 4,6/5 de pontuação Likert global, e cumprimento integral de cinco das oito regras de Shneiderman. As principais áreas a melhorar concentram-se na **gestão de sessão** (persistência indevida do horário no `AsyncStorage` após terminar sessão e *bug* do botão "Iniciar sessão" no Perfil) e no **feedback informativo** em acções de Definições.
 
-O plano de melhorias propõe **19 acções concretas**, das quais sete de prioridade máxima e exequibilidade trivial ou pequena, suficientes para elevar significativamente a usabilidade do produto antes de uma eventual iteração subsequente. Em particular, a correção do problema P-01 (privacidade — horário persiste após *logout*) é a mais urgente do conjunto e pode ser resolvida com poucas linhas de código no *handler* de *logout*, eliminando o único problema catastrófico identificado em toda a avaliação.
+O plano de melhorias propõe **19 acções concretas**, das quais **seis de prioridade máxima** e exequibilidade trivial ou pequena, suficientes para elevar significativamente a usabilidade do produto antes de uma eventual iteração subsequente. Em particular, a correção do problema P-01 (privacidade — horário persiste após *logout*) é a mais urgente do conjunto e pode ser resolvida com poucas linhas de código no *handler* de *logout*, eliminando o único problema catastrófico identificado em toda a avaliação.
 
 A documentação detalhada de cada técnica, das grelhas individuais de peritos e participantes, da síntese cruzada de problemas e do plano de melhorias encontra-se nos documentos anexos da Fase 3 (`HEURISTICAS_NIELSEN.md`, `REGRAS_SHNEIDERMAN.md`, `USER_TESTS.md`, `PROBLEMAS_DETECTADOS.md`, `MELHORIAS_PROPOSTAS.md`).
