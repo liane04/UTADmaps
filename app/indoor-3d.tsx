@@ -823,21 +823,66 @@ const THREE_HTML = `<!DOCTYPE html>
       scene.add(pathLine);
     }
 
-    // ─── REALCE DA SALA (zona verde) ──────────────────────────────────────────
-    // Plano semi-transparente verde claro sobre a área (footprint XZ) da sala.
+    // ─── REALCE DA SALA (zona laranja + contorno grosso) ──────────────────────
+    // Combina (i) um plano semi-transparente sobre o footprint XZ da sala, (ii)
+    // um contorno laranja grosso à volta da bbox que é visível mesmo quando o
+    // utilizador está com zoom out, e (iii) um pilar vertical ao centro da sala
+    // que torna a localização do destino impossível de não ver em qualquer
+    // panning/zoom. O grupo inteiro é guardado em roomHighlight para limpeza.
     function highlightRoom(bb) {
       clearHighlight();
       const w = bb.max.x - bb.min.x;
       const d = bb.max.z - bb.min.z;
+      const cx = (bb.min.x + bb.max.x) / 2;
+      const cz = (bb.min.z + bb.max.z) / 2;
+      const y  = bb.min.y + 0.03;
+      const group = new THREE.Group();
+      group.renderOrder = 1;
+
+      // (i) plano de fundo — cor laranja-amarelada com mais opacidade
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(w, d),
-        new THREE.MeshBasicMaterial({ color: 0x9CE89C, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
       );
       plane.rotation.x = -Math.PI / 2;
-      plane.position.set((bb.min.x + bb.max.x) / 2, bb.min.y + 0.03, (bb.min.z + bb.max.z) / 2);
+      plane.position.set(cx, y, cz);
       plane.renderOrder = 1;
-      roomHighlight = plane;
-      scene.add(plane);
+      group.add(plane);
+
+      // (ii) contorno laranja grosso ao perímetro da bbox — visível em qualquer zoom
+      const borderR = Math.max(0.12, modelSpan * 0.005);
+      const corners = [
+        new THREE.Vector3(bb.min.x, y + 0.02, bb.min.z),
+        new THREE.Vector3(bb.max.x, y + 0.02, bb.min.z),
+        new THREE.Vector3(bb.max.x, y + 0.02, bb.max.z),
+        new THREE.Vector3(bb.min.x, y + 0.02, bb.max.z),
+        new THREE.Vector3(bb.min.x, y + 0.02, bb.min.z),
+      ];
+      const borderCp = new THREE.CurvePath();
+      for (let i = 0; i < corners.length - 1; i++) {
+        borderCp.add(new THREE.LineCurve3(corners[i], corners[i + 1]));
+      }
+      const border = new THREE.Mesh(
+        new THREE.TubeGeometry(borderCp, 16, borderR, 8, false),
+        new THREE.MeshBasicMaterial({ color: 0xFF6B00, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false }),
+      );
+      border.renderOrder = 2;
+      group.add(border);
+
+      // (iii) pilar vertical no centro da sala — sinaliza o destino mesmo a
+      // grande distância, equivalente a um "you're here pin" projectado a 3D.
+      const pillarH = Math.max(8, modelSpan * 0.2);
+      const pillarR = Math.max(0.25, modelSpan * 0.012);
+      const pillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(pillarR, pillarR, pillarH, 12),
+        new THREE.MeshBasicMaterial({ color: 0xFF6B00, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }),
+      );
+      pillar.position.set(cx, y + pillarH / 2, cz);
+      pillar.renderOrder = 2;
+      group.add(pillar);
+
+      roomHighlight = group;
+      scene.add(group);
     }
 
     // ─── CORTE DO CAMINHO NA ENTRADA DA SALA ──────────────────────────────────
@@ -892,15 +937,17 @@ const THREE_HTML = `<!DOCTYPE html>
       const friendly = friendlyRoomName(roomName);
       if (friendly) {
         const lbl = makeLabelSprite(friendly);
-        // Escala em unidades do mundo — proporcional ao tamanho do modelo
-        const lblWidth  = Math.max(2.5, modelSpan * 0.06);
+        // Escala em unidades do mundo — proporcional ao tamanho do modelo,
+        // mas com mínimo grande para garantir visibilidade mesmo com zoom out.
+        const lblWidth  = Math.max(8, modelSpan * 0.12);
         const lblHeight = lblWidth * (160 / 512); // mesma razão do canvas
         lbl.scale.set(lblWidth, lblHeight, 1);
-        // Posicionada acima do centro da sala, a uma altura que se vê na vista
-        // ortográfica top-down sem se sobrepor ao realce verde.
+        // Posicionada acima do centro da sala. Em vista ortográfica top-down
+        // a coordenada Y não afecta a posição 2D, mas mantemos altura suficiente
+        // para o renderOrder garantir que aparece sobre o resto.
         lbl.position.set(
           (bb.min.x + bb.max.x) / 2,
-          bb.max.y + Math.max(1.0, modelSpan * 0.025),
+          bb.max.y + Math.max(2, modelSpan * 0.05),
           (bb.min.z + bb.max.z) / 2,
         );
         roomLabel = lbl;
@@ -921,22 +968,37 @@ const THREE_HTML = `<!DOCTYPE html>
       raw[0] = floorEntrancePos.clone();
       raw[raw.length - 1] = centroid.clone();
       let pts = simplifyPathGrid(raw);
-      pts = clipPathAtRoomEntrance(pts, bb);
-      // Recua ligeiramente o último ponto para FORA da sala, para que o caminho
-      // termine claramente "à porta" e não dentro do realce verde.
+      // NÃO clipa nem recua — deixa o caminho terminar mesmo no centro da sala
+      // destino, sobreposto ao realce. Quando combinado com o pin grande no
+      // último ponto, fica óbvio que é ali que se deve chegar.
       if (pts.length >= 2) {
-        pts = nudgeEndpointOutOfRoom(pts, bb, Math.max(0.25, modelSpan * 0.006));
         drawPath(pts);
 
-        // Pin no fim do caminho (na porta da sala)
+        // Pin GRANDE no fim do caminho (centro da sala destino)
         const last = pts[pts.length - 1];
         const pin = makePinSprite();
-        const pinSize = Math.max(0.8, modelSpan * 0.025);
+        const pinSize = Math.max(3, modelSpan * 0.06);
         pin.scale.set(pinSize, pinSize, 1);
-        pin.position.set(last.x, bb.max.y + Math.max(0.4, modelSpan * 0.012), last.z);
+        pin.position.set(last.x, bb.max.y + Math.max(1.0, modelSpan * 0.02), last.z);
         destPin = pin;
         scene.add(pin);
       }
+
+      // Centra a câmara entre a entrada e o destino, de forma a que ambos
+      // sejam visíveis sem necessidade de pan inicial. O zoom mantém-se.
+      const midX = (floorEntrancePos.x + centroid.x) / 2;
+      const midZ = (floorEntrancePos.z + centroid.z) / 2;
+      target.set(midX, personFloorY, midZ);
+      // Ajusta o raio de zoom para garantir que entrada+destino cabem na vista.
+      const dx = centroid.x - floorEntrancePos.x;
+      const dz = centroid.z - floorEntrancePos.z;
+      const span = Math.sqrt(dx * dx + dz * dz);
+      if (span > 0) {
+        const aspect = window.innerWidth / window.innerHeight;
+        const needed = Math.max(span * 0.7, span / (2 * aspect));
+        spherical.radius = Math.max(spherical.radius * 0.7, Math.min(zoomMax, needed));
+      }
+      updateCamera();
     }
 
     // Recua o último ponto do caminho ao longo do segmento anterior, na direção
