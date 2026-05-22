@@ -26,26 +26,7 @@ Avaliar a **eficácia**, **eficiência** e **satisfação** dos utilizadores ao 
 
 Os cinco elementos da equipa de desenvolvimento. **Limitação metodológica conhecida**: os participantes têm conhecimento prévio do produto, o que tende a **subestimar** o tempo de execução e **sobrestimar** o sucesso comparado com utilizadores externos novos. A justificação para esta amostra é o constrangimento temporal de execução da Fase 3 (20 a 22 de maio). Ainda assim, é possível extrair valor relativo (comparações entre tarefas) e identificar problemas que mesmo conhecedores enfrentam.
 
-### 1.3 Inventário de funcionalidades da aplicação
-
-Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação para garantir uma cobertura representativa dos testes:
-
-| Ecrã / Área | Funcionalidades |
-|---|---|
-| **Boas-vindas** (`index.tsx`) | Login email/password; toggle idioma PT/EN; mostrar/esconder password; "Saltar e explorar" (modo visitante); auto-importação horário ao fazer login |
-| **Onboarding** | 3 slides paginados (swipe horizontal); Skip; botão "Começar"; guardado no AsyncStorage |
-| **Mapa** (`(tabs)/index.tsx`) | Mapa campus com marcadores por tipo; barra de pesquisa flutuante (abre tab Pesquisa); controlos: localizar, zoom in/out; tap marcador → card (nome, tipo, pisos, salas); botão "Ir" → outdoor; botão "Explorar Indoor" |
-| **Pesquisa** (`(tabs)/pesquisa.tsx`) | Pesquisa com debounce 300 ms; limpar campo; filtros: Todos/Edifícios/Salas/Serviços; resultados com avatar, distância e ordenação por GPS; botão ♡/♥ favoritar; selecionar sala → indoor 3D; selecionar edifício → outdoor; pesquisas recentes |
-| **Horário** (`(tabs)/horario.tsx`) | Seletor dia semana; data por extenso; navegação entre semanas; importação via link/chave Inforestudante; timeline aulas + blocos "Livre" (gap ≥ 60 min); tap aula → navegar para sala; limpar horário; auto-importação ao login |
-| **Favoritos** (`(tabs)/favoritos.tsx`) | Lista favoritos (avatar, nome, subtítulo); tap → navegar; tap ♥ → remover; estado vazio com instrução |
-| **Perfil** (`(tabs)/perfil.tsx`) | Avatar com inicial do email; modo visitante "Convidado"; card "Próxima Aula" (urgente < 30 min, a decorrer agora, sem aulas); tick 30 s; tap card → navegar para sala; menu: Histórico / Horário Semanal / Definições; botão Entrar / Sair |
-| **Definições** (`definicoes.tsx`) | 5 níveis texto (85–200 %); switch Alto Contraste; switch Rotas Acessíveis (evitar escadas); switch Leitor de Ecrã; idioma PT/EN; tema Claro/Escuro; link Suporte e Ajuda |
-| **Navegação Outdoor** (`navigacao-outdoor.tsx`) | Mapa com rota OSRM (tracejado); selector ponto de partida: GPS ou edifício (modal pesquisável); toggle A pé / Carro; fase Planning: distância + tempo + botão Começar; fase Navigating: card instrução + ícone + auto-avanço; botão recentrar; botão "Entrar no Edifício"; fallback linha direta |
-| **Indoor 3D** (`indoor-3d.tsx`) | WebView + Three.js GLB; vista ortográfica top-down (planta 2D); seletor piso (pill dropdown); tap para navegar (boneco animado); pin destino pulsante; rastro caminho laranja; A\* grid (~0,3 m/célula); room-blocking dinâmico; pan 1 dedo; zoom 2 dedos; banner destino ativo; loading overlay |
-| **Histórico** (`historico.tsx`) | Lista navegações recentes; data relativa; tipo Interior/Exterior; tap → renavigar; pull-to-refresh; limpar histórico (confirmação); estado sem login |
-| **Suporte e Ajuda** (`suporte.tsx`) | FAQ expandível (6 perguntas); botão "Reportar erro" por email; versão e plataforma |
-
-### 1.4 Tarefas
+### 1.3 Tarefas
 
 | # | Tarefa | Critério de sucesso |
 |---|---|---|
@@ -63,13 +44,13 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 | **T12** | Aceder a Suporte e Ajuda e encontrar a resposta à pergunta "Como importo o meu horário?" | FAQ expandida com a resposta correcta visível |
 | **T13** | Fazer logout no Perfil, voltar a entrar com as mesmas credenciais e verificar a auto-importação do horário | Sessão reiniciada e horário restaurado automaticamente |
 
-### 1.5 Escala de facilidade
+### 1.4 Escala de facilidade
 
 | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|
 | Muito difícil | Difícil | Razoável | Fácil | Muito fácil |
 
-### 1.6 Sistema avaliado, plataforma e dispositivo
+### 1.5 Sistema avaliado, plataforma e dispositivo
 
 | Campo | Valor |
 |---|---|
