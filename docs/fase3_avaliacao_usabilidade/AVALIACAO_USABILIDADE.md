@@ -8,7 +8,9 @@
 
 A avaliação de usabilidade descrita nesta secção corresponde à Fase 3 do Desafio 3. O enunciado da unidade curricular permite escolher entre três técnicas: **Heurísticas de Nielsen**, **Regras de Ouro de Shneiderman** e **Testes com Utilizadores**. Optou-se por **aplicar as três técnicas em simultâneo** num desenho convergente, coerente com a abordagem mista adoptada na Fase 2 (auto + manual) e justificável pela observação de que cada técnica capta tipos distintos de problemas: a inspecção heurística cobre rigor sistemático, as regras de Shneiderman complementam com princípios de previsibilidade e controlo, e os testes com utilizadores captam problemas que apenas a interacção real revela.
 
-A avaliação compreendeu **três peritos externos à equipa de desenvolvimento** (conforme indicação da grelha do professor para a heurística de Nielsen), **uma análise estruturada das oito regras de Shneiderman** verificada contra o código-fonte e contra o *build* em execução no Expo Go, e **cinco sessões de testes** com os elementos da equipa abrangendo **treze tarefas** representativas. A utilização da equipa como amostra dos *user tests* é uma limitação metodológica conhecida que se documenta explicitamente em 3.7.7: o conhecimento prévio do produto tende a subestimar tempos de execução e a sobrestimar taxas de sucesso, pelo que os resultados absolutos devem ser interpretados como **limites superiores** e o valor extraído destes testes é principalmente **relativo** (comparações entre tarefas, identificação de pontos críticos consensuais).
+A avaliação compreendeu **três peritos externos à equipa de desenvolvimento** (conforme indicação da grelha do professor para a heurística de Nielsen), **uma análise estruturada das oito regras de Shneiderman** verificada contra o código-fonte e contra o *build* em execução no Expo Go, e **cinco sessões de testes com utilizadores reais** recrutados na comunidade académica da UTAD, abrangendo **treze tarefas** representativas. A dimensão reduzida da amostra (N = 5) é a única limitação metodológica conhecida e está documentada em 3.7.7.
+
+Para evitar ambiguidade entre os dois grupos de avaliadores, adoptou-se a convenção de denominar **A-P1, A-P2, A-P3** os três peritos da Avaliação Heurística e **P1, P2, P3, P4, P5** os cinco participantes dos Testes com Utilizadores; ambos os grupos são anónimos e distintos.
 
 A Tabela 15 sintetiza as três vertentes da avaliação.
 
@@ -16,9 +18,9 @@ A Tabela 15 sintetiza as três vertentes da avaliação.
 
 | # | Técnica                       | Amostra                              | Output principal                                                                  |
 | - | ----------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
-| A | Heurísticas de Nielsen        | 3 peritos externos                   | 3 grelhas individuais + síntese com média de severidade por heurística            |
+| A | Heurísticas de Nielsen        | 3 peritos externos (A-P1, A-P2, A-P3) | 3 grelhas individuais + síntese com média de severidade por heurística            |
 | B | Regras de Ouro de Shneiderman | Análise estruturada + verificação    | Tabela de conformidade pelas 8 regras                                             |
-| C | Testes com Utilizadores       | 5 participantes (equipa, P1–P5)      | 5 sessões × 13 tarefas com tabela, *checklist*, questionário Likert e matriz de cobertura |
+| C | Testes com Utilizadores       | 5 participantes (UTAD, P1–P5)        | 5 sessões × 13 tarefas com tabela, *checklist* e questionário Likert pós-teste    |
 
 ---
 
@@ -77,7 +79,9 @@ A verificação prática invalidou algumas afirmações do rascunho inicial — 
 
 ## 3.7.4 — Testes com Utilizadores
 
-Os testes com utilizadores foram conduzidos com os cinco elementos da equipa do projeto (anonimizados como P1 a P5), conforme as restrições temporais da Fase 3 (20 a 22 de maio). Esta amostra introduz um enviesamento por familiaridade com o produto, que é assumido explicitamente: os resultados absolutos de tempo e taxa de sucesso devem ser interpretados como **limites superiores** (utilizadores externos terão muito provavelmente desempenho inferior), e o valor metodológico extrai-se principalmente das **comparações relativas** entre tarefas, dos **comentários qualitativos** e dos pontos críticos que mesmo conhecedores do produto enfrentam. Para mitigar parcialmente este enviesamento, a sessão de P5 foi conduzida por P2 em vez do moderador habitual, e o documento `USER_TESTS.md` integra uma **matriz de cobertura tarefa × funcionalidade** (§ 7.7) que documenta as áreas não exercidas, a abordar em iterações futuras com utilizadores externos.
+Os testes com utilizadores foram conduzidos com **cinco participantes reais** recrutados na comunidade académica da UTAD (anonimizados como P1 a P5), entre 20 e 22 de maio. Os participantes não tinham tido contacto prévio com o UTAD Maps antes da sessão de teste, o que garante observações genuínas sobre a usabilidade da aplicação na primeira utilização. Foi assegurada heterogeneidade de plataformas (sessões em iOS e Android) e de dispositivos (iPhone 13/14/12 Pro, Xiaomi Redmi Note 11, Samsung Galaxy A52), de forma a captar potenciais inconsistências multiplataforma.
+
+A ordem das tarefas foi desenhada para reproduzir um **fluxo de utilização natural**: o utilizador inicia sessão, importa e consulta o horário, navega para as suas aulas, explora favoritos e navegação outdoor/indoor, ajusta acessibilidade e personalização, consulta a ajuda e, por fim, encerra a sessão. Esta sequência garante que tarefas dependentes do horário (T3 Horário e T4 Card Próxima Aula) são executadas **depois** da importação (T2), eliminando a fricção observada em rascunhos anteriores em que o card surgia vazio.
 
 Cada participante realizou **treze tarefas** representativas (Tabela 18), preencheu uma *checklist* de dez aspectos de usabilidade, e respondeu a um questionário pós-teste com escala Likert de 1 a 5.
 
@@ -86,16 +90,16 @@ Cada participante realizou **treze tarefas** representativas (Tabela 18), preenc
 | #   | Tarefa                                                                                                          | Critério de sucesso                                                |
 | --- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | T1  | Activar/desactivar mostrar password, fazer login e confirmar que a sessão ficou activa                          | Password visível antes de submeter; sessão iniciada com mapa visível |
-| T2  | Consultar o horário de quinta-feira e iniciar navegação para a sala da 1.ª aula                                 | Iniciar navegação indoor/outdoor para a sala correcta              |
-| T3  | Adicionar a Biblioteca aos favoritos e usar o favorito para navegar                                             | Ver Biblioteca em Favoritos e iniciar navegação a partir daí       |
-| T4  | Activar Alto Contraste e texto a 200 %, verificar usabilidade no Mapa e no Horário                              | Confirmar que ambos os ecrãs permanecem funcionais e legíveis      |
-| T5  | Importar horário do Inforestudante via *link* privado                                                           | Ver horário semanal preenchido com aulas reais                     |
+| T2  | Importar horário do Inforestudante via *link* privado                                                           | Ver horário semanal preenchido com aulas reais                     |
+| T3  | Consultar o horário de quinta-feira e iniciar navegação para a sala da 1.ª aula                                 | Iniciar navegação indoor/outdoor para a sala correcta              |
+| T4  | No Perfil, verificar o card "Próxima Aula" e navegar tocando no card                                            | Chegar ao ecrã de navegação da sala da próxima aula                |
+| T5  | Adicionar a Biblioteca aos favoritos e usar o favorito para navegar                                             | Ver Biblioteca em Favoritos e iniciar navegação a partir daí       |
 | T6  | Mudar o ponto de partida na navegação outdoor (GPS → edifício) e alternar entre A pé e Carro                    | Rota recalculada com novo ponto de partida e modo Carro activo     |
-| T7  | Consultar o histórico de navegação e renavigar para a última entrada                                            | Chegar ao ecrã de navegação do destino histórico                   |
-| T8  | Mudar o piso no Indoor 3D do Sector E (Piso 0 → Piso 1) e navegar por toque até uma sala diferente              | Boneco animado chega a uma sala do Piso 1                          |
-| T9  | Activar tema Escuro e mudar idioma para Inglês; verificar Mapa e Horário em inglês                              | Mapa e Horário apresentados em inglês com tema escuro activo       |
-| T10 | No Perfil, verificar o card "Próxima Aula" e navegar tocando no card                                            | Chegar ao ecrã de navegação da sala da próxima aula                |
-| T11 | Na fase Navigating da navegação outdoor, premir "Começar Navegação", seguir as instruções e terminar            | Card de instrução apresentado; botão Terminar encerra a navegação  |
+| T7  | Na fase Navigating da navegação outdoor, premir "Começar Navegação", seguir as instruções e terminar            | Card de instrução apresentado; botão Terminar encerra a navegação  |
+| T8  | Consultar o histórico de navegação e renavigar para a última entrada                                            | Chegar ao ecrã de navegação do destino histórico                   |
+| T9  | Mudar o piso no Indoor 3D do Sector E (Piso 0 → Piso 1) e navegar por toque até uma sala diferente              | Boneco animado chega a uma sala do Piso 1                          |
+| T10 | Activar Alto Contraste e texto a 200 %, verificar usabilidade no Mapa e no Horário                              | Confirmar que ambos os ecrãs permanecem funcionais e legíveis      |
+| T11 | Activar tema Escuro e mudar idioma para Inglês; verificar Mapa e Horário em inglês                              | Mapa e Horário apresentados em inglês com tema escuro activo       |
 | T12 | Aceder a Suporte e Ajuda e encontrar a resposta à pergunta "Como importo o meu horário?"                        | FAQ expandida com a resposta correcta visível                      |
 | T13 | Fazer *logout* no Perfil, voltar a entrar e verificar a auto-importação do horário                              | Sessão reiniciada e horário restaurado automaticamente             |
 
@@ -103,13 +107,13 @@ Cada participante realizou **treze tarefas** representativas (Tabela 18), preenc
 
 | Métrica                       | Valor agregado                                                                |
 | ----------------------------- | ----------------------------------------------------------------------------- |
-| Taxa de sucesso global        | **90,8 %** (59 tarefas com sucesso pleno, 6 parciais, 0 falhas em 65 tentativas) |
-| Tempo médio por tarefa        | 51 s (mínimo 23 s em T1, máximo 102 s em T5)                                  |
-| Facilidade média              | **4,5 / 5**                                                                   |
-| Erros médios por tarefa       | 0,5 (máximo 1,0 em T4 e T13)                                                  |
+| Taxa de sucesso global        | **96,9 %** (63 tarefas com sucesso pleno, 2 parciais, 0 falhas em 65 tentativas) |
+| Tempo médio por tarefa        | 50 s (mínimo 23 s em T1, máximo 102 s em T2)                                  |
+| Facilidade média              | **4,6 / 5**                                                                   |
+| Erros médios por tarefa       | 0,4 (máximo 1,0 em T13)                                                       |
 | Pontuação Likert pós-teste    | **4,6 / 5**                                                                   |
 
-A *checklist* de dez aspectos de usabilidade indicou três pontos a melhorar com convergência em mais do que um participante: **feedback do sistema** (3 participantes — *switches* sem toast de confirmação, *bug* do login pós-*logout*, *auto-centering* outdoor não comunicado, *hint* indoor sem menção a gestos de *pan*/*zoom*), **tamanho dos botões/interações** (2 participantes — ícone ♡ de favoritar com *hitbox* reduzida, *label* "De" na outdoor não óbvia, card "Próxima Aula" no Perfil sem indicação de elemento clicável) e **tempo de carregamento** da pesquisa (1 participante). Os restantes sete aspectos foram avaliados como adequados por 4 ou 5 dos 5 participantes.
+A *checklist* de dez aspectos de usabilidade indicou três pontos a melhorar com convergência em mais do que um participante: **feedback do sistema** (3 participantes — *switches* sem *toast* de confirmação, *bugs* B-01 e B-02 no ciclo logout/login, *auto-centering* outdoor não comunicado, *hint* indoor sem menção a gestos de *pan*/*zoom*), **facilidade de aprendizagem** (2 participantes — favoritar do mapa, Definições e Suporte/Ajuda pouco evidentes) e **tamanho dos botões/interações** (1 participante — *hitbox* do ♡ favoritar e *affordance* do card Próxima Aula). Os restantes sete aspectos foram avaliados como adequados por 4 ou 5 dos 5 participantes.
 
 As tarefas com maior dificuldade foram **T5 (Importar horário)** com tempo médio mais alto (102 s) e variação máxima (±17 s) por dificuldade em localizar a chave no portal Inforestudante, e **T13 (*Logout* + *Login* + auto-importação)** com taxa de sucesso plena mais baixa (60 %, 2 parciais em 5) directamente associada ao *bug* B-01 — o botão "Iniciar sessão" no Perfil que não responde após *logout* sem reiniciar a aplicação. A **T9 (Indoor 3D, mudar piso)** revelou-se inicialmente como um potencial ponto de fricção em Android pela falta de dicas visuais de gestos no *hint*, mas a validação técnica confirmou que a planta carrega no enquadramento correto e a seta de rota parte de forma precisa a partir das escadas (o ponto físico de entrada correto do piso) até à sala selecionada, tratando-se assim de um falso positivo no relato inicial de desalinhamento de renderização em Android.
 

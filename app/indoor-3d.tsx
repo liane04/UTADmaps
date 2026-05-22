@@ -135,6 +135,8 @@ const THREE_HTML = `<!DOCTYPE html>
     let activeRooms = new Set();      // sala atualmente selecionada (desbloqueada no grid)
     let roomBBoxes = new Map();       // Map<string, THREE.Box3>
     let roomHighlight = null;         // mesh de realce (zona verde) da sala selecionada
+    let roomLabel = null;             // sprite flutuante com o nome/número da sala destino
+    let destPin = null;               // sprite/marcador na porta da sala (fim do caminho)
 
     // Devolve o nome da sala cujo bbox XZ contém o ponto, ou null.
     function getRoomAtPoint(point) {
@@ -694,10 +696,109 @@ const THREE_HTML = `<!DOCTYPE html>
 
     function clearPath() {
       if (pathLine) { scene.remove(pathLine); pathLine = null; }
+      if (destPin)  { scene.remove(destPin);  destPin  = null; }
     }
 
     function clearHighlight() {
       if (roomHighlight) { scene.remove(roomHighlight); roomHighlight = null; }
+      if (roomLabel)     { scene.remove(roomLabel);     roomLabel     = null; }
+    }
+
+    // Constrói um sprite com texto (canvas-texture) para usar como label flutuante
+    // sobre a sala destino. Tamanho proporcional ao modelo para legibilidade
+    // independente do zoom.
+    function makeLabelSprite(text) {
+      const W = 512, H = 160;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Fundo arredondado preto semi-transparente
+      const r = 28;
+      ctx.fillStyle = 'rgba(20,20,20,0.92)';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(W - r, 0); ctx.quadraticCurveTo(W, 0, W, r);
+      ctx.lineTo(W, H - r); ctx.quadraticCurveTo(W, H, W - r, H);
+      ctx.lineTo(r, H);     ctx.quadraticCurveTo(0, H, 0, H - r);
+      ctx.lineTo(0, r);     ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Borda laranja para combinar com a cor do caminho
+      ctx.strokeStyle = '#FF6B00';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // Texto centrado, branco, grande
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 92px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, W / 2, H / 2);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.renderOrder = 20;
+      return sprite;
+    }
+
+    // Constrói um pin/marcador 2D (sprite) para colocar no ponto da porta.
+    function makePinSprite() {
+      const S = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = S; canvas.height = S;
+      const ctx = canvas.getContext('2d');
+      const cx = S / 2, cy = S * 0.38, R = S * 0.32;
+
+      // Sombra suave
+      const sg = ctx.createRadialGradient(cx, cy, 4, cx, cy, R * 1.5);
+      sg.addColorStop(0, 'rgba(255,107,0,0.55)');
+      sg.addColorStop(1, 'rgba(255,107,0,0)');
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.5, 0, Math.PI * 2); ctx.fill();
+
+      // Pin (gota de água)
+      ctx.fillStyle = '#FF3D00';
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      const tip = S * 0.92;
+      ctx.moveTo(cx - R * 0.55, cy + R * 0.75);
+      ctx.lineTo(cx, tip);
+      ctx.lineTo(cx + R * 0.55, cy + R * 0.75);
+      ctx.closePath();
+      ctx.fill();
+
+      // Anel branco
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.42, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FF3D00';
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.22, 0, Math.PI * 2); ctx.fill();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.renderOrder = 21;
+      return sprite;
+    }
+
+    // Devolve o "nome amigável" da sala para mostrar no label.
+    // 'sala_f117' → 'F1.17' · 'sala_F210A' → 'F2.10A' · 'BAR' → 'BAR'
+    // 'SECRETARIA' → 'Secretaria' · 'sala_G004b' → 'G0.04B'
+    function friendlyRoomName(meshName) {
+      if (!meshName) return '';
+      let s = String(meshName);
+      if (s.toLowerCase().startsWith('sala_')) s = s.substring(5);
+      // Especiais sem padrão letra+dígito
+      if (s.toUpperCase() === 'BAR') return 'BAR';
+      if (s.toUpperCase() === 'SECRETARIA') return 'Secretaria';
+      // Padrão letra+dígito+resto → inserir ponto após o primeiro dígito (F117 → F1.17)
+      const m = s.match(/^([A-Za-z])(\d)(\d+[A-Za-z]?)$/);
+      if (m) return (m[1] + m[2] + '.' + m[3]).toUpperCase();
+      return s.toUpperCase();
     }
 
     // Build a path of straight line segments — no curve smoothing so the path
@@ -771,8 +872,9 @@ const THREE_HTML = `<!DOCTYPE html>
     }
 
     // ─── SELEÇÃO ESTÁTICA DE SALA ─────────────────────────────────────────────
-    // Realça a sala e desenha um caminho estático (A*, sem animação) da entrada
-    // do piso até à entrada da sala.
+    // Realça a sala, desenha um caminho estático (A*, sem animação) da entrada
+    // do piso até à PORTA da sala destino, coloca um pin sobre a porta e um
+    // label flutuante com o número da sala por cima do realce.
     function showRoomStatic(roomName) {
       if (!currentModel) { showToast('Modelo ainda não carregado'); return; }
       clearPath();
@@ -785,6 +887,25 @@ const THREE_HTML = `<!DOCTYPE html>
       const bb = roomBBoxes.get(roomName);
       if (!bb) return;
       highlightRoom(bb);
+
+      // Label flutuante com o nome amigável da sala (e.g. "F1.17")
+      const friendly = friendlyRoomName(roomName);
+      if (friendly) {
+        const lbl = makeLabelSprite(friendly);
+        // Escala em unidades do mundo — proporcional ao tamanho do modelo
+        const lblWidth  = Math.max(2.5, modelSpan * 0.06);
+        const lblHeight = lblWidth * (160 / 512); // mesma razão do canvas
+        lbl.scale.set(lblWidth, lblHeight, 1);
+        // Posicionada acima do centro da sala, a uma altura que se vê na vista
+        // ortográfica top-down sem se sobrepor ao realce verde.
+        lbl.position.set(
+          (bb.min.x + bb.max.x) / 2,
+          bb.max.y + Math.max(1.0, modelSpan * 0.025),
+          (bb.min.z + bb.max.z) / 2,
+        );
+        roomLabel = lbl;
+        scene.add(lbl);
+      }
 
       if (!grid) return;
       const centroid = bb.getCenter(new THREE.Vector3());
@@ -801,7 +922,45 @@ const THREE_HTML = `<!DOCTYPE html>
       raw[raw.length - 1] = centroid.clone();
       let pts = simplifyPathGrid(raw);
       pts = clipPathAtRoomEntrance(pts, bb);
-      if (pts.length >= 2) drawPath(pts);
+      // Recua ligeiramente o último ponto para FORA da sala, para que o caminho
+      // termine claramente "à porta" e não dentro do realce verde.
+      if (pts.length >= 2) {
+        pts = nudgeEndpointOutOfRoom(pts, bb, Math.max(0.25, modelSpan * 0.006));
+        drawPath(pts);
+
+        // Pin no fim do caminho (na porta da sala)
+        const last = pts[pts.length - 1];
+        const pin = makePinSprite();
+        const pinSize = Math.max(0.8, modelSpan * 0.025);
+        pin.scale.set(pinSize, pinSize, 1);
+        pin.position.set(last.x, bb.max.y + Math.max(0.4, modelSpan * 0.012), last.z);
+        destPin = pin;
+        scene.add(pin);
+      }
+    }
+
+    // Recua o último ponto do caminho ao longo do segmento anterior, na direção
+    // oposta à entrada da sala — para que o caminho termine "à porta" e não
+    // dentro do realce. offset em unidades do mundo.
+    function nudgeEndpointOutOfRoom(pts, bb, offset) {
+      if (pts.length < 2 || offset <= 0) return pts;
+      const last = pts[pts.length - 1];
+      const prev = pts[pts.length - 2];
+      const dx = last.x - prev.x, dz = last.z - prev.z;
+      const len = Math.sqrt(dx * dx + dz * dz);
+      if (len < 1e-3) return pts;
+      // Só recua se o último ponto está mesmo "encostado" à bbox.
+      const onEdge =
+        Math.abs(last.x - bb.min.x) < 1e-2 || Math.abs(last.x - bb.max.x) < 1e-2 ||
+        Math.abs(last.z - bb.min.z) < 1e-2 || Math.abs(last.z - bb.max.z) < 1e-2;
+      if (!onEdge) return pts;
+      const ux = dx / len, uz = dz / len;
+      const adjusted = last.clone();
+      adjusted.x -= ux * offset;
+      adjusted.z -= uz * offset;
+      const out = pts.slice(0, -1);
+      out.push(adjusted);
+      return out;
     }
 
     // Normaliza nomes de salas para tornar o match robusto entre o que vem
