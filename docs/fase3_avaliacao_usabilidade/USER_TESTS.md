@@ -85,7 +85,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Participante 5 |
+| Nome do Avaliador | Bruno Alves |
 | Nome do Participante | Participante 1 |
 | Data | 20 de maio de 2026, 18:30 |
 | Sistema Avaliado | UTAD Maps v1.0 |
@@ -149,7 +149,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Participante 5 |
+| Nome do Avaliador | Filipe Silva |
 | Nome do Participante | Participante 2 |
 | Data | 20 de maio de 2026, 19:00 |
 | Plataforma | Android (Expo Go) |
@@ -212,7 +212,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Participante 5 |
+| Nome do Avaliador | Pedro Braz |
 | Nome do Participante | Participante 3 |
 | Data | 21 de maio de 2026, 10:00 |
 | Plataforma | Android (Expo Go) |
@@ -275,7 +275,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Participante 5 |
+| Nome do Avaliador | Diogo Queiroz |
 | Nome do Participante | Participante 4 |
 | Data | 21 de maio de 2026, 11:30 |
 | Plataforma | iOS (Expo Go) |
@@ -342,7 +342,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Participante 2 |
+| Nome do Avaliador | Liane Duarte |
 | Nome do Participante | Participante 5 |
 | Data | 21 de maio de 2026, 14:00 |
 | Plataforma | iOS (Expo Go) |
