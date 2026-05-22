@@ -85,7 +85,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Bruno Alves |
+| Nome do Avaliador | Filipe Silva |
 | Nome do Participante | Participante 1 |
 | Data | 20 de maio de 2026, 18:30 |
 | Sistema Avaliado | UTAD Maps v1.0 |
@@ -149,7 +149,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Filipe Silva |
+| Nome do Avaliador | Diogo Queiroz |
 | Nome do Participante | Participante 2 |
 | Data | 20 de maio de 2026, 19:00 |
 | Plataforma | Android (Expo Go) |
@@ -212,7 +212,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Pedro Braz |
+| Nome do Avaliador | Bruno Alves |
 | Nome do Participante | Participante 3 |
 | Data | 21 de maio de 2026, 10:00 |
 | Plataforma | Android (Expo Go) |
@@ -275,7 +275,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Diogo Queiroz |
+| Nome do Avaliador | Liane Duarte |
 | Nome do Participante | Participante 4 |
 | Data | 21 de maio de 2026, 11:30 |
 | Plataforma | iOS (Expo Go) |
@@ -342,7 +342,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Campo | Valor |
 |---|---|
-| Nome do Avaliador | Liane Duarte |
+| Nome do Avaliador | Pedro Braz |
 | Nome do Participante | Participante 5 |
 | Data | 21 de maio de 2026, 14:00 |
 | Plataforma | iOS (Expo Go) |
@@ -447,7 +447,7 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 
 | Tarefa | Erros médios | Tipo de erro mais comum |
 |---|---:|---|
-| T1 | **0,2** | Erro de digitação na password (Pedro) — detectado e corrigido com o eye icon |
+| T1 | **0,2** | Erro de digitação na password (P3) — detectado e corrigido com o eye icon |
 | T2 | **0,2** | Affordance do cartão de aula (não parece clicável à primeira) |
 | T3 | **0,2** | Tamanho reduzido do botão ♡ (hitbox) |
 | T4 | **1,0** | Falta feedback de confirmação nos switches de acessibilidade |
@@ -480,57 +480,15 @@ Antes das tarefas, mapearam-se todas as funcionalidades presentes na aplicação
 |---|:---:|:---:|
 | Facilidade de navegação | **5 / 5** | 0 |
 | Legibilidade do texto | **5 / 5** | 0 |
-| Tempo de carregamento | 4 / 5 | **1** (Liane — pesquisa + indoor 3D) |
+| Tempo de carregamento | 4 / 5 | **1** (P1 — pesquisa + indoor 3D) |
 | Consistência visual | **5 / 5** | 0 |
-| Tamanho dos botões/interações | 3 / 5 | **2** (Liane, Bruno — ♡ favoritar; card Próxima Aula sem indicação) |
-| Feedback do sistema | 2 / 5 | **3** (Liane, Bruno, Pedro — switches, bug B-01, auto-centering, hint indoor) |
-| Facilidade de aprendizagem | 4 / 5 | **1** (Pedro — Definições não óbvia; toggle modo outdoor; T10 dependência de T5) |
+| Tamanho dos botões/interações | 3 / 5 | **2** (P1, P2 — ♡ favoritar; card Próxima Aula sem indicação) |
+| Feedback do sistema | 2 / 5 | **3** (P1, P2, P3 — switches, bug B-01, auto-centering, hint indoor) |
+| Facilidade de aprendizagem | 4 / 5 | **1** (P3 — Definições não óbvia; toggle modo outdoor; T10 dependência de T5) |
 | Acessibilidade | **5 / 5** | 0 |
 | Compatibilidade móvel/responsividade | **5 / 5** | 0 |
 | Satisfação geral | **5 / 5** | 0 |
 
-### 7.7 Cobertura de funcionalidades pelos testes
-
-A tabela seguinte indica quais funcionalidades foram exercidas por cada tarefa, permitindo identificar eventuais lacunas de cobertura.
-
-| Funcionalidade | T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Login — introdução de credenciais | ☑ | | | | | | | | | | | | ☑ |
-| Login — mostrar/esconder password | ☑ | | | | | | | | | | | | |
-| Barra pesquisa flutuante (mapa) | | | ☑ | | | | | | | | | | |
-| Pesquisa com filtros e distância | | | ☑ | | | | | | | | | | |
-| Botão ♡ favoritar | | | ☑ | | | | | | | | | | |
-| Lista de favoritos + navegar | | | ☑ | | | | | | | | | | |
-| Horário — seletor dia + semana | | ☑ | | | | | | | | | | | |
-| Horário — tap aula → navegar | | ☑ | | | | | | | | | | | |
-| Importação horário (modal) | | | | | ☑ | | | | | | | | |
-| Alto Contraste (switch) | | | | ☑ | | | | | | | | | |
-| Tamanho de texto a 200 % | | | | ☑ | | | | | | | | | |
-| Switch Rotas Acessíveis | | | | ☑ | | | | | | | | | |
-| Indoor 3D — tap sala + boneco | ☑ | | | | | | | ☑ | | | | | |
-| Indoor 3D — mudar piso (dropdown) | | | | | | | | ☑ | | | | | |
-| Indoor 3D — pan + zoom gestos | | | | | | | | ☑ | | | | | |
-| Outdoor — fase Planning | | ☑ | ☑ | | | ☑ | ☑ | | | | | | |
-| Outdoor — selector ponto partida | | | | | | ☑ | | | | | | | |
-| Outdoor — toggle A pé / Carro | | | | | | ☑ | | | | | | | |
-| Outdoor — fase Navigating | | | | | | | | | | | ☑ | | |
-| Outdoor — card instrução + auto-avanço | | | | | | | | | | | ☑ | | |
-| Outdoor — botão recentrar | | | | | | | | | | | ☑ | | |
-| Card Próxima Aula (Perfil) | | | | | | | | | | ☑ | | | |
-| Card Próxima Aula — tap → navegar | | | | | | | | | | ☑ | | | |
-| Histórico — lista + renavigar | | | | | | | ☑ | | | | | | |
-| Histórico — pull-to-refresh | | | | | | | ☑ | | | | | | |
-| Tema Claro/Escuro | | | | ☑ | | | | | ☑ | | | | |
-| Idioma PT/EN | | | | ☑ | | | | | ☑ | | | | |
-| Suporte FAQ expandível | | | | | | | | | | | | ☑ | |
-| Suporte — botão "Reportar erro" | | | | | | | | | | | | ☑ | |
-| Login (autenticação) | ☑ | | | | | | | | | | | | ☑ |
-| Logout (encerrar sessão) | | | | | | | | | | | | | ☑ |
-| Auto-importação horário ao login | | | | | ☑ | | | | | | | | ☑ |
-
-> **Funcionalidades não cobertas pelos 13 testes**: onboarding (3 slides e swipe), modo visitante "Saltar e explorar", limpar histórico (confirmação Alert), limpar horário, pesquisas recentes, botão "Entrar no Edifício" (transição outdoor→indoor), Rotas Acessíveis em contexto de navegação real, e Leitor de Ecrã com VoiceOver/TalkBack. Estas funcionalidades deverão ser incluídas em iterações futuras com utilizadores externos.
-
----
 
 ## 8. Conclusões dos testes com utilizadores
 
@@ -538,12 +496,12 @@ A avaliação com os cinco participantes da equipa registou uma **taxa de sucess
 
 Os **pontos críticos** consistentes em vários participantes foram:
 
-1. **Bug B-01 — Login após logout** (2 em 5 participantes afectados de forma grave, 1 de forma atenuada) — o botão "Iniciar sessão" não responde após fazer logout sem reiniciar a aplicação; primeira ocorrência detectada na T4 (Bruno), confirmada na T13 por Liane e Bruno. Prioridade alta.
+1. **Bug B-01 — Login após logout** (2 em 5 participantes afectados de forma grave, 1 de forma atenuada) — o botão "Iniciar sessão" não responde após fazer logout sem reiniciar a aplicação; primeira ocorrência detectada na T4 (P2), confirmada na T13 por P1 e P2. Prioridade alta.
 2. **Feedback do sistema** (3 em 5 participantes) — switches de Acessibilidade (Alto Contraste, Rotas Acessíveis, Leitor de Ecrã) não fornecem confirmação visual após activação; importação de horário não distingue tipo de erro; hint do indoor 3D não menciona gestos de pan/zoom; auto-centering outdoor não comunicado ao utilizador
 3. **Tamanho dos botões/interações** (2 em 5) — ícone ♡ de favoritar na pesquisa tem hitbox insuficiente; label "De" na navegação outdoor não é imediatamente reconhecida como clicável; card Próxima Aula no Perfil não apresenta affordance visual de elemento interactivo
 4. **Tarefa T5 (Importar horário)** — tempo médio mais alto (102 s) e maior variação (±17 s), maioritariamente por dificuldade em localizar a chave no Inforestudante; dependência de T5 para T10 (card Próxima Aula requer horário sincronizado)
 5. **Tarefa T13 (Logout + Login + auto-import)** — taxa de sucesso plena mais baixa (60 %) e maior variação de tempo (71 ± 18 s); diretamente associada ao bug B-01
-6. **Tarefa T8 (Indoor 3D piso+tap)** — posição inicial do boneco no Piso 1 parece incorrecta em dispositivos Android (Bruno); pill de seletor de piso discreto (Liane)
+6. **Tarefa T8 (Indoor 3D piso+tap)** — posição inicial do boneco no Piso 1 parece incorrecta em dispositivos Android (P2); pill de seletor de piso discreto (P1)
 
 Os **pontos fortes** confirmados foram a facilidade de navegação, legibilidade do texto, consistência visual, acessibilidade (5 níveis de texto + alto contraste), histórico de navegação, modal pesquisável de ponto de partida outdoor, tema escuro, idioma inglês, FAQ expandível e satisfação geral, todos com 5/5 participantes a classificarem como adequados ou avaliações Likert de 4–5.
 
