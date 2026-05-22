@@ -8,7 +8,7 @@
 
 ## 1. Critério de priorização
 
-As melhorias propostas resultam dos **19 problemas** identificados em `PROBLEMAS_DETECTADOS.md`. A priorização cruza dois eixos:
+As melhorias propostas resultam dos **18 problemas** identificados em `PROBLEMAS_DETECTADOS.md`. A priorização cruza dois eixos:
 
 - **Impacto** — gravidade do problema corrigido (catastrófico, maior, menor, cosmético)
 - **Esforço** — tempo estimado de implementação (Trivial < 30 min, Pequeno 1–2 h, Médio 4–8 h, Grande 1+ dias)
@@ -44,22 +44,21 @@ Ordenada por prioridade decrescente.
 | **M-12** | Adicionar microtexto explicativo (tooltip) junto às opções avançadas de Definições de Acessibilidade | P-03 (parcial) | 🟢 Baixo | Pequeno | **III** |
 | **M-13** | Uniformizar o raio de cantos dos cards para 12 px ou 16 px (consistente em todo o sistema de design) | P-13 cosmético | 🟢 Baixo | Pequeno | **III** |
 | **M-14** | Adicionar ícone direccional visível no cartão de aula (timeline do Horário) a indicar que é clicável | P-14 cosmético | 🟢 Baixo | Trivial | **III** |
-| **M-15** | Reescrever o passo de importação de horário com link directo para onde encontrar a chave no Inforestudante (com print de exemplo) e advertência clara que T10 (Próxima Aula) requer horário importado | P-15 menor, P-04 menor | 🟡 Médio | Pequeno | **II** |
-| **M-16** | Recalibrar `FLOOR_START_POSITIONS` para o Piso 1 do `sectorE` (posicionar o boneco dentro do corredor principal) e verificar nos dispositivos Android | P-16 menor | 🟡 Médio | Pequeno | **I** |
-| **M-17** | Adicionar chevron / ícone de "navegar" visível ao card "Próxima Aula" do Perfil para sinalizar que é um elemento clicável | P-17 cosmético | 🟢 Baixo | Trivial | **III** |
-| **M-18** | Adicionar campo de pesquisa no topo do ecrã Suporte/FAQ para filtrar perguntas por texto livre | P-18 menor | 🟡 Médio | Pequeno | **III** |
-| **M-19** | Adicionar dica visual prévia ao indoor (badge "2D" ou "3D") nos resultados de pesquisa para distinguir entre planta 2D e modelo 3D | — (melhoria proactiva) | 🟢 Baixo | Pequeno | **III** |
-| **M-20** | Tornar a entrada "Definições" mais proeminente no ecrã de Perfil (destaque visual ou sub-label "Tema · Idioma · Acessibilidade") | P-19 cosmético | 🟢 Baixo | Trivial | **III** |
+| **M-15** | Reescrever o passo de importação de horário com link directo para onde encontrar a chave no Inforestudante (com print de exemplo) | P-15 menor, P-04 menor | 🟡 Médio | Pequeno | **II** |
+| **M-16** | Adicionar chevron / ícone de "navegar" visível ao card "Próxima Aula" do Perfil para sinalizar que é um elemento clicável | P-16 cosmético | 🟢 Baixo | Trivial | **III** |
+| **M-17** | Adicionar campo de pesquisa no topo do ecrã Suporte/FAQ para filtrar perguntas por texto livre | P-17 menor | 🟡 Médio | Pequeno | **III** |
+| **M-18** | Adicionar dica visual prévia ao indoor (badge "2D" ou "3D") nos resultados de pesquisa para distinguir entre planta 2D e modelo 3D | — (melhoria proactiva) | 🟢 Baixo | Pequeno | **III** |
+| **M-19** | Tornar a entrada "Definições" mais proeminente no ecrã de Perfil (destaque visual ou sub-label "Tema · Idioma · Acessibilidade") | P-18 cosmético | 🟢 Baixo | Trivial | **III** |
 
 > ¹ **M-03** classificada com impacto Médio (e não Baixo, apesar de P-11 ser Cosmético) porque os gaps G-01 a G-03 foram documentados na Fase 2 como requisitos de acessibilidade pendentes, tornando a sua resolução obrigatória para conformidade com as diretrizes de acessibilidade.
 >
-> ² **M-04** classificada com impacto Alto (e não Menor, apesar de P-03 ter severidade Menor) porque P-03 foi o **único problema detectado pelas três técnicas em simultâneo** (AH + SH + UT), e os UT confirmaram-no em duas tarefas distintas (T4 e T11), o que, pela regra de desempate, eleva o seu impacto para Alto.
+> ² **M-04** classificada com impacto Alto (e não Menor, apesar de P-03 ter severidade Menor) porque P-03 foi detectado pelas **três técnicas em simultâneo** (AH + SH + UT) — tal como P-01 — confirmado nos UT pelo auto-centering não comunicado (T7) e reforçado pela inspecção heurística (toggles de Definições), o que, pela regra de desempate, eleva o seu impacto para Alto.
 
 ---
 
 ## 3. Plano de ação por sprints
 
-A próxima iteração do produto pode organizar as 20 melhorias em três sprints sequenciais.
+A próxima iteração do produto pode organizar as 19 melhorias em três sprints sequenciais.
 
 ### Sprint 1 — Correções críticas (1 dia de trabalho)
 
@@ -71,9 +70,8 @@ Concentra todas as melhorias do Quadrante I (Impacto Alto × Esforço Baixo). Re
 - **M-04** — *Toast* nas alterações de definições
 - **M-05** — `accessibilityLiveRegion` na barra de navegação + comunicar auto-centering
 - **M-06** — Indicador de carregamento na pesquisa
-- **M-16** — Recalibrar `FLOOR_START_POSITIONS` no Piso 1 do indoor 3D
 
-**Output esperado**: aplicação sem bugs catastróficos nem maiores, com feedback informativo adequado, suporte AAA para leitores de ecrã, e indoor 3D consistente entre iOS e Android.
+**Output esperado**: aplicação sem bugs catastróficos nem maiores (resolvidos B-01 e B-02 do ciclo logout/login), com feedback informativo adequado e suporte AAA para leitores de ecrã.
 
 ### Sprint 2 — Melhorias de fluxo (2 dias)
 
@@ -81,7 +79,7 @@ Quadrante II — melhorias com impacto significativo que, pela sua natureza ou d
 
 - **M-07** — Notificação de chegada ao destino
 - **M-10** — Atalho "Próxima aula" no Mapa
-- **M-15** — Modal de importação melhorado (chave Inforestudante + dependência T10)
+- **M-15** — Modal de importação melhorado (chave Inforestudante)
 
 ### Sprint 3 — Polimento (1 dia)
 
@@ -89,10 +87,10 @@ Quadrante III — refinamentos cosméticos e de usabilidade não críticos.
 
 - **M-08** e **M-09** — Mensagens de erro melhoradas; legenda do mapa
 - **M-11** a **M-14** — Glossário onboarding, tooltips, raio de cantos, ícone no cartão de aula
-- **M-17** — Chevron no card Próxima Aula do Perfil
-- **M-18** — Campo de pesquisa nas FAQs do Suporte
-- **M-19** — Badge "2D/3D" nos resultados de pesquisa
-- **M-20** — Destaque de "Definições" no Perfil
+- **M-16** — Chevron no card Próxima Aula do Perfil
+- **M-17** — Campo de pesquisa nas FAQs do Suporte
+- **M-18** — Badge "2D/3D" nos resultados de pesquisa
+- **M-19** — Destaque de "Definições" no Perfil
 
 ---
 
@@ -104,21 +102,21 @@ Após implementação das três sprints, propõe-se reavaliar com as mesmas trê
 |---|---|---|
 | Problemas catastróficos (sev 4) | 1 | **0** |
 | Problemas maiores (sev 3) | 1 | **0** |
-| Problemas menores (sev 2) | 12 | ≤ 6 |
-| Taxa de sucesso nos user tests (13 tarefas × 5 participantes) | 90,8 % (59/65) | ≥ 95 % |
-| Tempo médio na tarefa T5 (Importar horário) | 102 s | ≤ 70 s |
-| Tempo médio na tarefa T13 (Logout + Login + auto-import) | 71 s | ≤ 45 s |
-| Facilidade média nos user tests | 4,5 / 5 | ≥ 4,7 / 5 |
+| Problemas menores (sev 2) | 11 | ≤ 6 |
+| Taxa de sucesso nos user tests (13 tarefas × 5 participantes) | 96,9 % (63/65) | **100 %** (65/65) |
+| Tempo médio na tarefa T2 (Importar horário) | 102 s | ≤ 70 s |
+| Tempo médio na tarefa T13 (Logout + Login + auto-import) | 60 s | ≤ 45 s |
+| Facilidade média nos user tests | 4,6 / 5 | ≥ 4,8 / 5 |
 | Pontuação Likert pós-teste | 4,6 / 5 | ≥ 4,8 / 5 |
 | Cobertura `accessibilityState` em chips/pills | 0 % | **100 %** |
-| Taxa de sucesso pleno em T13 (bug B-01) | 60 % (3/5) | **100 %** |
+| Taxa de sucesso pleno em T13 (bugs B-01 e B-02) | 60 % (3/5) | **100 %** |
 
 ---
 
 ## 5. Conclusões
 
-O plano de melhorias propõe **20 acções concretas** distribuídas por três sprints de execução sequencial. **Sete acções são de prioridade máxima** (Quadrante I — Impacto Alto × Esforço Baixo) e cobrem o problema catastrófico e o único maior, podendo ser concluídas em um dia de trabalho.
+O plano de melhorias propõe **19 acções concretas** distribuídas por três sprints de execução sequencial. **Seis acções são de prioridade máxima** (Quadrante I — Impacto Alto × Esforço Baixo) e cobrem o problema catastrófico e o único maior, podendo ser concluídas em um dia de trabalho.
 
-A correção do problema P-01 (privacidade — horário persiste após logout) é a **mais urgente** do conjunto, podendo ser resolvida com poucas linhas de código adicionais no `handleLogout` da tab Perfil que limpem as chaves apropriadas do `AsyncStorage`. A acção M-02 (fix do botão "Iniciar sessão") complementa esta correção para fechar definitivamente o ciclo de gestão de sessão — bug confirmado em T4 (P2), T13 (P1 e P2 com sucesso parcial) e T13 (P3 com manifestação atenuada).
+A correção do problema P-01 (privacidade — horário permanece visível após logout) é a **mais urgente** do conjunto, podendo ser resolvida com poucas linhas de código adicionais no `handleLogout` da tab Perfil que limpem as chaves apropriadas do `AsyncStorage`. Esta correção é tanto mais prioritária quanto o cenário deixou de ser hipotético: foi **observado directamente nos user tests** (P2 verificou, em T13, que o seu horário continuava exposto sem nenhuma conta autenticada). A acção M-02 (fix do botão "Iniciar sessão") complementa esta correção para fechar definitivamente o ciclo de gestão de sessão — bug B-01 confirmado em T13 por P1 e P2 (sucesso parcial) e por P3 (manifestação atenuada).
 
-A implementação das sete acções de prioridade máxima deverá elevar a aplicação de **90,8 % de taxa de sucesso** para uma estimativa de **96–97 %**, fundada na eliminação das falhas directamente observadas nos user tests (P-02 — bug B-01 que afecta T13 com 2 parciais; P-03 — feedback insuficiente em T4 e T11; P-06 — pesquisa lenta sem indicador; P-16 — posição inicial do boneco no Piso 1 em Android que causou parcial em T8) e na resolução dos problemas catastróficos e maiores. A tarefa T13 (Logout + Login) deverá passar de 60 % para 100 % de sucesso pleno após M-02. Esta estimativa deverá ser validada numa iteração subsequente com os mesmos utilizadores e tarefas, e idealmente complementada com utilizadores externos para mitigar o enviesamento por familiaridade da equipa.
+A implementação das seis acções de prioridade máxima deverá elevar a aplicação de **96,9 % de taxa de sucesso** para **100 %**, fundada na eliminação das duas falhas parciais directamente observadas nos user tests, ambas concentradas em T13 (P-01 — bug B-02 de privacidade; P-02 — bug B-01 do botão de login), e na resolução dos problemas catastróficos e maiores. A tarefa T13 (Logout + Login) deverá passar de 60 % para 100 % de sucesso pleno após M-01 e M-02. Esta estimativa deverá ser validada numa iteração subsequente com os mesmos utilizadores e tarefas, e idealmente complementada com utilizadores externos para mitigar o enviesamento por familiaridade da equipa.
