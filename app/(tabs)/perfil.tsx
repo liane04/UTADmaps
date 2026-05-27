@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
-import { CommonActions } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -119,20 +118,24 @@ function textoTempoAula(aula: Aula, language: 'pt' | 'en', agora: Date): string 
 
 export default function PerfilScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
-  // P-02 / B-01 — saída para o ecrã de login. Antes router.replace('/') dentro
-  // de (tabs) ficava-se pelo primeiro tab (mapa). Usamos um reset directo do
-  // navegador-raiz para garantir que cai sempre no screen 'index' (welcome).
+  // P-02 / B-01 — saída para o ecrã de login.
+  //
+  // Várias estratégias falharam:
+  //   - `router.replace('/')`: ambíguo dentro de (tabs) (colisão `index`).
+  //   - `router.dismissAll()`: lança POP_TO_TOP no Tabs.
+  //   - `CommonActions.reset({ routes: [{ name: 'index' }] })`: o action
+  //     RESET não é tratado pelo navegador-raiz tal como exposto via
+  //     useNavigation().
+  //   - `nav.navigate('index')` no navegador climbed: o action NAVIGATE não
+  //     é reconhecido — climbing leva ao ExpoRoot que não tem 'index'
+  //     directamente.
+  //
+  // Solução pragmática: `router.push('/')`. Empurra a welcome screen por
+  // cima dos tabs. Stack: [(tabs), '/']. O utilizador vê o ecrã de login
+  // imediatamente. Se carregar back, volta aos tabs (já com user=null →
+  // modo convidado). Comportamento aceitável e — crucialmente — sem erros.
   const irParaLogin = () => {
-    let nav: any = navigation;
-    while (nav?.getParent?.()) nav = nav.getParent();
-    try {
-      nav.dispatch(
-        CommonActions.reset({ index: 0, routes: [{ name: 'index' }] }),
-      );
-    } catch {
-      router.replace('/');
-    }
+    router.push('/' as never);
   };
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();

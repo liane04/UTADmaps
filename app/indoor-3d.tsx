@@ -458,11 +458,17 @@ const THREE_HTML = `<!DOCTYPE html>
       if (!currentModel) return;
 
       // Re-popular roomBBoxes a cada chamada para garantir consistência.
-      // Apenas meshes "sala_*" participam no sistema de room-blocking;
-      // bar, wc_*, cube*, col_* e qualquer outro nome são ignorados aqui.
+      // Apenas nós "sala_*" participam no sistema de room-blocking. Aceitamos
+      // Mesh OU Group (com Mesh descendente) — em GLBs do Blender muitos nós
+      // sala_* são Groups e o filtro isMesh-only deixava roomBBoxes vazio.
       roomBBoxes.clear();
       currentModel.traverse(obj => {
-        if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
+        if (!isBlockableRoom(obj.name)) return;
+        let usable = obj.isMesh;
+        if (!usable) {
+          obj.traverse(c => { if (c.isMesh) usable = true; });
+        }
+        if (!usable) return;
         roomBBoxes.set(obj.name, new THREE.Box3().setFromObject(obj));
       });
 
@@ -470,9 +476,11 @@ const THREE_HTML = `<!DOCTYPE html>
       const sx = mb.max.x - mb.min.x;
       const sz = mb.max.z - mb.min.z;
       const span = Math.max(sx, sz);
-      // Target ~350 cells in the longer dimension; floor of 0.3 m so even tiny
-      // models don't get a degenerate 1-cell grid.
-      const cell = Math.max(0.3, span / 350);
+      // Target ~700 células na dimensão maior para garantir resolução suficiente
+      // para portas estreitas (≈ 1 m) — com 350 células, span=533 dava cell=1.52 m
+      // o que fechava muitas portas. Com 700 células, cell≈0.76 m e as portas
+      // mantêm-se passáveis. O A* com heap binário lida bem com ~500K células.
+      const cell = Math.max(0.3, span / 700);
       const PAD  = cell * 4;
       const x0 = mb.min.x - PAD, z0 = mb.min.z - PAD;
       const cols = Math.ceil((sx + PAD * 2) / cell) + 1;
@@ -494,18 +502,18 @@ const THREE_HTML = `<!DOCTYPE html>
       }
 
       // Bloquear salas (sala_*) que NÃO estão em activeRooms.
-      // Ao contrário dos col_* (onde se usa ceil/floor conservador para preservar
-      // brechas de portas), aqui usamos floor/ceil AGRESSIVO e expandimos 1 célula
-      // em todas as direções. Isto cobre a faixa entre o plano sala_* e as paredes
-      // col_*, impedindo que o A* "deslize" pela borda da sala através das portas.
-      // As portas dos col_* (que têm 10-20 células de largura) continuam abertas —
-      // 1 célula de expansão (~6-10 cm) não as fecha.
+      // Usamos a mesma estratégia conservadora dos col_* (center-based:
+      // ceil/floor) sem expansão adicional. A expansão +1 célula que existia
+      // antes fechava portas estreitas quando cell > ~0.5 m (caso real com
+      // modelos exportados de 500+ m de span). Como os planos sala_* são na
+      // generalidade ligeiramente menores que a "porta" deixada pelos col_*,
+      // o A* deixa de "deslizar" pela borda mesmo sem expansão.
       for (const [name, bb] of roomBBoxes) {
         if (activeRooms.has(name)) continue;
-        const c0 = Math.max(0, Math.floor((bb.min.x - x0) / cell) - 1);
-        const c1 = Math.min(cols - 1, Math.ceil((bb.max.x - x0) / cell) + 1);
-        const r0 = Math.max(0, Math.floor((bb.min.z - z0) / cell) - 1);
-        const r1 = Math.min(rows - 1, Math.ceil((bb.max.z - z0) / cell) + 1);
+        const c0 = Math.max(0, Math.ceil((bb.min.x - x0) / cell));
+        const c1 = Math.min(cols - 1, Math.floor((bb.max.x - x0) / cell));
+        const r0 = Math.max(0, Math.ceil((bb.min.z - z0) / cell));
+        const r1 = Math.min(rows - 1, Math.floor((bb.max.z - z0) / cell));
         for (let r = r0; r <= r1; r++)
           for (let c = c0; c <= c1; c++)
             blocked[r * cols + c] = 1;
@@ -792,12 +800,33 @@ const THREE_HTML = `<!DOCTYPE html>
       if (!meshName) return '';
       let s = String(meshName);
       if (s.toLowerCase().startsWith('sala_')) s = s.substring(5);
-      // Especiais sem padrão letra+dígito
       if (s.toUpperCase() === 'BAR') return 'BAR';
       if (s.toUpperCase() === 'SECRETARIA') return 'Secretaria';
-      // Padrão letra+dígito+resto → inserir ponto após o primeiro dígito (F117 → F1.17)
-      const m = s.match(/^([A-Za-z])(\d)(\d+[A-Za-z]?)$/);
-      if (m) return (m[1] + m[2] + '.' + m[3]).toUpperCase();
+      // Parsing manual sem regex — o escape \d num template literal HTML
+      // pode perder-se durante o bundle e degenerar em /d/ (literal 'd'),
+      // o que faz com que F117 → F117 em vez de F1.17. Verificamos
+      // caracter a caracter usando comparações de código.
+      function isLetter(ch) {
+        return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
+      }
+      function isDigit(ch) {
+        return ch >= '0' && ch <= '9';
+      }
+      if (s.length >= 3 && isLetter(s.charAt(0)) && isDigit(s.charAt(1))) {
+        // Verifica que o resto (a partir do char 2) é só dígitos, opcionalmente
+        // terminados por uma letra (ex: F210A).
+        const rest = s.substring(2);
+        let ok = rest.length > 0;
+        for (let i = 0; i < rest.length; i++) {
+          const ch = rest.charAt(i);
+          const last = i === rest.length - 1;
+          if (isDigit(ch)) continue;
+          if (last && isLetter(ch)) continue;
+          ok = false;
+          break;
+        }
+        if (ok) return (s.charAt(0) + s.charAt(1) + '.' + rest).toUpperCase();
+      }
       return s.toUpperCase();
     }
 
@@ -823,66 +852,24 @@ const THREE_HTML = `<!DOCTYPE html>
       scene.add(pathLine);
     }
 
-    // ─── REALCE DA SALA (zona laranja + contorno grosso) ──────────────────────
-    // Combina (i) um plano semi-transparente sobre o footprint XZ da sala, (ii)
-    // um contorno laranja grosso à volta da bbox que é visível mesmo quando o
-    // utilizador está com zoom out, e (iii) um pilar vertical ao centro da sala
-    // que torna a localização do destino impossível de não ver em qualquer
-    // panning/zoom. O grupo inteiro é guardado em roomHighlight para limpeza.
+    // ─── REALCE DA SALA — versão minimalista ─────────────────────────────────
+    // Apenas um plano semi-transparente verde claro sobre a área XZ da sala.
+    // Sem contorno grosso (escondia o número da sala) e sem pilar vertical (que
+    // bloqueava a vista). O label sprite por cima do plano contém já o número
+    // da sala, e o pin laranja marca a porta — não é preciso mais nada.
     function highlightRoom(bb) {
       clearHighlight();
       const w = bb.max.x - bb.min.x;
       const d = bb.max.z - bb.min.z;
-      const cx = (bb.min.x + bb.max.x) / 2;
-      const cz = (bb.min.z + bb.max.z) / 2;
-      const y  = bb.min.y + 0.03;
-      const group = new THREE.Group();
-      group.renderOrder = 1;
-
-      // (i) plano de fundo — cor laranja-amarelada com mais opacidade
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(w, d),
-        new THREE.MeshBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: 0x9CE89C, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })
       );
       plane.rotation.x = -Math.PI / 2;
-      plane.position.set(cx, y, cz);
+      plane.position.set((bb.min.x + bb.max.x) / 2, bb.min.y + 0.03, (bb.min.z + bb.max.z) / 2);
       plane.renderOrder = 1;
-      group.add(plane);
-
-      // (ii) contorno laranja grosso ao perímetro da bbox — visível em qualquer zoom
-      const borderR = Math.max(0.12, modelSpan * 0.005);
-      const corners = [
-        new THREE.Vector3(bb.min.x, y + 0.02, bb.min.z),
-        new THREE.Vector3(bb.max.x, y + 0.02, bb.min.z),
-        new THREE.Vector3(bb.max.x, y + 0.02, bb.max.z),
-        new THREE.Vector3(bb.min.x, y + 0.02, bb.max.z),
-        new THREE.Vector3(bb.min.x, y + 0.02, bb.min.z),
-      ];
-      const borderCp = new THREE.CurvePath();
-      for (let i = 0; i < corners.length - 1; i++) {
-        borderCp.add(new THREE.LineCurve3(corners[i], corners[i + 1]));
-      }
-      const border = new THREE.Mesh(
-        new THREE.TubeGeometry(borderCp, 16, borderR, 8, false),
-        new THREE.MeshBasicMaterial({ color: 0xFF6B00, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false }),
-      );
-      border.renderOrder = 2;
-      group.add(border);
-
-      // (iii) pilar vertical no centro da sala — sinaliza o destino mesmo a
-      // grande distância, equivalente a um "you're here pin" projectado a 3D.
-      const pillarH = Math.max(8, modelSpan * 0.2);
-      const pillarR = Math.max(0.25, modelSpan * 0.012);
-      const pillar = new THREE.Mesh(
-        new THREE.CylinderGeometry(pillarR, pillarR, pillarH, 12),
-        new THREE.MeshBasicMaterial({ color: 0xFF6B00, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }),
-      );
-      pillar.position.set(cx, y + pillarH / 2, cz);
-      pillar.renderOrder = 2;
-      group.add(pillar);
-
-      roomHighlight = group;
-      scene.add(group);
+      roomHighlight = plane;
+      scene.add(plane);
     }
 
     // ─── CORTE DO CAMINHO NA ENTRADA DA SALA ──────────────────────────────────
@@ -943,23 +930,40 @@ const THREE_HTML = `<!DOCTYPE html>
         showError('Bbox não encontrada para ' + roomName);
         return;
       }
+
+      // DIAGNÓSTICO: bbox que vai ser usada
+      try {
+        const dbg = {
+          fn: 'showRoomStatic',
+          roomName: roomName,
+          bboxMin: [bb.min.x.toFixed(1), bb.min.z.toFixed(1)],
+          bboxMax: [bb.max.x.toFixed(1), bb.max.z.toFixed(1)],
+          bboxCenter: [((bb.min.x + bb.max.x) / 2).toFixed(1), ((bb.min.z + bb.max.z) / 2).toFixed(1)],
+          floorEntrance: [floorEntrancePos.x.toFixed(1), floorEntrancePos.z.toFixed(1)],
+        };
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'SHOW ' + JSON.stringify(dbg) }));
+        }
+      } catch (e) {}
+
       highlightRoom(bb);
 
-      // Label flutuante com o nome amigável da sala (e.g. "F1.17")
+      // Label flutuante com o nome amigável da sala (e.g. "F1.17").
+      // Tamanho gerador — suficientemente grande para ser legível à distância
+      // sem ser preciso fazer zoom in.
       const friendly = friendlyRoomName(roomName);
       if (friendly) {
         const lbl = makeLabelSprite(friendly);
-        // Escala em unidades do mundo — proporcional ao tamanho do modelo,
-        // mas com mínimo grande para garantir visibilidade mesmo com zoom out.
-        const lblWidth  = Math.max(8, modelSpan * 0.12);
-        const lblHeight = lblWidth * (160 / 512); // mesma razão do canvas
+        // Largura ≈ 12% do span do modelo, com mínimo absoluto de 12 unidades.
+        // Garante legibilidade tanto em modelos pequenos como grandes.
+        const lblWidth  = Math.max(12, modelSpan * 0.12);
+        const lblHeight = lblWidth * (160 / 512);
         lbl.scale.set(lblWidth, lblHeight, 1);
-        // Posicionada acima do centro da sala. Em vista ortográfica top-down
-        // a coordenada Y não afecta a posição 2D, mas mantemos altura suficiente
-        // para o renderOrder garantir que aparece sobre o resto.
+        // Por cima da sala mas mais perto do centro (sem o offset para fora
+        // que existia antes) — fica directamente sobre o realce verde.
         lbl.position.set(
           (bb.min.x + bb.max.x) / 2,
-          bb.max.y + Math.max(2, modelSpan * 0.05),
+          bb.max.y + Math.max(2, modelSpan * 0.04),
           (bb.min.z + bb.max.z) / 2,
         );
         roomLabel = lbl;
@@ -986,36 +990,24 @@ const THREE_HTML = `<!DOCTYPE html>
       if (pts.length >= 2) {
         drawPath(pts);
 
-        // Pin GRANDE no fim do caminho (centro da sala destino)
+        // Pin no fim do caminho (centro da sala destino) — tamanho moderado.
         const last = pts[pts.length - 1];
         const pin = makePinSprite();
-        const pinSize = Math.max(3, modelSpan * 0.06);
+        const pinSize = Math.max(1.5, modelSpan * 0.025);
         pin.scale.set(pinSize, pinSize, 1);
-        pin.position.set(last.x, bb.max.y + Math.max(1.0, modelSpan * 0.02), last.z);
+        pin.position.set(last.x, bb.max.y + Math.max(0.5, modelSpan * 0.01), last.z);
         destPin = pin;
         scene.add(pin);
       }
 
-      // Centra a câmara directamente no DESTINO. A entrada do piso fica fora
-      // do enquadramento principal por design — o que interessa ao utilizador
-      // é ver a sala alvo e o último segmento do caminho. Estratégia preferida
-      // após observação de que o midpoint pode deixar o destino em zona pouco
-      // visível em pisos com grandes distâncias entre entrada e sala.
-      target.set(centroid.x, personFloorY, centroid.z);
-
-      // Ajusta o raio de zoom para que a sala destino fique nítida MAS o
-      // caminho desde a entrada ainda seja visível parcialmente — usamos a
-      // distância entrada→destino para escolher um raio adequado.
-      const dx = centroid.x - floorEntrancePos.x;
-      const dz = centroid.z - floorEntrancePos.z;
-      const span = Math.sqrt(dx * dx + dz * dz);
-      const roomDiag = Math.sqrt(
-        (bb.max.x - bb.min.x) * (bb.max.x - bb.min.x) +
-        (bb.max.z - bb.min.z) * (bb.max.z - bb.min.z),
-      );
-      // Raio = max(diagonal da sala × 1.5, distância entrada-destino × 0.55)
-      const needed = Math.max(roomDiag * 1.5, span * 0.55, 8);
-      spherical.radius = Math.min(zoomMax, needed);
+      // Não mexer no zoom — manter a vista geral do piso. Limitação observada:
+      // qualquer auto-zoom (mesmo no midpoint entrada↔destino) corta partes
+      // da planta e dificulta ver o caminho. O utilizador pode sempre fazer
+      // pinch-to-zoom se quiser. Reset apenas do target para um ponto razoável
+      // entre o início do piso e a sala destino, sem alterar o raio.
+      const midX = (floorEntrancePos.x + centroid.x) / 2;
+      const midZ = (floorEntrancePos.z + centroid.z) / 2;
+      target.set(midX, personFloorY, midZ);
       updateCamera();
     }
 
@@ -1060,71 +1052,96 @@ const THREE_HTML = `<!DOCTYPE html>
     //   'SECRETARIA'   → 'secretaria' ✓ match
     function normalizeRoomName(name) {
       if (!name) return '';
-      let s = String(name).toLowerCase().replace(/\./g, '');
+      // Usa split/join em vez de replace(/\./g, '') porque a sequência \. dentro
+      // do template literal HTML pode perder a barra invertida durante o bundle
+      // e ficar como /./g (match em qualquer carácter) — bug observado em
+      // produção que punha todas as salas a normalize == ''.
+      let s = String(name).toLowerCase().split('.').join('');
       if (s.startsWith('sala_')) s = s.substring(5);
       return s;
     }
 
     // Chamado por NAVIGATE / destino pendente (vindo da pesquisa) com o nome da sala.
     //
-    // Estratégia em 3 passos com debug ao vivo via toast:
-    //   1. Match exacto (normalize) em meshes blocáveis (sala_*)
-    //   2. Match também em meshes Group (não-Mesh) que tenham filhos Mesh —
-    //      cobre o caso em que o Blender exportou o nó com nome 'sala_G008'
-    //      como Group e o mesh filho com outro nome (problema observado em alguns GLBs)
-    //   3. Match em nav-nodes auxiliares (BAR, SECRETARIA, WC_*)
+    // Reescrita completa para garantir transparência total:
+    //   1. Constrói um mapa explícito normalize→mesh.name a partir de TODOS os
+    //      meshes do modelo (sala_* e nav-nodes auxiliares como BAR, SECRETARIA).
+    //   2. Lookup directo no mapa para o alvo normalizado.
+    //   3. Diagnóstico via toast mostra exactamente "input → normalize → match"
+    //      para que qualquer divergência seja imediatamente visível ao utilizador.
     function navigateFromPersonTo(destName) {
       if (!currentModel) return;
       const target = normalizeRoomName(destName);
-      let match = null;
 
-      // 1ª passagem: meshes blocáveis (sala_*) — caso comum
+      // Constrói o mapa de candidatos a partir do modelo actual.
+      // Inclui Mesh E Group — em GLBs exportados pelo Blender, os nós sala_*
+      // são frequentemente Groups com a geometria num Mesh filho. O filtro
+      // obj.isMesh excluia esses Groups e por isso só "bar" ficava nos
+      // candidatos (era o único nav-node Mesh directo).
+      const candidates = new Map(); // norm → obj.name
+      const candidateMeshes = new Map(); // obj.name → Three.Object3D
+      const sample = [];
       currentModel.traverse(obj => {
-        if (match) return;
-        if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
-        if (normalizeRoomName(obj.name) === target) match = obj.name;
+        if (!obj.name) return;
+        const isSala = isBlockableRoom(obj.name);
+        const isNav = isNavNode(obj.name);
+        if (!isSala && !isNav) return;
+        // Aceita Mesh ou Group que tenha pelo menos um Mesh descendente —
+        // assim podemos computar bbox via setFromObject.
+        let usable = obj.isMesh;
+        if (!usable) {
+          obj.traverse(c => { if (c.isMesh) usable = true; });
+        }
+        if (!usable) return;
+        const norm = normalizeRoomName(obj.name);
+        if (!candidates.has(norm)) {
+          candidates.set(norm, obj.name);
+          candidateMeshes.set(obj.name, obj);
+          if (sample.length < 8) sample.push(obj.name);
+        }
       });
 
-      // 2ª passagem: nós com nome sala_* que NÃO são Mesh directamente (são
-      // Group) — em alguns ficheiros GLB o nó com o nome relevante é um Group
-      // e o mesh está dentro. Neste caso usamos o nome do Group e adicionamos
-      // a sua bbox manualmente ao roomBBoxes.
-      if (!match) {
-        currentModel.traverse(obj => {
-          if (match) return;
-          if (!isBlockableRoom(obj.name)) return;
-          if (normalizeRoomName(obj.name) !== target) return;
-          // Verifica se há mesh dentro
-          let hasMeshChild = false;
-          obj.traverse(c => { if (c.isMesh) hasMeshChild = true; });
-          if (hasMeshChild) {
-            match = obj.name;
-            // Adiciona bbox do Group ao roomBBoxes para que showRoomStatic encontre
-            roomBBoxes.set(obj.name, new THREE.Box3().setFromObject(obj));
-          }
-        });
-      }
+      const match = candidates.get(target);
 
-      // 3ª passagem: nav-nodes auxiliares (BAR, SECRETARIA, WC_*)
-      if (!match) {
-        currentModel.traverse(obj => {
-          if (match) return;
-          if (!obj.isMesh || !isNavNode(obj.name)) return;
-          if (normalizeRoomName(obj.name) === target) match = obj.name;
-        });
-      }
+      // ─── DIAGNÓSTICO COMPLETO via console.log ────────────────────────────
+      // Mostra nos logs do Metro: o que entrou, o alvo normalizado, quantos
+      // candidatos existem, e os primeiros 6. Permite verificar à distância
+      // se o matching está a fazer o que deve.
+      try {
+        const dbg = {
+          fn: 'navigateFromPersonTo',
+          destName: destName,
+          target: target,
+          match: match || null,
+          candidatesCount: candidates.size,
+          firstCandidates: sample.slice(0, 8),
+          allG: Array.from(candidates.entries()).filter(([k]) => k.startsWith('g')).map(([k, v]) => k + '→' + v),
+        };
+        if (match && candidateMeshes.has(match)) {
+          const obj = candidateMeshes.get(match);
+          const bb = new THREE.Box3().setFromObject(obj);
+          dbg.bboxMin = [bb.min.x.toFixed(1), bb.min.z.toFixed(1)];
+          dbg.bboxMax = [bb.max.x.toFixed(1), bb.max.z.toFixed(1)];
+          dbg.bboxCenter = [((bb.min.x + bb.max.x) / 2).toFixed(1), ((bb.min.z + bb.max.z) / 2).toFixed(1)];
+        }
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEBUG', msg: 'NAV ' + JSON.stringify(dbg) }));
+        }
+      } catch (e) {}
+      // ───────────────────────────────────────────────────────────────────
 
-      // Diagnóstico: contar candidatos para incluir na mensagem de erro
       if (!match) {
-        let candidates = 0;
-        currentModel.traverse(o => { if (o.name && isBlockableRoom(o.name)) candidates++; });
-        showError('Sala "' + destName + '" não encontrada (' + candidates + ' candidatos)');
+        showError(
+          'Sem match para "' + destName + '" (normalize="' + target + '"). ' +
+          candidates.size + ' candidatos. Exemplos: ' + sample.slice(0, 5).join(', '),
+        );
         return;
       }
 
-      // Toast de confirmação — mostra ao utilizador qual mesh foi escolhida.
-      // Útil para diagnosticar se a pesquisa e o destino estão alinhados.
-      showToast('Destino: ' + friendlyRoomName(match));
+      // Toast no ecrã (também visível no Metro via logs)
+      showToast(
+        '"' + destName + '" → ' + match + ' (' + friendlyRoomName(match) + ')',
+      );
 
       showRoomStatic(match);
     }
