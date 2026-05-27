@@ -519,6 +519,31 @@ const THREE_HTML = `<!DOCTYPE html>
             blocked[r * cols + c] = 1;
       }
 
+      // ─── DOOR OVERRIDES ──────────────────────────────────────────────────
+      // Zonas que devem estar sempre LIVRES no grid, independentemente do
+      // que as col_* / sala_* dizem. Serve para corrigir defeitos pontuais
+      // do modelo Blender sem reabrir o .blend.
+      //
+      // Coordenadas em WORLD após centering do modelo. Validar com o log
+      // SHOW (bboxMin/bboxMax) das salas envolventes.
+      const doorOverrides = [
+        // Porta esquerda da G0.08 + corredor entre G0.03 e G0.08.
+        // G0.03 está em X[-124, -36], G0.08 está em X[-8, 132], corredor X∈[-36, -8].
+        // A porta real é no lado esquerdo de G0.08 (entrada física), com Z
+        // aproximadamente no centro da sala. Largura generosa para garantir
+        // que o A* sempre consegue entrar.
+        { x0: -45, x1: -2, z0: -50, z1: 30 },
+      ];
+      for (const door of doorOverrides) {
+        const c0 = Math.max(0, Math.floor((door.x0 - x0) / cell));
+        const c1 = Math.min(cols - 1, Math.ceil((door.x1 - x0) / cell));
+        const r0 = Math.max(0, Math.floor((door.z0 - z0) / cell));
+        const r1 = Math.min(rows - 1, Math.ceil((door.z1 - z0) / cell));
+        for (let r = r0; r <= r1; r++)
+          for (let c = c0; c <= c1; c++)
+            blocked[r * cols + c] = 0; // FORÇA LIVRE
+      }
+
       grid = { x0, z0, cols, rows, cell, blocked };
       try {
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({

@@ -38,6 +38,8 @@ export default function MapaScreen() {
   });
 
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  // Legenda das cores dos marcadores — recolhível por defeito (M-09 do plano de melhorias)
+  const [legendOpen, setLegendOpen] = useState(false);
 
   // Handlers dos controlos do mapa
   const handleLocate = () => {
@@ -182,6 +184,47 @@ export default function MapaScreen() {
             </View>
           </View>
         )}
+
+        {/* Legenda das cores dos marcadores — canto inferior esquerdo, recolhível */}
+        {!selectedBuilding && (
+          <View style={styles.legendContainer} pointerEvents="box-none">
+            {legendOpen ? (
+              <View style={[styles.legendPanel, { backgroundColor: colors.card }]}>
+                <View style={styles.legendHeader}>
+                  <Text style={[styles.legendTitle, { color: colors.text, fontSize: fs(13) }]}>
+                    {tr('Legenda', 'Legend')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setLegendOpen(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr('Fechar legenda', 'Close legend')}
+                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <Ionicons name="close" size={18} color={colors.subtext} />
+                  </TouchableOpacity>
+                </View>
+                {(['escola', 'servico', 'lab', 'desporto', 'outro'] as const).map(t => (
+                  <View key={t} style={styles.legendRow}>
+                    <View style={[styles.legendDot, { backgroundColor: TIPO_COR[t] }]}>
+                      <Text style={styles.legendDotText}>{TIPO_SIMBOLO[t]}</Text>
+                    </View>
+                    <Text style={[styles.legendLabel, { color: colors.text, fontSize: fs(12) }]}>
+                      {(language === 'pt' ? TIPO_LABEL_PT : TIPO_LABEL_EN)[t]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.legendButton, { backgroundColor: colors.card }]}
+                onPress={() => setLegendOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={tr('Mostrar legenda das cores', 'Show colour legend')}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                <Ionicons name="information-circle-outline" size={22} color={colors.text} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </SafeAreaView>
 
       {/* Location info card (Google-Maps style mini-tab) */}
@@ -286,6 +329,65 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 16,
     marginBottom: 16,
+  },
+  // Legenda das cores dos marcadores
+  legendContainer: {
+    position: 'absolute',
+    left: 16,
+    bottom: 24,
+  },
+  legendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  legendPanel: {
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minWidth: 150,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  legendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  legendTitle: {
+    fontWeight: '700',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  legendDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  legendDotText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  legendLabel: {
+    flex: 1,
   },
   controlButton: {
     backgroundColor: '#FFFFFF',
