@@ -104,11 +104,12 @@ const doc = new Document({
         children: [new TextRun({ text: 'Ordem dos oradores', font: FONT, bold: true, size: 28, color: BLUE })],
       }),
       new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '1.  Filipe       — Abertura          (1:30)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '2.  Bruno        — Solução + Demo    (3:30)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '3.  Liane        — Acessibilidade    (1:30)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '2.  Bruno        — Solução + Demo    (3:45)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '3.  Liane        — Acessibilidade    (2:00)', font: 'Consolas', size: 22 })] }),
       new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '4.  Pedro        — Nielsen + Shnei.  (1:30)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '5.  Diogo        — User Tests        (1:30)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '5.  Diogo        — User Tests        (1:15)', font: 'Consolas', size: 22 })] }),
       new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '6.  Filipe       — Fecho              (0:30)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { before: 80, after: 60 }, children: [new TextRun({ text: '                                       TOTAL  10:30', font: 'Consolas', size: 22, bold: true })] }),
 
       new Paragraph({
         spacing: { before: 240, after: 60 },
@@ -132,10 +133,10 @@ const doc = new Document({
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 2 — Solução + Mapeamento + Demo ─────────────────────
-      ...speakerHeader('2 (Bruno)', 'Solução · Mapeamento · Demo', '3 min 30 seg total', 'Slides 3, 4, 5'),
+      ...speakerHeader('2 (Bruno)', 'Solução · Mapeamento · Demo', '3 min 45 seg total', 'Slides 3, 4, 5'),
 
-      tempo('▶ Slide 3 — Solução em 1 ecrã  (30 seg)'),
-      fala('O UTAD Maps é uma aplicação mobile-first multi-plataforma — funciona em iOS, Android e Web a partir de um único link, sem instalação.'),
+      tempo('▶ Slide 3 — Solução em 1 ecrã  (45 seg)'),
+      fala('O UTAD Maps é uma aplicação mobile-first construída em React Native com Expo, TypeScript em todo o código-fonte, Three.js para a renderização indoor 3D, e Supabase para o backend. Funciona em iOS, Android e Web a partir de um único link, sem instalação.'),
       fala('Combina quatro funcionalidades-chave: navegação exterior entre edifícios com rotas reais via OSRM, navegação interior 3D dentro dos edifícios, importação automática do horário académico do Inforestudante, e suporte de acessibilidade com cinco níveis de texto até 200 por cento e modo de alto contraste.'),
 
       tempo('▶ Slide 4 — Como mapeámos  (30 seg)'),
@@ -161,12 +162,16 @@ const doc = new Document({
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 3 (Liane) — Acessibilidade ──────────────────────────
-      ...speakerHeader('3 (Liane)', 'Fase 2 — Acessibilidade WCAG 2.2 AA', '1 min 30 seg', 'Slide 6'),
+      ...speakerHeader('3 (Liane)', 'Fase 2 — Acessibilidade WCAG 2.2 AA', '2 min', 'Slide 6'),
 
       fala('Para a acessibilidade adoptámos uma metodologia mista, conforme indicado pelos docentes.'),
-      fala('Combinámos quatro ferramentas automáticas — Lighthouse, axe-core, pa11y e a T.A.W. — com quatro análises manuais, incluindo teste real com o leitor de ecrã VoiceOver num iPhone.'),
-      fala('Os resultados estão no ecrã: 100 em 100 no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — o que corresponde a 85 por cento de conformidade plena — e identificámos no processo nove correcções concretas que foram aplicadas durante a própria Fase 2.'),
-      fala('A lição metodológica é importante: as ferramentas automáticas só detectam 30 a 40 por cento dos problemas reais. O bug B-05, que afectava utilizadores com texto a 200 por cento, só foi descoberto pelo nosso teste manual de responsividade — nenhuma das quatro ferramentas o apanhou.'),
+      fala('Importa esclarecer uma distinção metodológica: a versão hospedada em utadmaps.b-host.me — onde corremos as ferramentas automáticas — é um subproduto web gerado pelo Expo a partir do mesmo código, com algumas funcionalidades limitadas. A versão mobile completa, com indoor 3D, foi testada manualmente via Expo Go num iPhone real. Esta é exactamente a razão pela qual combinámos auto com manual: nenhum dos dois sozinho cobria a aplicação inteira.'),
+      fala('No lado automático corremos quatro ferramentas: Lighthouse, axe-core, pa11y e a T.A.W. recomendada pelos docentes.'),
+      fala('No lado manual aplicámos quatro procedimentos. O primeiro: auditoria sistemática dos atributos accessibilityLabel, Role, Hint e State em 12 ficheiros e 78 componentes interactivos. O segundo: cálculo programático dos rácios de contraste de cada combinação de cor da paleta — todas acima do limiar AA. O terceiro: teste exploratório com o leitor de ecrã VoiceOver num iPhone real. E o quarto: verificação do reflow nos cinco níveis de tamanho de texto.'),
+      fala('Vou mostrar-vos quinze segundos do VoiceOver a navegar no ecrã principal — com o som dele a ler ao vivo:'),
+      nota('Vídeo de 15 segundos com áudio do VoiceOver começa a tocar aqui.'),
+      fala('Os resultados: 100 em 100 no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — 85 por cento de conformidade plena — e identificámos no processo nove correcções concretas que foram aplicadas durante a própria Fase 2.'),
+      fala('A lição metodológica está aqui: o bug B-05, que afectava utilizadores com texto a 200 por cento, só foi descoberto pelo teste manual de responsividade — nenhuma das quatro ferramentas automáticas o apanhou.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
@@ -182,7 +187,7 @@ const doc = new Document({
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 5 (Diogo) — User Tests ──────────────────────────────
-      ...speakerHeader('5 (Diogo)', 'Fase 3 — User Tests + Plano de melhorias', '1 min 30 seg', 'Slide 8'),
+      ...speakerHeader('5 (Diogo)', 'Fase 3 — User Tests + Plano de melhorias', '1 min 15 seg', 'Slide 8'),
 
       fala('Conduzimos cinco sessões de teste com utilizadores reais recrutados na comunidade académica da UTAD, abrangendo treze tarefas representativas: autenticação, importação de horário, navegação outdoor e indoor, configurações de acessibilidade, logout.'),
       fala('Os resultados globais são positivos: 96,9 por cento de taxa de sucesso pleno em 65 tentativas, 4,6 em 5 na facilidade média, e 4,6 no Likert do questionário pós-teste.'),
@@ -190,7 +195,6 @@ const doc = new Document({
       nota('Apontar para a citação no slide.'),
       fala('O Participante 2, na tarefa de logout, abriu o telemóvel e viu o horário do utilizador anterior. A privacidade que tínhamos previsto pelas inspecções foi confirmada empiricamente pelos utilizadores reais — esta é a justificação concreta para combinar técnicas: a inspecção prevê, o teste confirma.'),
       fala('Identificámos 17 problemas distintos no total. Propomos 6 melhorias prioritárias — todas triviais — que num dia de trabalho elevam a aplicação dos 96,9 para 100 por cento de taxa de sucesso na próxima iteração.'),
-      fala('E aliás, já implementámos uma delas: a legenda das cores dos marcadores no mapa, identificada por um dos peritos. Está visível no canto inferior esquerdo do mapa principal, recolhível para não poluir. Isto demonstra que o ciclo avaliação → correcção da nossa metodologia funciona na prática.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
