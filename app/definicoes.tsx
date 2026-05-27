@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -23,6 +24,57 @@ export default function DefinicoesScreen() {
     setLeitorEcra,
   } = useSettings();
 
+  // P-04: feedback de confirmação ao mudar definições. Um pequeno toast animado
+  // no topo do ecrã confirma cada alteração — antes destas correcções, o
+  // utilizador via o efeito mas não recebia qualquer aviso textual.
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    Animated.timing(toastAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastAnim, { toValue: 0, duration: 240, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) setToastMsg(null);
+      });
+    }, 1600);
+  }, [toastAnim]);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+
+  const handleAltoContraste = (v: boolean) => {
+    setAltoContraste(v);
+    showToast(v
+      ? tr('Alto contraste activado', 'High contrast on')
+      : tr('Alto contraste desactivado', 'High contrast off'));
+  };
+  const handleTema = (novo: 'claro' | 'escuro') => {
+    setTema(novo);
+    showToast(novo === 'escuro'
+      ? tr('Tema escuro activado', 'Dark theme on')
+      : tr('Tema claro activado', 'Light theme on'));
+  };
+  const handleTamanho = (op: typeof tamanhoTexto) => {
+    setTamanhoTexto(op);
+    showToast(tr('Tamanho do texto: ', 'Text size: ') + String(op));
+  };
+  const handleIdioma = (lang: 'pt' | 'en') => {
+    setLanguage(lang);
+    showToast(lang === 'pt' ? 'Idioma: Português' : 'Language: English');
+  };
+  const handleRotas = (v: boolean) => {
+    setRotasAcessiveis(v);
+    showToast(v
+      ? tr('Rotas acessíveis activadas', 'Accessible routes on')
+      : tr('Rotas acessíveis desactivadas', 'Accessible routes off'));
+  };
+  const handleLeitor = (v: boolean) => {
+    setLeitorEcra(v);
+    showToast(v
+      ? tr('Suporte a leitor de ecrã activado', 'Screen reader support on')
+      : tr('Suporte a leitor de ecrã desactivado', 'Screen reader support off'));
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
@@ -40,6 +92,25 @@ export default function DefinicoesScreen() {
         {/* Spacer para centrar o título */}
         <View style={{ width: 80 }} />
       </View>
+
+      {/* Toast de confirmação de alteração de definição (P-04) */}
+      {toastMsg && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.toast,
+            {
+              backgroundColor: altoContraste ? colors.text : '#1F1F1F',
+              opacity: toastAnim,
+              transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
+            },
+          ]}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite">
+          <Ionicons name="checkmark-circle" size={18} color={altoContraste ? colors.bg : '#FFFFFF'} />
+          <Text style={[styles.toastText, { color: altoContraste ? colors.bg : '#FFFFFF', fontSize: fs(14) }]}>{toastMsg}</Text>
+        </Animated.View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
@@ -68,7 +139,7 @@ export default function DefinicoesScreen() {
                         borderWidth: altoContraste ? 2 : 0,
                         borderColor: colors.text }
                     ]}
-                    onPress={() => setTamanhoTexto(op)}
+                    onPress={() => handleTamanho(op)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: ativo }}
                     accessibilityLabel={
@@ -95,7 +166,7 @@ export default function DefinicoesScreen() {
             </View>
             <Switch
               value={altoContraste}
-              onValueChange={setAltoContraste}
+              onValueChange={handleAltoContraste}
               trackColor={{ false: '#E5E5EA', true: colors.primary }}
               thumbColor={altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
@@ -113,7 +184,7 @@ export default function DefinicoesScreen() {
             </View>
             <Switch
               value={rotasAcessiveis}
-              onValueChange={setRotasAcessiveis}
+              onValueChange={handleRotas}
               trackColor={{ false: '#E5E5EA', true: colors.primary }}
               thumbColor={rotasAcessiveis && altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
@@ -133,7 +204,7 @@ export default function DefinicoesScreen() {
             </View>
             <Switch
               value={leitorEcra}
-              onValueChange={setLeitorEcra}
+              onValueChange={handleLeitor}
               trackColor={{ false: '#E5E5EA', true: colors.primary }}
               thumbColor={leitorEcra && altoContraste ? colors.bg : '#FFFFFF'}
               ios_backgroundColor="#E5E5EA"
@@ -149,7 +220,7 @@ export default function DefinicoesScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
           <TouchableOpacity
             style={styles.cardRow}
-            onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+            onPress={() => handleIdioma(language === 'pt' ? 'en' : 'pt')}
             accessibilityRole="button"
             accessibilityLabel={`${t.idioma}: ${language === 'pt' ? 'Português' : 'English'}`}
             accessibilityHint={tr(
@@ -166,7 +237,7 @@ export default function DefinicoesScreen() {
 
           <TouchableOpacity
             style={styles.cardRow}
-            onPress={() => setTema(tema === 'claro' ? 'escuro' : 'claro')}
+            onPress={() => handleTema(tema === 'claro' ? 'escuro' : 'claro')}
             accessibilityRole="button"
             accessibilityLabel={`${t.tema}: ${tema === 'claro' ? t.claro : t.escuro}`}
             accessibilityHint={tr(
@@ -203,6 +274,28 @@ export default function DefinicoesScreen() {
 }
 
 const styles = StyleSheet.create({
+  toast: {
+    position: 'absolute',
+    top: 70,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  toastText: {
+    flex: 1,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F2F2F7',

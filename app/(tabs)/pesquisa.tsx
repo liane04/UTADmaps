@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { api } from '../../services/api';
 import { SearchResult, SearchCategoria } from '../../types';
@@ -60,6 +60,24 @@ export default function PesquisaScreen() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Coord | null>(null);
+  // Param `focus=1` é passado pela barra de pesquisa do mapa para que o teclado
+  // suba automaticamente. O param `t` (timestamp) garante que o useFocusEffect
+  // re-dispara mesmo que o utilizador volte a tocar na barra após ter saído.
+  const params = useLocalSearchParams<{ focus?: string; t?: string }>();
+  const inputRef = useRef<TextInput>(null);
+
+  // Auto-focus do campo de pesquisa quando este ecrã é aberto a partir da
+  // barra do mapa (param focus=1). Sem isto, o utilizador era obrigado a tocar
+  // duas vezes — uma para abrir a página, outra para abrir o teclado.
+  useFocusEffect(
+    useCallback(() => {
+      if (params.focus !== '1') return;
+      // Pequeno atraso para garantir que o TextInput já foi montado e a
+      // animação de transição entre tabs já terminou.
+      const handle = setTimeout(() => inputRef.current?.focus(), 120);
+      return () => clearTimeout(handle);
+    }, [params.focus, params.t]),
+  );
 
   // Pede GPS uma vez ao montar (silencioso — sem alertar se falhar)
   useEffect(() => {
@@ -174,6 +192,7 @@ export default function PesquisaScreen() {
       <View style={[styles.searchContainer, { backgroundColor: colors.inputBg, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
         <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
         <TextInput
+          ref={inputRef}
           style={[styles.searchInput, { color: colors.text }]}
           value={query}
           onChangeText={setQuery}

@@ -929,8 +929,20 @@ const THREE_HTML = `<!DOCTYPE html>
       activeRooms = new Set([roomName]);
       buildGrid();
 
-      const bb = roomBBoxes.get(roomName);
-      if (!bb) return;
+      let bb = roomBBoxes.get(roomName);
+      if (!bb) {
+        // Tenta recomputar a bbox directamente a partir do objecto.
+        let found = null;
+        currentModel.traverse(o => { if (o.name === roomName && !found) found = o; });
+        if (found) {
+          bb = new THREE.Box3().setFromObject(found);
+          roomBBoxes.set(roomName, bb);
+        }
+      }
+      if (!bb) {
+        showError('Bbox não encontrada para ' + roomName);
+        return;
+      }
       highlightRoom(bb);
 
       // Label flutuante com o nome amigável da sala (e.g. "F1.17")
@@ -984,20 +996,26 @@ const THREE_HTML = `<!DOCTYPE html>
         scene.add(pin);
       }
 
-      // Centra a câmara entre a entrada e o destino, de forma a que ambos
-      // sejam visíveis sem necessidade de pan inicial. O zoom mantém-se.
-      const midX = (floorEntrancePos.x + centroid.x) / 2;
-      const midZ = (floorEntrancePos.z + centroid.z) / 2;
-      target.set(midX, personFloorY, midZ);
-      // Ajusta o raio de zoom para garantir que entrada+destino cabem na vista.
+      // Centra a câmara directamente no DESTINO. A entrada do piso fica fora
+      // do enquadramento principal por design — o que interessa ao utilizador
+      // é ver a sala alvo e o último segmento do caminho. Estratégia preferida
+      // após observação de que o midpoint pode deixar o destino em zona pouco
+      // visível em pisos com grandes distâncias entre entrada e sala.
+      target.set(centroid.x, personFloorY, centroid.z);
+
+      // Ajusta o raio de zoom para que a sala destino fique nítida MAS o
+      // caminho desde a entrada ainda seja visível parcialmente — usamos a
+      // distância entrada→destino para escolher um raio adequado.
       const dx = centroid.x - floorEntrancePos.x;
       const dz = centroid.z - floorEntrancePos.z;
       const span = Math.sqrt(dx * dx + dz * dz);
-      if (span > 0) {
-        const aspect = window.innerWidth / window.innerHeight;
-        const needed = Math.max(span * 0.7, span / (2 * aspect));
-        spherical.radius = Math.max(spherical.radius * 0.7, Math.min(zoomMax, needed));
-      }
+      const roomDiag = Math.sqrt(
+        (bb.max.x - bb.min.x) * (bb.max.x - bb.min.x) +
+        (bb.max.z - bb.min.z) * (bb.max.z - bb.min.z),
+      );
+      // Raio = max(diagonal da sala × 1.5, distância entrada-destino × 0.55)
+      const needed = Math.max(roomDiag * 1.5, span * 0.55, 8);
+      spherical.radius = Math.min(zoomMax, needed);
       updateCamera();
     }
 
@@ -1048,18 +1066,46 @@ const THREE_HTML = `<!DOCTYPE html>
     }
 
     // Chamado por NAVIGATE / destino pendente (vindo da pesquisa) com o nome da sala.
+    //
+    // Estratégia em 3 passos com debug ao vivo via toast:
+    //   1. Match exacto (normalize) em meshes blocáveis (sala_*)
+    //   2. Match também em meshes Group (não-Mesh) que tenham filhos Mesh —
+    //      cobre o caso em que o Blender exportou o nó com nome 'sala_G008'
+    //      como Group e o mesh filho com outro nome (problema observado em alguns GLBs)
+    //   3. Match em nav-nodes auxiliares (BAR, SECRETARIA, WC_*)
     function navigateFromPersonTo(destName) {
       if (!currentModel) return;
       const target = normalizeRoomName(destName);
       let match = null;
-      // 1ª passagem: tenta apenas em meshes blocáveis (sala_*) — caso comum
+
+      // 1ª passagem: meshes blocáveis (sala_*) — caso comum
       currentModel.traverse(obj => {
         if (match) return;
         if (!obj.isMesh || !isBlockableRoom(obj.name)) return;
         if (normalizeRoomName(obj.name) === target) match = obj.name;
       });
-      // 2ª passagem: alarga a nav-nodes (BAR, SECRETARIA, WC_*) se o alvo
-      // for um serviço sem prefixo sala_
+
+      // 2ª passagem: nós com nome sala_* que NÃO são Mesh directamente (são
+      // Group) — em alguns ficheiros GLB o nó com o nome relevante é um Group
+      // e o mesh está dentro. Neste caso usamos o nome do Group e adicionamos
+      // a sua bbox manualmente ao roomBBoxes.
+      if (!match) {
+        currentModel.traverse(obj => {
+          if (match) return;
+          if (!isBlockableRoom(obj.name)) return;
+          if (normalizeRoomName(obj.name) !== target) return;
+          // Verifica se há mesh dentro
+          let hasMeshChild = false;
+          obj.traverse(c => { if (c.isMesh) hasMeshChild = true; });
+          if (hasMeshChild) {
+            match = obj.name;
+            // Adiciona bbox do Group ao roomBBoxes para que showRoomStatic encontre
+            roomBBoxes.set(obj.name, new THREE.Box3().setFromObject(obj));
+          }
+        });
+      }
+
+      // 3ª passagem: nav-nodes auxiliares (BAR, SECRETARIA, WC_*)
       if (!match) {
         currentModel.traverse(obj => {
           if (match) return;
@@ -1067,10 +1113,19 @@ const THREE_HTML = `<!DOCTYPE html>
           if (normalizeRoomName(obj.name) === target) match = obj.name;
         });
       }
-      if (!match) { showError(destName + ' não encontrada'); return; }
-      // showRoomStatic depende de roomBBoxes (só salas blocáveis) — se a sala
-      // alvo é um serviço (BAR, SECRETARIA), o highlight/caminho não corre,
-      // mas pelo menos não falha silenciosamente nem mostra mensagem de erro.
+
+      // Diagnóstico: contar candidatos para incluir na mensagem de erro
+      if (!match) {
+        let candidates = 0;
+        currentModel.traverse(o => { if (o.name && isBlockableRoom(o.name)) candidates++; });
+        showError('Sala "' + destName + '" não encontrada (' + candidates + ' candidatos)');
+        return;
+      }
+
+      // Toast de confirmação — mostra ao utilizador qual mesh foi escolhida.
+      // Útil para diagnosticar se a pesquisa e o destino estão alinhados.
+      showToast('Destino: ' + friendlyRoomName(match));
+
       showRoomStatic(match);
     }
 

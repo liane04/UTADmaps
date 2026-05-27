@@ -177,8 +177,24 @@ export default function PerfilScreen() {
   }, [proximaAula, agora, language]);
 
   const handleLogout = () => {
-    const confirmar = () => {
+    const confirmar = async () => {
+      // P-01 catastrófico: limpa as chaves do AsyncStorage que contêm dados
+      // pessoais do utilizador (horário académico, próxima aula em cache, etc.)
+      // ANTES de fazer logout — caso contrário o próximo utilizador a abrir a
+      // app num telemóvel partilhado veria o horário do anterior.
+      try {
+        await AsyncStorage.multiRemove([
+          'utadmaps_schedule_v2',
+          'utadmaps_proxima_aula_cache',
+          'utadmaps_favoritos_local',
+          'utadmaps_historico_local',
+        ]);
+      } catch {}
       logout();
+      try {
+        const r = router as unknown as { dismissAll?: () => void };
+        r.dismissAll?.();
+      } catch {}
       router.replace('/');
     };
     if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
@@ -328,7 +344,19 @@ export default function PerfilScreen() {
         {isAnonimo ? (
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.replace('/')}
+            onPress={() => {
+              // P-02 / bug B-01: o botão antes só fazia router.replace('/') que,
+              // dentro do tab navigator, podia ser interpretado como "ir para o
+              // primeiro tab (mapa)" em vez de sair para a welcome screen. Aqui
+              // forçamos a saída do nested navigator (dismissAll) e só depois
+              // navegamos para a raiz, garantindo que cai sempre no ecrã de login.
+              logout();
+              try {
+                const r = router as unknown as { dismissAll?: () => void };
+                r.dismissAll?.();
+              } catch {}
+              router.replace('/');
+            }}
             accessibilityRole="button"
             accessibilityLabel={tr('Iniciar sessão', 'Sign in')}
             accessibilityHint={tr('Abre o ecrã de início de sessão com a conta institucional', 'Opens the institutional sign-in screen')}>

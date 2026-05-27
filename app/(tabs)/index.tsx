@@ -136,7 +136,7 @@ export default function MapaScreen() {
         <TouchableOpacity
           style={[styles.searchContainer, { backgroundColor: colors.card }]}
           activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/pesquisa')}
+          onPress={() => router.push({ pathname: '/(tabs)/pesquisa', params: { focus: '1', t: String(Date.now()) } })}
           accessibilityRole="button"
           accessibilityLabel={tr('Abrir pesquisa', 'Open search')}>
           <Ionicons name="search" size={20} color={colors.subtext} style={styles.searchIcon} />
