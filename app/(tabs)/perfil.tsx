@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
+import { CommonActions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -118,6 +119,21 @@ function textoTempoAula(aula: Aula, language: 'pt' | 'en', agora: Date): string 
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  // P-02 / B-01 — saída para o ecrã de login. Antes router.replace('/') dentro
+  // de (tabs) ficava-se pelo primeiro tab (mapa). Usamos um reset directo do
+  // navegador-raiz para garantir que cai sempre no screen 'index' (welcome).
+  const irParaLogin = () => {
+    let nav: any = navigation;
+    while (nav?.getParent?.()) nav = nav.getParent();
+    try {
+      nav.dispatch(
+        CommonActions.reset({ index: 0, routes: [{ name: 'index' }] }),
+      );
+    } catch {
+      router.replace('/');
+    }
+  };
   const { colors, fs, altoContraste } = useSettings();
   const { tr, language } = useLanguage();
   const { user, favorites, logout } = useAppStore();
@@ -191,11 +207,7 @@ export default function PerfilScreen() {
         ]);
       } catch {}
       logout();
-      try {
-        const r = router as unknown as { dismissAll?: () => void };
-        r.dismissAll?.();
-      } catch {}
-      router.replace('/');
+      irParaLogin();
     };
     if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
       if ((window as any).confirm(tr('Terminar sessão?', 'Sign out?'))) confirmar();
@@ -345,17 +357,8 @@ export default function PerfilScreen() {
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={() => {
-              // P-02 / bug B-01: o botão antes só fazia router.replace('/') que,
-              // dentro do tab navigator, podia ser interpretado como "ir para o
-              // primeiro tab (mapa)" em vez de sair para a welcome screen. Aqui
-              // forçamos a saída do nested navigator (dismissAll) e só depois
-              // navegamos para a raiz, garantindo que cai sempre no ecrã de login.
               logout();
-              try {
-                const r = router as unknown as { dismissAll?: () => void };
-                r.dismissAll?.();
-              } catch {}
-              router.replace('/');
+              irParaLogin();
             }}
             accessibilityRole="button"
             accessibilityLabel={tr('Iniciar sessão', 'Sign in')}

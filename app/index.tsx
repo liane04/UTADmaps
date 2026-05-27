@@ -10,6 +10,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,8 +109,13 @@ export default function WelcomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoContainer}>
-            <Text style={[styles.logoText, { color: colors.subtext }]}>Ü</Text>
-            <Ionicons name="compass-outline" size={24} color={colors.subtext} style={styles.logoIcon} />
+            <Image
+              source={require('../assets/icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+              accessibilityRole="image"
+              accessibilityLabel="UTAD Maps"
+            />
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.card, borderWidth: altoContraste ? 2 : 0, borderColor: colors.border }]}>
@@ -218,20 +224,13 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   logoContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
-    position: 'relative',
+    justifyContent: 'center',
+    marginBottom: 32,
   },
-  logoText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#8E8E93',
-  },
-  logoIcon: {
-    position: 'absolute',
-    bottom: 5,
-    right: -15,
+  logoImage: {
+    width: 180,
+    height: 90,
   },
   card: {
     backgroundColor: '#FFFFFF',
