@@ -103,12 +103,12 @@ const doc = new Document({
         spacing: { before: 200, after: 120 },
         children: [new TextRun({ text: 'Ordem dos oradores', font: FONT, bold: true, size: 28, color: BLUE })],
       }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '1.  Filipe       — Abertura          (1:30)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '2.  Bruno        — Solução + Demo    (3:45)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '3.  Liane        — Acessibilidade    (2:00)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '1.  Liane        — Abertura          (1:30)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '2.  Filipe       — Solução + Demo    (3:45)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '3.  Bruno        — Acessibilidade    (2:00)', font: 'Consolas', size: 22 })] }),
       new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '4.  Pedro        — Nielsen + Shnei.  (1:30)', font: 'Consolas', size: 22 })] }),
       new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '5.  Diogo        — User Tests        (1:15)', font: 'Consolas', size: 22 })] }),
-      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '6.  Filipe       — Fecho              (0:30)', font: 'Consolas', size: 22 })] }),
+      new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: '6.  Liane        — Fecho              (0:30)', font: 'Consolas', size: 22 })] }),
       new Paragraph({ spacing: { before: 80, after: 60 }, children: [new TextRun({ text: '                                       TOTAL  10:30', font: 'Consolas', size: 22, bold: true })] }),
 
       new Paragraph({
@@ -123,17 +123,17 @@ const doc = new Document({
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 1 (parte 1) — Abertura ─────────────────────────────
-      ...speakerHeader('1 (Filipe)', 'Abertura', '1 min 30 seg', 'Slide 2 — Problema + 4 personas'),
+      ...speakerHeader('1 (Liane)', 'Abertura', '1 min 30 seg', 'Slide 2 — Problema + 4 personas'),
 
       fala('Boa tarde. Somos a equipa do UTAD Maps.'),
       fala('Antes de mostrar o que fizemos, queria que pensassem num cenário simples: imaginem um aluno de primeiro ano à procura da sala G0.08 no ECT-Polo I. Abre o telemóvel, mete no Google Maps, e o Google Maps leva-o até à porta do edifício — e depois desiste.'),
       fala('Para quatro perfis distintos de utilizadores, esta lacuna é uma barreira real: caloiros, estudantes Erasmus, pessoas com baixa visão e estudantes com mobilidade reduzida. Não existe hoje no campus uma solução digital que entre com o utilizador no edifício e o leve até à sala.'),
-      fala('Foi para resolver este problema concreto que construímos o UTAD Maps. O Bruno vai mostrar.'),
+      fala('Foi para resolver este problema concreto que construímos o UTAD Maps. O Filipe vai mostrar.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 2 — Solução + Mapeamento + Demo ─────────────────────
-      ...speakerHeader('2 (Bruno)', 'Solução · Mapeamento · Demo', '3 min 45 seg total', 'Slides 3, 4, 5'),
+      ...speakerHeader('2 (Filipe)', 'Solução · Mapeamento · Demo', '3 min 45 seg total', 'Slides 3, 4, 5'),
 
       tempo('▶ Slide 3 — Solução em 1 ecrã  (45 seg)'),
       fala('O UTAD Maps é uma aplicação mobile-first construída em React Native com Expo, TypeScript em todo o código-fonte, Three.js para a renderização indoor 3D, e Supabase para o backend. Funciona em iOS, Android e Web a partir de um único link, sem instalação.'),
@@ -157,21 +157,21 @@ const doc = new Document({
       fala('Para utilizadores com baixa visão, temos cinco níveis de tamanho do texto até 200 por cento, e modo de alto contraste com rácio 21 para 1. Notem o feedback imediato — cada alteração mostra uma confirmação textual, e o leitor de ecrã anuncia a transição.'),
 
       tempo('[120 — 150 s] Bilingue + transição'),
-      fala('E tudo está disponível em português e inglês. Passo a palavra à Liane, que vai explicar como garantimos que esta aplicação cumpre os padrões internacionais de acessibilidade.'),
+      fala('E tudo está disponível em português e inglês. Passo a palavra ao Bruno, que vai explicar como garantimos que esta aplicação cumpre os padrões internacionais de acessibilidade.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
-      // ─── ORADOR 3 (Liane) — Acessibilidade ──────────────────────────
-      ...speakerHeader('3 (Liane)', 'Fase 2 — Acessibilidade WCAG 2.2 AA', '2 min', 'Slide 6'),
+      // ─── ORADOR 3 (Bruno) — Acessibilidade ──────────────────────────
+      ...speakerHeader('3 (Bruno)', 'Fase 2 — Acessibilidade WCAG 2.2 AA', '2 min', 'Slide 6'),
 
-      fala('Para a acessibilidade adoptámos uma metodologia mista, conforme indicado pelos docentes.'),
-      fala('Importa esclarecer uma distinção metodológica: a versão hospedada em utadmaps.b-host.me — onde corremos as ferramentas automáticas — é um subproduto web gerado pelo Expo a partir do mesmo código, com algumas funcionalidades limitadas. A versão mobile completa, com indoor 3D, foi testada manualmente via Expo Go num iPhone real. Esta é exactamente a razão pela qual combinámos auto com manual: nenhum dos dois sozinho cobria a aplicação inteira.'),
-      fala('No lado automático corremos quatro ferramentas: Lighthouse, axe-core, pa11y e a T.A.W. recomendada pelos docentes.'),
-      fala('No lado manual aplicámos quatro procedimentos. O primeiro: auditoria sistemática dos atributos accessibilityLabel, Role, Hint e State em 12 ficheiros e 78 componentes interactivos. O segundo: cálculo programático dos rácios de contraste de cada combinação de cor da paleta — todas acima do limiar AA. O terceiro: teste exploratório com o leitor de ecrã VoiceOver num iPhone real. E o quarto: verificação do reflow nos cinco níveis de tamanho de texto.'),
+      fala('Para a acessibilidade adotámos uma metodologia mista, conforme indicado pelos docentes — combinámos ferramentas automáticas com análise manual.'),
+      fala('Importa esclarecer uma distinção metodológica: a versão hospedada em utadmaps.b-host.me — onde corremos as ferramentas automáticas — é uma build web do mesmo código-fonte que nós próprios alojámos para esse efeito, com algumas funcionalidades limitadas. A versão mobile completa, com indoor 3D, só corre via Expo Go num dispositivo real e foi sobre essa que fizemos os testes manuais. Esta é exatamente a razão pela qual combinámos auto com manual: nenhum dos dois sozinho cobria a aplicação inteira.'),
+      fala('No lado automático corremos quatro ferramentas: Lighthouse, axe-core, pa11y e a T.A.W. recomendada pelos docentes. Cada uma usa um motor de inspeção diferente, com regras parcialmente distintas — onde uma falhava em detetar algo, outra apanhava.'),
+      fala('No lado manual aplicámos quatro procedimentos. O primeiro foi a auditoria sistemática dos atributos accessibilityLabel, Role, Hint e State em 12 ficheiros e 78 componentes interativos — estes atributos do React Native são o que os leitores de ecrã VoiceOver e TalkBack usam para anunciar cada elemento da interface. O segundo: cálculo programático dos rácios de contraste de cada combinação de cor da paleta — todas acima do limiar AA de 4,5 para 1. O terceiro: teste exploratório com o VoiceOver num iPhone real, percorrendo a aplicação por swipe e validando o que é anunciado. E o quarto: verificação da responsividade nos cinco níveis de tamanho de texto, do nível Pequeno a 85 por cento até ao Máximo a 200 por cento, nos sete ecrãs principais.'),
       fala('Vou mostrar-vos quinze segundos do VoiceOver a navegar no ecrã principal — com o som dele a ler ao vivo:'),
       nota('Vídeo de 15 segundos com áudio do VoiceOver começa a tocar aqui.'),
-      fala('Os resultados: 100 em 100 no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — 85 por cento de conformidade plena — e identificámos no processo nove correcções concretas que foram aplicadas durante a própria Fase 2.'),
-      fala('A lição metodológica está aqui: o bug B-05, que afectava utilizadores com texto a 200 por cento, só foi descoberto pelo teste manual de responsividade — nenhuma das quatro ferramentas automáticas o apanhou.'),
+      fala('Os resultados: 100 em 100 no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — 85 por cento de conformidade plena — e identificámos no processo nove correções concretas que foram aplicadas durante a própria Fase 2.'),
+      fala('A lição metodológica está aqui: o bug B-05, que afetava utilizadores com texto a 200 por cento por fazer a barra de navegação crescer desproporcionalmente, só foi descoberto pelo teste manual de responsividade — nenhuma das quatro ferramentas automáticas o apanhou. Reforça que a inspeção manual continua a ser indispensável.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
@@ -193,13 +193,13 @@ const doc = new Document({
       fala('Os resultados globais são positivos: 96,9 por cento de taxa de sucesso pleno em 65 tentativas, 4,6 em 5 na facilidade média, e 4,6 no Likert do questionário pós-teste.'),
       fala('Mas o resultado mais importante está aqui:'),
       nota('Apontar para a citação no slide.'),
-      fala('O Participante 2, na tarefa de logout, abriu o telemóvel e viu o horário do utilizador anterior. A privacidade que tínhamos previsto pelas inspecções foi confirmada empiricamente pelos utilizadores reais — esta é a justificação concreta para combinar técnicas: a inspecção prevê, o teste confirma.'),
+      fala('O Participante 2, na tarefa de logout, abriu o telemóvel e viu o horário do utilizador anterior. A privacidade que tínhamos previsto pelas inspeções foi confirmada empiricamente pelos utilizadores reais — esta é a justificação concreta para combinar técnicas: a inspeção prevê, o teste confirma.'),
       fala('Identificámos 17 problemas distintos no total. Propomos 6 melhorias prioritárias — todas triviais — que num dia de trabalho elevam a aplicação dos 96,9 para 100 por cento de taxa de sucesso na próxima iteração.'),
 
       new Paragraph({ children: [new PageBreak()] }),
 
       // ─── ORADOR 1 (parte 2) — Fecho ─────────────────────────────────
-      ...speakerHeader('1 (Filipe)', 'Fecho', '30 seg', 'Slide 9 — Obrigado + QR'),
+      ...speakerHeader('1 (Liane)', 'Fecho', '30 seg', 'Slide 9 — Obrigado + QR'),
 
       fala('Em resumo: criámos uma aplicação mobile-first, acessível desde a primeira linha de código, com navegação indoor 3D baseada em plantas reais, e validada por três técnicas convergentes de avaliação. Está disponível online em utadmaps.b-host.me.'),
       fala('Obrigado pela atenção — estamos disponíveis para perguntas.'),
@@ -241,12 +241,12 @@ const doc = new Document({
         spacing: { before: 200, after: 60 },
         children: [new TextRun({ text: 'P: Qual o maior aprendizado do projecto?', font: FONT, bold: true, size: 22 })],
       }),
-      fala('A combinação de inspecção com testes empíricos. A inspecção previu o problema de privacidade B-02; os testes com utilizadores confirmaram-no de forma irrefutável. Sozinhas, nenhuma das técnicas teria sido suficiente — a inspecção poderia ser descartada como preocupação teórica, e o teste sem o contexto da inspecção poderia parecer caso isolado.'),
+      fala('A combinação de inspeção com testes empíricos. A inspeção previu o problema de privacidade B-02; os testes com utilizadores confirmaram-no de forma irrefutável. Sozinhas, nenhuma das técnicas teria sido suficiente — a inspeção poderia ser descartada como preocupação teórica, e o teste sem o contexto da inspeção poderia parecer caso isolado.'),
     ],
   }],
 });
 
-const outPath = path.join(__dirname, 'Roteiro_Simplificado.docx');
+const outPath = path.join(__dirname, '..', 'Roteiro_Simplificado.docx');
 Packer.toBuffer(doc).then((buffer) => {
   fs.writeFileSync(outPath, buffer);
   console.log('OK ->', outPath);

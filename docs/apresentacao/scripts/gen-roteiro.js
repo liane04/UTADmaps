@@ -187,7 +187,7 @@ const doc = new Document({
       // Visão geral
       h('Visão geral'),
       p('Esta apresentação corresponde à Componente AP (15%) do Modo 1 de avaliação do Desafio 3 da unidade curricular de Interação Pessoa-Computador. Apresentamos o UTAD Maps, uma aplicação mobile-first para navegação inteligente no campus da UTAD, com integração de horário académico, navegação indoor 3D e desenho inclusivo.'),
-      p('O fluxo da apresentação está desenhado para 10 minutos exactos com cinco oradores. A demo é apresentada em vídeo gravado (não ao vivo) para eliminar o risco de falha de WiFi ou de comportamento inesperado da aplicação em ambiente desconhecido.'),
+      p('O fluxo da apresentação está desenhado para 10 minutos exatos com cinco oradores. A demo é apresentada em vídeo gravado (não ao vivo) para eliminar o risco de falha de WiFi ou de comportamento inesperado da aplicação em ambiente desconhecido.'),
 
       h('Distribuição por orador'),
       distrTable,
@@ -266,13 +266,13 @@ const doc = new Document({
 
       ...slide('6', 'Fase 2 — Acessibilidade WCAG 2.2 AA', 'Orador 3', '1:30',
         [
-          bullet('3 números enormes no topo: 100/100 Lighthouse · 29/34 critérios WCAG · 9 correcções'),
+          bullet('3 números enormes no topo: 100/100 Lighthouse · 29/34 critérios WCAG · 9 correções'),
           bullet('Duas colunas em baixo: Automáticas (Lighthouse · axe-core · pa11y · T.A.W.) | Manuais (atributos RN · contraste · VoiceOver · responsividade)'),
         ],
         [
-          'Para a acessibilidade adoptámos uma metodologia mista, conforme indicado pelos docentes. Combinámos quatro ferramentas automáticas — Lighthouse, axe-core, pa11y e T.A.W. — com quatro análises manuais, incluindo teste real com o leitor de ecrã VoiceOver num iPhone.',
-          'Os resultados estão no ecrã: 100% no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — o que corresponde a 85% de conformidade plena — e identificámos no processo nove correcções concretas que foram aplicadas durante a própria Fase 2.',
-          'A lição metodológica é importante: as ferramentas automáticas só detectam 30 a 40% dos problemas reais. O bug B-05, que afectava utilizadores com texto a 200%, só foi descoberto pelo nosso teste manual de responsividade — nenhuma das quatro ferramentas o apanhou.',
+          'Para a acessibilidade adotámos uma metodologia mista, conforme indicado pelos docentes. Combinámos quatro ferramentas automáticas — Lighthouse, axe-core, pa11y e T.A.W. — com quatro análises manuais, incluindo teste real com o leitor de ecrã VoiceOver num iPhone.',
+          'Os resultados estão no ecrã: 100% no Lighthouse, 29 dos 34 critérios WCAG 2.2 nível AA totalmente conformes — o que corresponde a 85% de conformidade plena — e identificámos no processo nove correções concretas que foram aplicadas durante a própria Fase 2.',
+          'A lição metodológica é importante: as ferramentas automáticas só detectam 30 a 40% dos problemas reais. O bug B-05, que afetava utilizadores com texto a 200%, só foi descoberto pelo nosso teste manual de responsividade — nenhuma das quatro ferramentas o apanhou.',
         ],
       ),
 
@@ -299,7 +299,7 @@ const doc = new Document({
           'Conduzimos cinco sessões de teste com utilizadores reais recrutados na comunidade académica da UTAD, abrangendo treze tarefas representativas: autenticação, importação de horário, navegação outdoor e indoor, configurações de acessibilidade, logout.',
           'Os resultados globais são positivos: 96,9% de taxa de sucesso pleno em 65 tentativas, 4,6 em 5 na facilidade média e 4,6 no Likert do questionário pós-teste. Mas o resultado mais importante está aqui.',
           '(Apontar para a citação.)',
-          'O Participante 2, na tarefa de logout, abriu o telemóvel e viu o horário do utilizador anterior. A privacidade que tínhamos previsto pelas inspecções foi confirmada empiricamente pelos utilizadores reais — esta é a justificação concreta para combinar técnicas: a inspecção prevê, o teste confirma.',
+          'O Participante 2, na tarefa de logout, abriu o telemóvel e viu o horário do utilizador anterior. A privacidade que tínhamos previsto pelas inspeções foi confirmada empiricamente pelos utilizadores reais — esta é a justificação concreta para combinar técnicas: a inspeção prevê, o teste confirma.',
           'Identificámos 17 problemas distintos no total. Propomos 6 melhorias prioritárias — todas triviais — que num dia de trabalho elevam a aplicação dos 96,9% para 100% de taxa de sucesso na próxima iteração.',
         ],
       ),
@@ -343,12 +343,12 @@ const doc = new Document({
       quote('Não há scraping nem credenciais. O aluno copia a chave privada do próprio portal — a UTAD disponibiliza essa chave publicamente por design para sincronização de calendário (mesmo formato iCal usado por Google Calendar, Outlook, etc.).'),
 
       new Paragraph({ spacing: { before: 100 }, children: [bold('"Qual o maior aprendizado do projecto?"')] }),
-      quote('A combinação de inspecção + testes empíricos. A inspecção previu o B-02 (privacidade do horário); os testes com utilizadores confirmaram-no de forma irrefutável (citação do P2 no slide 8). Sozinhas, nenhuma das técnicas teria sido suficiente — a inspecção poderia ser descartada como "preocupação teórica", o teste sem o contexto da inspecção poderia parecer caso isolado.'),
+      quote('A combinação de inspeção + testes empíricos. A inspeção previu o B-02 (privacidade do horário); os testes com utilizadores confirmaram-no de forma irrefutável (citação do P2 no slide 8). Sozinhas, nenhuma das técnicas teria sido suficiente — a inspeção poderia ser descartada como "preocupação teórica", o teste sem o contexto da inspeção poderia parecer caso isolado.'),
     ],
   }],
 });
 
-const outPath = path.join(__dirname, 'Roteiro_Apresentacao.docx');
+const outPath = path.join(__dirname, '..', 'Roteiro_Apresentacao.docx');
 Packer.toBuffer(doc).then((buffer) => {
   fs.writeFileSync(outPath, buffer);
   console.log('OK ->', outPath);
