@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -163,38 +163,50 @@ export default function HorarioScreen() {
   const [chaveInput, setChaveInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(async (raw) => {
-      if (raw) {
+  useFocusEffect(
+    useCallback(() => {
+      let isCurrent = true;
+      AsyncStorage.getItem(STORAGE_KEY).then(async (raw) => {
+        if (!isCurrent) return;
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as Aula[];
+            if (parsed.length > 0 && parsed[0].data) {
+              setAulas(parsed);
+              setImportado(true);
+              return;
+            }
+          } catch {}
+        }
+        
+        // Se não há horário no AsyncStorage, limpa o estado local
+        setAulas([]);
+        setImportado(false);
+
+        // No local schedule — auto-import if user has a saved chave
+        const chave = user?.user_metadata?.ical_chave;
+        if (!chave) return;
         try {
-          const parsed = JSON.parse(raw) as Aula[];
-          if (parsed.length > 0 && parsed[0].data) {
-            setAulas(parsed);
-            setImportado(true);
-            return;
-          }
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const res = await fetch(`${API_URL}/api/schedule/ical/import-url`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ chave }),
+          });
+          if (!res.ok || !isCurrent) return;
+          const json = await res.json();
+          const lista = json.aulas as Aula[];
+          setAulas(lista);
+          setImportado(true);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
         } catch {}
-      }
-      // No local schedule — auto-import if user has a saved chave
-      const chave = user?.user_metadata?.ical_chave;
-      if (!chave) return;
-      try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(`${API_URL}/api/schedule/ical/import-url`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ chave }),
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const lista = json.aulas as Aula[];
-        setAulas(lista);
-        setImportado(true);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-      } catch {}
-    });
-  }, []);
+      });
+      return () => {
+        isCurrent = false;
+      };
+    }, [user, token])
+  );
 
   const { inicio: inicioSemana, fim: fimSemana } = useMemo(
     () => calcularSemana(semanaOffset),
