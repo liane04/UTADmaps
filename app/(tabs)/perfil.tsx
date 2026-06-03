@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -152,36 +152,44 @@ export default function PerfilScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  useFocusEffect(
+    useCallback(() => {
+      let isCurrent = true;
+      setLoadingAula(true);
+      AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+        if (!isCurrent) return;
         if (!raw) {
           setProximaAula(null);
+          setLoadingAula(false);
           return;
         }
-        const aulas: Aula[] = JSON.parse(raw);
-        const ahora = new Date();
-        // Aceita aula que está em curso ou ainda no futuro próximo.
-        // EXCLUI entregas/prazos de dia inteiro (00:00–00:00) — esses não são
-        // aulas e estavam a aparecer no card de "Próxima Aula".
-        const candidatas = aulas
-          .filter(isAula)
-          .filter((a) => {
-            const [h, min] = a.horaFim.split(':').map(Number);
-            const [y, m, d] = a.data.split('-').map(Number);
-            const fim = new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0);
-            return fim.getTime() > ahora.getTime();
-          })
-          .sort((a, b) => chaveAula(a).localeCompare(chaveAula(b)));
-        setProximaAula(candidatas[0] ?? null);
-      } catch {
-        setProximaAula(null);
-      } finally {
-        setLoadingAula(false);
-      }
-    })();
-  }, []);
+        try {
+          const aulas: Aula[] = JSON.parse(raw);
+          const ahora = new Date();
+          // Aceita aula que está em curso ou ainda no futuro próximo.
+          // EXCLUI entregas/prazos de dia inteiro (00:00–00:00) — esses não são
+          // aulas e estavam a aparecer no card de "Próxima Aula".
+          const candidatas = aulas
+            .filter(isAula)
+            .filter((a) => {
+              const [h, min] = a.horaFim.split(':').map(Number);
+              const [y, m, d] = a.data.split('-').map(Number);
+              const fim = new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0);
+              return fim.getTime() > ahora.getTime();
+            })
+            .sort((a, b) => chaveAula(a).localeCompare(chaveAula(b)));
+          setProximaAula(candidatas[0] ?? null);
+        } catch {
+          setProximaAula(null);
+        } finally {
+          setLoadingAula(false);
+        }
+      });
+      return () => {
+        isCurrent = false;
+      };
+    }, [user])
+  );
 
   // Calcula estado da próxima aula a partir do tick
   const aulaInfo = useMemo(() => {
